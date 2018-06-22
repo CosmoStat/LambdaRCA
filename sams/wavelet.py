@@ -23,7 +23,7 @@ sys.path.append('../functions')
 from np_adjust import rotate_stack
 
 
-def call_mr_transform(data, opt=None, path='./', remove_files=True,exe_path='/export/home/fngole/src/ISAP_V3.1/cxx/sparse2d/bin/'):
+def call_mr_transform(data, opt=None, path='./', remove_files=True,exe_path=''):
     """Call mr_transform
 
     This method calls the iSAP module mr_transform

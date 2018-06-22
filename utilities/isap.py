@@ -78,7 +78,7 @@ def mr_trans(im,opt=None,path='',exe_path=''):
     os.remove(NameImag)
     return swapaxes(swapaxes(Result,0,1),1,2),NameResult+'.mr'
 
-def mr_trans_1d(x,opt=None,path='../data/',exe_path='/export/home/fngole/src/ISAP_V3.1/cxx/sparse2d/bin/',info_filename=None,save_info_en=True):
+def mr_trans_1d(x,opt=None,path='../data/',exe_path='',info_filename=None,save_info_en=True):
     NameSignal = path+utils.rand_file_name('.fits')
     NameResult = path+utils.rand_file_name('')
     # Writes the input signal to a fits file
@@ -99,7 +99,7 @@ def mr_trans_1d(x,opt=None,path='../data/',exe_path='/export/home/fngole/src/ISA
     os.remove(NameResult+'.fits')
     return Result,info_filename
 
-def mr_recons_1d(x,info_filename,path='../data/',exe_path='/export/home/fngole/src/ISAP_V3.1/cxx/sparse2d/bin/'):
+def mr_recons_1d(x,info_filename,path='../data/',exe_path=''):
     trans_file = path+utils.rand_file_name('.fits')
     # Writes the input coefficients to a fits file
     fits.writeto(trans_file,x)
@@ -113,7 +113,7 @@ def mr_recons_1d(x,info_filename,path='../data/',exe_path='/export/home/fngole/s
 
     return Result
 
-def mr_trans_2(im,filters=None,opt=None,exe_path='/export/home/fngole/src/ISAP_V3.1/cxx/sparse2d/bin/'):
+def mr_trans_2(im,filters=None,opt=None,exe_path=''):
     shap = im.shape
     if filters is None:
         dirac = zeros((shap[0]-(shap[0]-1)%2,shap[1]-(shap[1]-1)%2)) # Odd dimensions needed
