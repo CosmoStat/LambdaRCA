@@ -20,7 +20,7 @@ sys.path.append('../functions')
 from np_adjust import rotate, rotate_stack
 
 
-def convolve(data, kernel, method='astropy'):
+def convolve(data, kernel, method='scipy'):
     """Convolve data with kernel
 
     This method convolves the input data with a given kernel using FFT and
