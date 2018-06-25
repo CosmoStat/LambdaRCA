@@ -1629,6 +1629,7 @@ def threshold_perc(x,perc=0.99):
 
 
 def kthresholding(x,k):
+    k = int(k)
     if k<1:
         print "Warning: wrong k value for k-thresholding"
         k = 1
