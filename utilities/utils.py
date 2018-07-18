@@ -5248,7 +5248,6 @@ def shift_est(psf_stack): #
     centroid_out = zeros((shap[2],2))
     for i in range(0,shap[2]):
         param=gaussfitter.gaussfit(psf_stack[:,:,i],returnfitimage=False)
-        #(centroid,Wc) = compute_centroid(psf_stack[:,:,i],(param[3]+param[4])/2)
         (centroid,Wc) = compute_centroid(psf_stack[:,:,i],(param[3]+param[4])/2)
         U[i,0] = centroid[0,0]-double(shap[0])/2
         U[i,1] = centroid[0,1]-double(shap[1])/2

@@ -1766,7 +1766,7 @@ def full_displacement(shap,supp,t,pol_en=False,cent=None,theta_param=1,pol_mod=F
         weights_neighbors[:,:,0] = inv_dist/(inv_dist.sum(axis=1).reshape((supp.shape[0],1)).dot(ones((1,4))))
     else:
         for j in range(0,size(t)):
-            print "Wavelenght ",j+1,"/",size(t)
+            print "Wavelength ",j+1,"/",size(t)
             neighbors_graph_temp,dist_neighbors = knn.nn_index(advection_points[:,:,j],4)
             neighbors_graph[:,0,:,j] = neighbors_graph_temp/shap[0]
             neighbors_graph[:,1,:,j] = neighbors_graph_temp%shap[0]
