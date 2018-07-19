@@ -36,6 +36,12 @@ from scipy import interpolate
 import scipy.linalg as sci_lin
 
 def diagonally_dominated_mat(shap,sig=4.,thresh_en=True,coord_map=None,pol_en=False,pol_mod=False,theta_param=1,cent=None):
+    """**[???]**
+    
+    Calls:
+    
+    * :func:`optim_utils.dist_map_2`
+    * :func:`utils.polar_coord_cloud`"""
     from optim_utils import dist_map_2
     from numpy import sqrt as numsqrt
     coord_cloud = None
@@ -67,6 +73,13 @@ def diagonally_dominated_mat(shap,sig=4.,thresh_en=True,coord_map=None,pol_en=Fa
 
 def diagonally_dominated_mat_stack(shap,nb_mat,sig=4.,thresh_en=True,coord_map=None,pol_en=False,\
     pol_mod=False,theta_param=1,cent=None):
+    
+    """Applies whatever :func:`diagonally_dominated_mat` does to a stack.
+    
+    Calls:
+    
+    * :func:`diagonally_dominated_mat`
+    """
     mat_ref = diagonally_dominated_mat(shap,sig=sig,thresh_en=thresh_en,coord_map=coord_map,\
     pol_en=pol_en,pol_mod=pol_mod,theta_param=theta_param,cent=cent)
     mat = zeros((shap[0]*shap[1],shap[0]*shap[1],nb_mat))
@@ -200,6 +213,9 @@ def space_dist_filt(r,a=1,exp=1):
     return filt
 
 def feat_dist_mat(feat_mat):
+    """Computes pairwise distances...?
+    
+    #TODO: maybe some redundancy with :func:`optim_utils.dist_map_2` here?"""
     shap = feat_mat.shape
     mat_out = zeros((shap[0],shap[0]-1))
     a = array(range(0,shap[0]))
@@ -319,6 +335,14 @@ def gauss_gen_2(sigma_x,sigma_y,cent,theta,rad):
 
 
 def compute_centroid(im,sigw=None,nb_iter=4):
+    """ Computes centroid.
+    
+    #TODO: would be interesting to compare with Sam's moments based computation
+    
+    Calls:
+    
+    * gaussfitter.gaussfit
+    """
     if sigw is None:
         param=gaussfitter.gaussfit(im,returnfitimage=False)
         #print param
@@ -1565,7 +1589,9 @@ def sig_sparsity_analysis_m(cube,nb_points):
 
 
 
-def thresholding(x,thresh,thresh_type): # x is a 1D or 2D array, thresh is an array of the same size, thresh_type is 1 or 0, 1 for soft thresholding, 0 for hard thresholding
+def thresholding(x,thresh,thresh_type): 
+    """ Performs either soft- (``thresh_type=1``) or hard-thresholding (``thresh_type=0``). Input can be 1D or 2D array.
+    """
     xthresh = copy(x)
     n = x.shape
 
@@ -1683,6 +1709,12 @@ def l_inf_ball_proj(x,thresh,thresh_type,cent=None):
     return xthresh
 
 def thresholding_3D(x,thresh,thresh_type):
+    """Apply thresholding to a set of images (or transport plans I guess).
+    
+    Calls:
+    
+    * :func:`utils.thresholding`
+    """
     from numpy import copy
     shap = x.shape
     nb_plan = shap[2]
@@ -1801,6 +1833,10 @@ def kernel_testmat_stack(mat,mat_test,tol=0.01):
 
 
 def log_sampling(val_min,val_max,nb_samp):
+    """Literally ``np.logspace`` I think.
+    
+    #TODO: you know.
+    """
     from  numpy import log,double,array,exp
     lval_min = log(val_min)
     lval_max = log(val_max)
@@ -2034,10 +2070,13 @@ def spike_analysis(x,rad,nb_deg,nb_width,mu,nb_iter,nsigma,sigma,thresh_type,nb_
     return Urec,mse
 
 def mad(x):
+    """Computes MAD.
+    """
     from numpy import *
     return median(abs(x-median(x)))
 
 def cartesian_product(arrays):
+    """**[???]***"""
     import numpy as numpy
     broadcastable = numpy.ix_(*arrays)
     broadcasted = numpy.broadcast_arrays(*broadcastable)
@@ -2050,6 +2089,13 @@ def cartesian_product(arrays):
     return out.reshape(cols, rows).T
 
 def get_noise(im,nb_iter=5,k=3):
+    """ Estimate noise level for one given image through one soft thresholding iterations.
+    See SPRITE paper, appendix... I want to say A.
+    
+    Calls:
+    
+    * :func:`utils.mad`
+    """
     sig = 1.4826*mad(im)
     for i in range(0,nb_iter):
         im_thresh = im*(abs(im)>k*sig)
@@ -2057,7 +2103,13 @@ def get_noise(im,nb_iter=5,k=3):
     return sig
 
 def get_noise_arr(arr):
+    """Estimate noise for each of a set of image.
+    
+    Calls:
 
+    * :func:`utils.cartesian_product`
+    * :func:`utils.get_noise`
+    """
     shap = arr.shape
     ind = list()
     for i in shap[2:]:
@@ -3214,6 +3266,8 @@ def shape_projector_opt_step(im,cent_shape,back_cent_shape,shape_ortho_basis,mu,
 
 
 def lanczos(U,n=10,n2=None):
+    """Generate Lanczos kernel for a given shift.
+    """
     if n2 is None:
         n2 = n
     siz = size(U)
@@ -3812,6 +3866,10 @@ def lin_bar(data,weights):
 
 
 def knn_interf(data,nb_neigh,return_index=False):
+    """ Computes closest neighbors. 
+    
+    #TODO: Probably some costly redundancy with :func:`full_displacement` here. Also is it me or is ``params`` not used?
+    """
     from numpy import array,float64
     flann = FLANN()
     data_cp = array(data, dtype=float64)
@@ -4949,6 +5007,12 @@ def correlated_noise_est(u,nb_iter=5,k=5,tol=1.):
 
 
 def im_gauss_nois_est(im,opt=['-t2','-n2'],filters=None):
+    """Compute sigma mad for... What appears to be the first wavelet scale only?
+    
+    Calls:
+    
+    * isap.mr_trans_2
+    """
     from isap import mr_trans_2
     Result,filters = mr_trans_2(im,filters=filters,opt=opt)
     siz = im.shape
@@ -4958,6 +5022,16 @@ def im_gauss_nois_est(im,opt=['-t2','-n2'],filters=None):
     return sigma,filters
 
 def im_gauss_nois_est_cube(cube,opt=None,filters=None,return_map=False):
+    """
+    Estimate sigma mad for a set of images.
+    
+    #TODO: Note there is clearly something wrong with ``return_map`` since it fills in a ``map`` but 
+    does not return it (just the boolean saying it was filled).
+    
+    Calls:
+    
+    * :func:`utils.im_gauss_nois_est`
+    """
     shap = cube.shape
     sig = zeros((shap[2],))
     map = None
@@ -5141,7 +5215,9 @@ def dir_check(dir_stack,ref_ell,cur_point):
             dir_cand[i]=1
     return dir_cand,ell_steepness
 
-def polar_coord(coord,cent): # Angle in radians
+def polar_coord(coord,cent):
+    """Computes polar coordinates for one cartesian position (angles are in radians).
+    """
     from numpy import sqrt,arccos,abs,pi
     r = sqrt((coord[0]-cent[0])**2+(coord[1]-cent[1])**2)
     alpha=None
@@ -5160,6 +5236,12 @@ def polar_coord(coord,cent): # Angle in radians
     return r,alpha
 
 def polar_coord_cloud(coord,cent):
+    """Compute polar coordinates for a set of points.
+    
+    Calls:
+    
+    * :func:`utils.polar_coord`
+    """
     from numpy import zeros
     shap = coord.shape
     out = zeros((2,shap[1]))
@@ -5240,7 +5322,14 @@ def int_grid_shift(psf_stack): #
 
     return U
 
-def shift_est(psf_stack): #
+def shift_est(psf_stack): 
+    """Estimates shifts.
+    
+    Calls:
+    
+    * gaussfitter.gaussfit
+    * :func:`utils.compute_centroid`
+    """
     shap = psf_stack.shape
     U = zeros((shap[2],2))
     param=gaussfitter.gaussfit(psf_stack[:,:,0],returnfitimage=False)
@@ -5327,6 +5416,8 @@ def thresh_shift_est(im_stack,sig_thresh=None,opt=None):
 
 
 def flux_estimate(im,cent=None,rad=4): # Default value for the flux tunned for Euclid PSF at Euclid resolution
+    """Estimate flux for one image.
+    """
     flux = 0
     if cent is None:
         cent = array(where(im==im.max())).reshape((1,2))
@@ -5338,6 +5429,12 @@ def flux_estimate(im,cent=None,rad=4): # Default value for the flux tunned for E
     return flux
 
 def flux_estimate_stack(stack,cent=None,rad=4):
+    """Estimate flux for a bunch of images.
+    
+    Calls:
+    
+    * :func:`utils.flux_estimate`
+    """
     shap = stack.shape
     flux = zeros((shap[2],))
     for i in range(0,shap[2]):
@@ -5550,6 +5647,12 @@ def rot_invar_correl(im1,im2):
     return corr_coeff
 
 def shift_ker_stack(shifts,upfact,lanc_rad=4):
+    """Generate shifting kernels and rotated shifting kernels.
+    
+    Calls:
+    
+    * :func:`utils.lanczos`
+    """
     from numpy import rot90
     shap = shifts.shape
     shift_ker_stack = zeros((2*lanc_rad+1,2*lanc_rad+1,shap[0]))

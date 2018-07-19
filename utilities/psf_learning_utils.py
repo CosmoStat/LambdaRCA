@@ -1712,6 +1712,12 @@ def displacement_interp_pol_3(im_ref,im_proj,t,pos_map,final_pos,cent,scale_coef
     return psf_interp
 
 def full_displacement(shap,supp,t,pol_en=False,cent=None,theta_param=1,pol_mod=False,coord_map=None,knn=None,eps = 1.e-16):
+    """**[???] Something with neighbors... I don't think it's what actually computes the transport plan? Or is it?**
+    
+    Calls:
+    
+    * :func:`utils.polar_coord_cloud`
+    """
     from numpy import ones,zeros,copy,array,pi,int,transpose,diag
     from utils import polar_coord_cloud
     from pyflann import FLANN

@@ -3161,6 +3161,7 @@ def dist_map(stack):
     return dist_mat
 
 def dist_map_2(arr): # The samples are in the columns
+    """Pairwise distances...?"""
     from numpy.linalg import norm
     from numpy import ones,transpose,fill_diagonal
 
@@ -7902,6 +7903,16 @@ def notch_filt_optim_2(test_mat,dist,expo_range,e_range,nb_iter=2,tol=0.01):
     return expo_out,e_out,loss,vect,ker,j2
 
 def analysis(cube,sig,field_dist,p_min = 0.01,e_min=0.01,e_max=1.99,nb_max=30,tol=0.01):
+    """Computes graph-constraint related values, see RCA paper sections 5.2 and (especially) 5.5.3.
+    
+    
+    Calls:
+    
+    * :func:`utils.knn_interf`
+    * :func:`optim_utils.pow_law_select`
+    * :func:`utils.feat_dist_mat`
+    * :func:`utils.log_sampling`
+    """
     nb_samp_opt = 10
     shap = cube.shape
     nb_neighs = shap[2]-1
@@ -8151,6 +8162,8 @@ def proj_affine_pos2(x,a,u,min_val_map=None): # Projects x onto the set {y,ak*y+
     return proj
 
 def pow_law_select(dist_weights,nb_neigh,min_val=10**(-15)):
+    """ **[???] but related to proximity constrains hyperparameters**
+    """
 
     a = dist_weights[:,0]/dist_weights[:,nb_neigh-1]
     r_med = a.min()
@@ -10963,6 +10976,20 @@ def polychromatic_psf_field_est(im_stack,spectrums,wvl,D,opt_shift_est,nb_comp,n
 def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_comp,field_pos=None,nb_iter=4,nb_subiter=100,mu=0.3,\
                         tol = 0.1,sig_supp = 3,sig=None,shifts=None,flux=None,nsig_shift_est=4,pos_en = True,simplex_en=False,\
                         wvl_en=True,wvl_opt=None,nsig=3,graph_cons_en=False):
+    """ Main LambdaRCA function.
+    
+    Calls:
+    
+    * :func:`utils.get_noise_arr`
+    * :func:`utils.diagonally_dominated_mat_stack` 
+    * :func:`psf_learning_utils.full_displacement` 
+    * :func:`utils.im_gauss_nois_est_cube` 
+    * :func:`utils.thresholding_3D` 
+    * :func:`utils.shift_est` 
+    * :func:`utils.shift_ker_stack` 
+    * :func:`utils.flux_estimate_stack` 
+    * :func:`optim_utils.analysis` 
+    """
 
     im_stack = copy(im_stack_in)
     if wvl_en:
