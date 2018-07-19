@@ -1,0 +1,132 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>optim_utils &#8212; LambdaRCA 0.0 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="utils" href="utils.html" />
+    <link rel="prev" title="LambdaRCA" href="index.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-optim_utils">
+<span id="optim-utils"></span><h1>optim_utils<a class="headerlink" href="#module-optim_utils" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="optim_utils.analysis">
+<code class="descclassname">optim_utils.</code><code class="descname">analysis</code><span class="sig-paren">(</span><em>cube</em>, <em>sig</em>, <em>field_dist</em>, <em>p_min=0.01</em>, <em>e_min=0.01</em>, <em>e_max=1.99</em>, <em>nb_max=30</em>, <em>tol=0.01</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/optim_utils.html#analysis"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#optim_utils.analysis" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes graph-constraint related values, see RCA paper sections 5.2 and (especially) 5.5.3.</p>
+<p>Calls:</p>
+<ul class="simple">
+<li><a class="reference internal" href="utils.html#utils.knn_interf" title="utils.knn_interf"><code class="xref py py-func docutils literal notranslate"><span class="pre">utils.knn_interf()</span></code></a></li>
+<li><a class="reference internal" href="#optim_utils.pow_law_select" title="optim_utils.pow_law_select"><code class="xref py py-func docutils literal notranslate"><span class="pre">optim_utils.pow_law_select()</span></code></a></li>
+<li><a class="reference internal" href="utils.html#utils.feat_dist_mat" title="utils.feat_dist_mat"><code class="xref py py-func docutils literal notranslate"><span class="pre">utils.feat_dist_mat()</span></code></a></li>
+<li><a class="reference internal" href="utils.html#utils.log_sampling" title="utils.log_sampling"><code class="xref py py-func docutils literal notranslate"><span class="pre">utils.log_sampling()</span></code></a></li>
+</ul>
+</dd></dl>
+
+<dl class="function">
+<dt id="optim_utils.dist_map_2">
+<code class="descclassname">optim_utils.</code><code class="descname">dist_map_2</code><span class="sig-paren">(</span><em>arr</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/optim_utils.html#dist_map_2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#optim_utils.dist_map_2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pairwise distances…?</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="optim_utils.polychromatic_psf_field_est_2">
+<code class="descclassname">optim_utils.</code><code class="descname">polychromatic_psf_field_est_2</code><span class="sig-paren">(</span><em>im_stack_in</em>, <em>spectrums</em>, <em>wvl</em>, <em>D</em>, <em>opt_shift_est</em>, <em>nb_comp</em>, <em>field_pos=None</em>, <em>nb_iter=4</em>, <em>nb_subiter=100</em>, <em>mu=0.3</em>, <em>tol=0.1</em>, <em>sig_supp=3</em>, <em>sig=None</em>, <em>shifts=None</em>, <em>flux=None</em>, <em>nsig_shift_est=4</em>, <em>pos_en=True</em>, <em>simplex_en=False</em>, <em>wvl_en=True</em>, <em>wvl_opt=None</em>, <em>nsig=3</em>, <em>graph_cons_en=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/optim_utils.html#polychromatic_psf_field_est_2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#optim_utils.polychromatic_psf_field_est_2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Main LambdaRCA function.</p>
+<p>Calls:</p>
+<ul class="simple">
+<li><a class="reference internal" href="utils.html#utils.get_noise_arr" title="utils.get_noise_arr"><code class="xref py py-func docutils literal notranslate"><span class="pre">utils.get_noise_arr()</span></code></a></li>
+<li><a class="reference internal" href="utils.html#utils.diagonally_dominated_mat_stack" title="utils.diagonally_dominated_mat_stack"><code class="xref py py-func docutils literal notranslate"><span class="pre">utils.diagonally_dominated_mat_stack()</span></code></a></li>
+<li><a class="reference internal" href="psf_learning_utils.html#psf_learning_utils.full_displacement" title="psf_learning_utils.full_displacement"><code class="xref py py-func docutils literal notranslate"><span class="pre">psf_learning_utils.full_displacement()</span></code></a></li>
+<li><a class="reference internal" href="utils.html#utils.im_gauss_nois_est_cube" title="utils.im_gauss_nois_est_cube"><code class="xref py py-func docutils literal notranslate"><span class="pre">utils.im_gauss_nois_est_cube()</span></code></a></li>
+<li><a class="reference internal" href="utils.html#utils.thresholding_3D" title="utils.thresholding_3D"><code class="xref py py-func docutils literal notranslate"><span class="pre">utils.thresholding_3D()</span></code></a></li>
+<li><a class="reference internal" href="utils.html#utils.shift_est" title="utils.shift_est"><code class="xref py py-func docutils literal notranslate"><span class="pre">utils.shift_est()</span></code></a></li>
+<li><a class="reference internal" href="utils.html#utils.shift_ker_stack" title="utils.shift_ker_stack"><code class="xref py py-func docutils literal notranslate"><span class="pre">utils.shift_ker_stack()</span></code></a></li>
+<li><a class="reference internal" href="utils.html#utils.flux_estimate_stack" title="utils.flux_estimate_stack"><code class="xref py py-func docutils literal notranslate"><span class="pre">utils.flux_estimate_stack()</span></code></a></li>
+<li><a class="reference internal" href="#optim_utils.analysis" title="optim_utils.analysis"><code class="xref py py-func docutils literal notranslate"><span class="pre">optim_utils.analysis()</span></code></a></li>
+</ul>
+</dd></dl>
+
+<dl class="function">
+<dt id="optim_utils.pow_law_select">
+<code class="descclassname">optim_utils.</code><code class="descname">pow_law_select</code><span class="sig-paren">(</span><em>dist_weights</em>, <em>nb_neigh</em>, <em>min_val=1e-15</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/optim_utils.html#pow_law_select"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#optim_utils.pow_law_select" title="Permalink to this definition">¶</a></dt>
+<dd><p><strong>[???] but related to proximity constrains hyperparameters</strong></p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">LambdaRCA</a></li>
+      <li>Next: <a href="utils.html" title="next chapter">utils</a></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/optim_utils.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Fred Ngolè, Morgan A Schmitz, Rebeca Araripe, Jean-Luc Starck.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.7</a>
+      
+      |
+      <a href="_sources/optim_utils.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
