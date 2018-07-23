@@ -120,6 +120,14 @@ instead of just integers. For instance:</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="utils.cube_svd">
+<code class="descclassname">utils.</code><code class="descname">cube_svd</code><span class="sig-paren">(</span><em>cube</em>, <em>nb_comp=None</em>, <em>ind=None</em>, <em>mean_sub=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/utils.html#cube_svd"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#utils.cube_svd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs PCA as initialization.</p>
+<p>#TODO: replace with Scikit Learn version? Pretty sure this is where RCA crashes with
+too many inputs</p>
+</dd></dl>
+
+<dl class="function">
 <dt id="utils.diagonally_dominated_mat">
 <code class="descclassname">utils.</code><code class="descname">diagonally_dominated_mat</code><span class="sig-paren">(</span><em>shap</em>, <em>sig=4.0</em>, <em>thresh_en=True</em>, <em>coord_map=None</em>, <em>pol_en=False</em>, <em>pol_mod=False</em>, <em>theta_param=1</em>, <em>cent=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/utils.html#diagonally_dominated_mat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#utils.diagonally_dominated_mat" title="Permalink to this definition">¶</a></dt>
 <dd><p><strong>[???]</strong></p>
@@ -150,7 +158,7 @@ instead of just integers. For instance:</p>
 <dl class="function">
 <dt id="utils.flux_estimate">
 <code class="descclassname">utils.</code><code class="descname">flux_estimate</code><span class="sig-paren">(</span><em>im</em>, <em>cent=None</em>, <em>rad=4</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/utils.html#flux_estimate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#utils.flux_estimate" title="Permalink to this definition">¶</a></dt>
-<dd><p>Estimate flux for one image.</p>
+<dd><p>Estimate flux for one image (see SPRITE paper, section 3.4.1., subsection ‘Photometric flux’).</p>
 </dd></dl>
 
 <dl class="function">
@@ -208,6 +216,35 @@ does not return it (just the boolean saying it was filled).</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="utils.kernel_ext">
+<code class="descclassname">utils.</code><code class="descname">kernel_ext</code><span class="sig-paren">(</span><em>mat</em>, <em>tol=0.01</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/utils.html#kernel_ext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#utils.kernel_ext" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes input matrix’s kernel, defined as the vector space spanned by the eigenvectors corresponding 
+to 1% of the sum of the squared singular values.</p>
+<p>#TODO: this is basically just the SVD, all lines between that and the <code class="docutils literal notranslate"><span class="pre">return</span></code> are useless.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="utils.kernel_mat_stack_test_unit">
+<code class="descclassname">utils.</code><code class="descname">kernel_mat_stack_test_unit</code><span class="sig-paren">(</span><em>mat_stack</em>, <em>mat_test</em>, <em>tol=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/utils.html#kernel_mat_stack_test_unit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#utils.kernel_mat_stack_test_unit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes whatever graph constraint-related quantity <a class="reference internal" href="#utils.kernel_mat_test_unit" title="utils.kernel_mat_test_unit"><code class="xref py py-func docutils literal notranslate"><span class="pre">utils.kernel_mat_test_unit()</span></code></a> computes
+for a set of matrices.</p>
+<p>Calls:</p>
+<ul class="simple">
+<li><a class="reference internal" href="#utils.kernel_mat_test_unit" title="utils.kernel_mat_test_unit"><code class="xref py py-func docutils literal notranslate"><span class="pre">utils.kernel_mat_test_unit()</span></code></a></li>
+</ul>
+</dd></dl>
+
+<dl class="function">
+<dt id="utils.kernel_mat_test_unit">
+<code class="descclassname">utils.</code><code class="descname">kernel_mat_test_unit</code><span class="sig-paren">(</span><em>mat</em>, <em>mat_test</em>, <em>tol=0.01</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/utils.html#kernel_mat_test_unit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#utils.kernel_mat_test_unit" title="Permalink to this definition">¶</a></dt>
+<dd><p><strong>[???]</strong></p>
+<p>Calls:</p>
+<ul class="simple">
+<li><a class="reference internal" href="#utils.kernel_ext" title="utils.kernel_ext"><code class="xref py py-func docutils literal notranslate"><span class="pre">utils.kernel_ext()</span></code></a></li>
+</ul>
+</dd></dl>
+
+<dl class="function">
 <dt id="utils.knn_interf">
 <code class="descclassname">utils.</code><code class="descname">knn_interf</code><span class="sig-paren">(</span><em>data</em>, <em>nb_neigh</em>, <em>return_index=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/utils.html#knn_interf"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#utils.knn_interf" title="Permalink to this definition">¶</a></dt>
 <dd><p>Computes closest neighbors.</p>
@@ -231,6 +268,13 @@ does not return it (just the boolean saying it was filled).</p>
 <dt id="utils.mad">
 <code class="descclassname">utils.</code><code class="descname">mad</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/utils.html#mad"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#utils.mad" title="Permalink to this definition">¶</a></dt>
 <dd><p>Computes MAD.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="utils.mat_to_cube">
+<code class="descclassname">utils.</code><code class="descname">mat_to_cube</code><span class="sig-paren">(</span><em>mat</em>, <em>n1</em>, <em>n2</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/utils.html#mat_to_cube"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#utils.mat_to_cube" title="Permalink to this definition">¶</a></dt>
+<dd><p>Literally <code class="docutils literal notranslate"><span class="pre">np.swapaxes</span></code> I think.</p>
+<p>#TODO</p>
 </dd></dl>
 
 <dl class="function">
@@ -291,7 +335,7 @@ no parameters were supplied.</dd>
 <dl class="function">
 <dt id="utils.shift_est">
 <code class="descclassname">utils.</code><code class="descname">shift_est</code><span class="sig-paren">(</span><em>psf_stack</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/utils.html#shift_est"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#utils.shift_est" title="Permalink to this definition">¶</a></dt>
-<dd><p>Estimates shifts.</p>
+<dd><p>Estimates shifts (see SPRITE paper, section 3.4.1., subsection ‘Subpixel shifts’).</p>
 <p>Calls:</p>
 <ul class="simple">
 <li>gaussfitter.gaussfit</li>

@@ -7856,7 +7856,10 @@
 
     <span class="k">return</span> <span class="n">mat_out</span>
 
-<span class="k">def</span> <span class="nf">non_uniform_smoothing_bas_mat</span><span class="p">(</span><span class="n">weights</span><span class="p">):</span>
+<div class="viewcode-block" id="non_uniform_smoothing_bas_mat"><a class="viewcode-back" href="../optim_utils.html#optim_utils.non_uniform_smoothing_bas_mat">[docs]</a><span class="k">def</span> <span class="nf">non_uniform_smoothing_bas_mat</span><span class="p">(</span><span class="n">weights</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; **[???]**</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">shap</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">shape</span>
     <span class="n">A</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">((</span><span class="n">shap</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">shap</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
     <span class="n">B</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">((</span><span class="n">shap</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">shap</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
@@ -7868,14 +7871,26 @@
         <span class="n">A</span><span class="p">[</span><span class="n">ik</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">weights</span><span class="p">[</span><span class="n">i</span><span class="p">,:]</span>
         <span class="n">B</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">weights</span><span class="p">[</span><span class="n">i</span><span class="p">,:])</span>
 
-    <span class="k">return</span> <span class="n">A</span><span class="p">,</span><span class="n">B</span>
+    <span class="k">return</span> <span class="n">A</span><span class="p">,</span><span class="n">B</span></div>
 
-<span class="k">def</span> <span class="nf">non_uniform_smoothing_mat_2</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span><span class="n">e</span><span class="p">):</span> <span class="c1"># e&gt;=0</span>
+<div class="viewcode-block" id="non_uniform_smoothing_mat_2"><a class="viewcode-back" href="../optim_utils.html#optim_utils.non_uniform_smoothing_mat_2">[docs]</a><span class="k">def</span> <span class="nf">non_uniform_smoothing_mat_2</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span><span class="n">e</span><span class="p">):</span> <span class="c1"># e&gt;=0</span>
+    <span class="sd">&quot;&quot;&quot; **[???]**</span>
+<span class="sd">    </span>
+<span class="sd">    Calls:</span>
+<span class="sd">    </span>
+<span class="sd">    * :func:`optim_utils.non_uniform_smoothing_bas_mat`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">A</span><span class="p">,</span><span class="n">B</span> <span class="o">=</span> <span class="n">non_uniform_smoothing_bas_mat</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
     <span class="n">mat_out</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">transpose</span><span class="p">(</span><span class="n">A</span><span class="p">))</span><span class="o">+</span> <span class="n">e</span><span class="o">*</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">B</span><span class="p">)</span><span class="o">+</span> <span class="n">B</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">transpose</span><span class="p">(</span><span class="n">A</span><span class="p">)))</span> <span class="o">+</span> <span class="p">(</span><span class="n">e</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="n">B</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">B</span><span class="p">)</span> <span class="c1"># B is diagonal matrix</span>
-    <span class="k">return</span> <span class="n">mat_out</span>
+    <span class="k">return</span> <span class="n">mat_out</span></div>
 
-<span class="k">def</span> <span class="nf">non_uniform_smoothing_mat_dist_1</span><span class="p">(</span><span class="n">dist</span><span class="p">,</span><span class="n">expo_range</span><span class="p">,</span><span class="n">e</span><span class="p">):</span>
+<div class="viewcode-block" id="non_uniform_smoothing_mat_dist_1"><a class="viewcode-back" href="../optim_utils.html#optim_utils.non_uniform_smoothing_mat_dist_1">[docs]</a><span class="k">def</span> <span class="nf">non_uniform_smoothing_mat_dist_1</span><span class="p">(</span><span class="n">dist</span><span class="p">,</span><span class="n">expo_range</span><span class="p">,</span><span class="n">e</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; **[???] Computes some distance matrix, *again*.**</span>
+<span class="sd">    </span>
+<span class="sd">    Calls:</span>
+<span class="sd">    </span>
+<span class="sd">    * :func:`optim_utils.non_uniform_smoothing_mat_2`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">dist_med</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">dist</span><span class="p">)</span>
     <span class="n">nb_samp</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">expo_range</span><span class="p">)</span>
     <span class="n">nb_im</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -7884,9 +7899,17 @@
         <span class="n">dist_weights</span> <span class="o">=</span> <span class="p">(</span><span class="n">dist_med</span><span class="o">/</span><span class="n">dist</span><span class="p">)</span><span class="o">**</span><span class="n">expo_range</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
         <span class="n">dist_weigths</span> <span class="o">=</span> <span class="n">dist_weights</span><span class="o">/</span><span class="n">dist_weights</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
         <span class="n">mat_stack</span><span class="p">[:,:,</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">non_uniform_smoothing_mat_2</span><span class="p">(</span><span class="n">dist_weights</span><span class="p">,</span><span class="n">e</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">mat_stack</span>
+    <span class="k">return</span> <span class="n">mat_stack</span></div>
 
-<span class="k">def</span> <span class="nf">non_uniform_smoothing_mat_dist_2</span><span class="p">(</span><span class="n">dist</span><span class="p">,</span><span class="n">expo</span><span class="p">,</span><span class="n">e_range</span><span class="p">):</span>
+<div class="viewcode-block" id="non_uniform_smoothing_mat_dist_2"><a class="viewcode-back" href="../optim_utils.html#optim_utils.non_uniform_smoothing_mat_dist_2">[docs]</a><span class="k">def</span> <span class="nf">non_uniform_smoothing_mat_dist_2</span><span class="p">(</span><span class="n">dist</span><span class="p">,</span><span class="n">expo</span><span class="p">,</span><span class="n">e_range</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Same as :func:`optim_utils.non_uniform_smoothing_mat_dist_1`, but with</span>
+<span class="sd">    constant ``expo`` and varying ``e`` (as opposed to constant ``e`` and </span>
+<span class="sd">    varying ``expo``.</span>
+<span class="sd">    </span>
+<span class="sd">    Calls:</span>
+<span class="sd">    </span>
+<span class="sd">    * :func:`optim_utils.non_uniform_smoothing_mat_2`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">dist_med</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">dist</span><span class="p">)</span>
     <span class="n">nb_samp</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">e_range</span><span class="p">)</span>
     <span class="n">nb_im</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -7895,7 +7918,7 @@
         <span class="n">dist_weights</span> <span class="o">=</span> <span class="p">(</span><span class="n">dist_med</span><span class="o">/</span><span class="n">dist</span><span class="p">)</span><span class="o">**</span><span class="n">expo</span>
         <span class="n">dist_weigths</span> <span class="o">=</span> <span class="n">dist_weights</span><span class="o">/</span><span class="n">dist_weights</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
         <span class="n">mat_stack</span><span class="p">[:,:,</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">non_uniform_smoothing_mat_2</span><span class="p">(</span><span class="n">dist_weights</span><span class="p">,</span><span class="n">e_range</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
-    <span class="k">return</span> <span class="n">mat_stack</span>
+    <span class="k">return</span> <span class="n">mat_stack</span></div>
 
 <span class="k">def</span> <span class="nf">notch_filt_optim</span><span class="p">(</span><span class="n">test_mat</span><span class="p">,</span><span class="n">dist</span><span class="p">,</span><span class="n">expo_range</span><span class="p">,</span><span class="n">e_range</span><span class="p">,</span><span class="n">nb_iter</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span><span class="n">tol</span><span class="o">=</span><span class="mf">0.01</span><span class="p">):</span>
     <span class="n">expo_out</span> <span class="o">=</span> <span class="kc">None</span>
@@ -7913,7 +7936,15 @@
         <span class="nb">print</span> <span class="s2">&quot; Optimum values: &quot;</span><span class="p">,</span><span class="n">expo_out</span><span class="p">,</span><span class="s2">&quot; &quot;</span><span class="p">,</span><span class="n">e_out</span><span class="c1">#,&quot; &quot;,expo_range,&quot; &quot;,e_range</span>
     <span class="k">return</span> <span class="n">expo_out</span><span class="p">,</span><span class="n">e_out</span>
 
-<span class="k">def</span> <span class="nf">notch_filt_optim_2</span><span class="p">(</span><span class="n">test_mat</span><span class="p">,</span><span class="n">dist</span><span class="p">,</span><span class="n">expo_range</span><span class="p">,</span><span class="n">e_range</span><span class="p">,</span><span class="n">nb_iter</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span><span class="n">tol</span><span class="o">=</span><span class="mf">0.01</span><span class="p">):</span>
+<div class="viewcode-block" id="notch_filt_optim_2"><a class="viewcode-back" href="../optim_utils.html#optim_utils.notch_filt_optim_2">[docs]</a><span class="k">def</span> <span class="nf">notch_filt_optim_2</span><span class="p">(</span><span class="n">test_mat</span><span class="p">,</span><span class="n">dist</span><span class="p">,</span><span class="n">expo_range</span><span class="p">,</span><span class="n">e_range</span><span class="p">,</span><span class="n">nb_iter</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span><span class="n">tol</span><span class="o">=</span><span class="mf">0.01</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;**[???]** Finds notch filter hyperparameters I guess?</span>
+<span class="sd">    </span>
+<span class="sd">    Calls:</span>
+<span class="sd">    </span>
+<span class="sd">    * :func:`optim_utils.non_uniform_smoothing_mat_dist_1`</span>
+<span class="sd">    * :func:`utils.kernel_mat_stack_test_unit`</span>
+<span class="sd">    * :func:`optim_utils.non_uniform_smoothing_mat_dist_2`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">expo_out</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">e_out</span> <span class="o">=</span> <span class="mf">0.5</span>
     <span class="n">loss</span> <span class="o">=</span> <span class="kc">None</span>
@@ -7930,7 +7961,7 @@
         <span class="nb">print</span> <span class="s2">&quot;=========== Loss out ==========: &quot;</span><span class="p">,</span><span class="n">loss</span>
         <span class="n">e_out</span> <span class="o">=</span> <span class="n">e_range</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
 
-    <span class="k">return</span> <span class="n">expo_out</span><span class="p">,</span><span class="n">e_out</span><span class="p">,</span><span class="n">loss</span><span class="p">,</span><span class="n">vect</span><span class="p">,</span><span class="n">ker</span><span class="p">,</span><span class="n">j2</span>
+    <span class="k">return</span> <span class="n">expo_out</span><span class="p">,</span><span class="n">e_out</span><span class="p">,</span><span class="n">loss</span><span class="p">,</span><span class="n">vect</span><span class="p">,</span><span class="n">ker</span><span class="p">,</span><span class="n">j2</span></div>
 
 <div class="viewcode-block" id="analysis"><a class="viewcode-back" href="../optim_utils.html#optim_utils.analysis">[docs]</a><span class="k">def</span> <span class="nf">analysis</span><span class="p">(</span><span class="n">cube</span><span class="p">,</span><span class="n">sig</span><span class="p">,</span><span class="n">field_dist</span><span class="p">,</span><span class="n">p_min</span> <span class="o">=</span> <span class="mf">0.01</span><span class="p">,</span><span class="n">e_min</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span><span class="n">e_max</span><span class="o">=</span><span class="mf">1.99</span><span class="p">,</span><span class="n">nb_max</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span><span class="n">tol</span><span class="o">=</span><span class="mf">0.01</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Computes graph-constraint related values, see RCA paper sections 5.2 and (especially) 5.5.3.</span>
@@ -7942,6 +7973,8 @@
 <span class="sd">    * :func:`optim_utils.pow_law_select`</span>
 <span class="sd">    * :func:`utils.feat_dist_mat`</span>
 <span class="sd">    * :func:`utils.log_sampling`</span>
+<span class="sd">    * :func:`optim_utils.notch_filt_optim_2`</span>
+<span class="sd">    * :func:`utils.mat_to_cube`</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">nb_samp_opt</span> <span class="o">=</span> <span class="mi">10</span>
     <span class="n">shap</span> <span class="o">=</span> <span class="n">cube</span><span class="o">.</span><span class="n">shape</span>
@@ -11019,6 +11052,7 @@
 <span class="sd">    * :func:`utils.shift_ker_stack` </span>
 <span class="sd">    * :func:`utils.flux_estimate_stack` </span>
 <span class="sd">    * :func:`optim_utils.analysis` </span>
+<span class="sd">    * :func:`utils.cube_svd`</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">im_stack</span> <span class="o">=</span> <span class="n">copy</span><span class="p">(</span><span class="n">im_stack_in</span><span class="p">)</span>

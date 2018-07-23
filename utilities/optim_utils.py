@@ -7827,6 +7827,9 @@ def non_uniform_smoothing_mat(weights_mat): # the ith line of the weight matrix 
     return mat_out
 
 def non_uniform_smoothing_bas_mat(weights):
+    """ **[???]**
+    
+    """
     shap = weights.shape
     A = zeros((shap[0],shap[0]))
     B = zeros((shap[0],shap[0]))
@@ -7841,11 +7844,23 @@ def non_uniform_smoothing_bas_mat(weights):
     return A,B
 
 def non_uniform_smoothing_mat_2(weights,e): # e>=0
+    """ **[???]**
+    
+    Calls:
+    
+    * :func:`optim_utils.non_uniform_smoothing_bas_mat`
+    """
     A,B = non_uniform_smoothing_bas_mat(weights)
     mat_out = A.dot(transpose(A))+ e*(A.dot(B)+ B.dot(transpose(A))) + (e**2)*B.dot(B) # B is diagonal matrix
     return mat_out
 
 def non_uniform_smoothing_mat_dist_1(dist,expo_range,e):
+    """ **[???] Computes some distance matrix, *again*.**
+    
+    Calls:
+    
+    * :func:`optim_utils.non_uniform_smoothing_mat_2`
+    """
     dist_med = np.median(dist)
     nb_samp = len(expo_range)
     nb_im = dist.shape[0]
@@ -7857,6 +7872,14 @@ def non_uniform_smoothing_mat_dist_1(dist,expo_range,e):
     return mat_stack
 
 def non_uniform_smoothing_mat_dist_2(dist,expo,e_range):
+    """ Same as :func:`optim_utils.non_uniform_smoothing_mat_dist_1`, but with
+    constant ``expo`` and varying ``e`` (as opposed to constant ``e`` and 
+    varying ``expo``.
+    
+    Calls:
+    
+    * :func:`optim_utils.non_uniform_smoothing_mat_2`
+    """
     dist_med = np.median(dist)
     nb_samp = len(e_range)
     nb_im = dist.shape[0]
@@ -7884,6 +7907,14 @@ def notch_filt_optim(test_mat,dist,expo_range,e_range,nb_iter=3,tol=0.01):
     return expo_out,e_out
 
 def notch_filt_optim_2(test_mat,dist,expo_range,e_range,nb_iter=2,tol=0.01):
+    """**[???]** Finds notch filter hyperparameters I guess?
+    
+    Calls:
+    
+    * :func:`optim_utils.non_uniform_smoothing_mat_dist_1`
+    * :func:`utils.kernel_mat_stack_test_unit`
+    * :func:`optim_utils.non_uniform_smoothing_mat_dist_2`
+    """
     expo_out = None
     e_out = 0.5
     loss = None
@@ -7912,6 +7943,8 @@ def analysis(cube,sig,field_dist,p_min = 0.01,e_min=0.01,e_max=1.99,nb_max=30,to
     * :func:`optim_utils.pow_law_select`
     * :func:`utils.feat_dist_mat`
     * :func:`utils.log_sampling`
+    * :func:`optim_utils.notch_filt_optim_2`
+    * :func:`utils.mat_to_cube`
     """
     nb_samp_opt = 10
     shap = cube.shape
@@ -10989,6 +11022,7 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
     * :func:`utils.shift_ker_stack` 
     * :func:`utils.flux_estimate_stack` 
     * :func:`optim_utils.analysis` 
+    * :func:`utils.cube_svd`
     """
 
     im_stack = copy(im_stack_in)

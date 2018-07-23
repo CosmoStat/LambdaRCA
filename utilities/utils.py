@@ -1741,7 +1741,12 @@ def orth_comple(A,tol=99.999): # This function computes an orthogonal basis of t
     comple_ortho = U[:,:shap[0]-rank]
     return comple_ortho,s2,rank
 
-def kernel_ext(mat,tol = 0.01): # The kernel of the matrix mat is defined as the vector space spanned by the eigenvectors corresponding to 1% of the sum of the squared singular values
+def kernel_ext(mat,tol = 0.01): 
+    """ Computes input matrix's kernel, defined as the vector space spanned by the eigenvectors corresponding 
+    to 1% of the sum of the squared singular values.
+    
+    #TODO: this is basically just the SVD, all lines between that and the ``return`` are useless.
+    """
     from numpy.linalg import svd
     U, s, Vt = svd(mat,full_matrices=True)
     e = (s**2).sum()
@@ -1772,6 +1777,12 @@ def kernel_mat_test(mat,mat_test,tol=0.01):
     return loss
 
 def kernel_mat_test_unit(mat,mat_test,tol=0.01):
+    """**[???]**
+    
+    Calls:
+    
+    * :func:`utils.kernel_ext`
+    """
     ker = kernel_ext(mat,tol = tol)
 
     shap = ker.shape
@@ -1792,6 +1803,13 @@ def kernel_mat_test_unit(mat,mat_test,tol=0.01):
     return loss,uout,ker,select_ind
 
 def kernel_mat_stack_test_unit(mat_stack,mat_test,tol=0):
+    """ Computes whatever graph constraint-related quantity :func:`utils.kernel_mat_test_unit` computes
+    for a set of matrices.
+    
+    Calls:
+    
+    * :func:`utils.kernel_mat_test_unit`
+    """
     shap = mat_stack.shape
     nb_mat = shap[2]
     loss = (mat_test**2).sum()
@@ -2162,6 +2180,11 @@ def SVD_interf(data,nb_comp,mean_sub=None,coeff_comp=None): # Rows represent obs
     return w,eig_vect,coeff,mean_data
 
 def cube_svd(cube,nb_comp=None,ind=None,mean_sub=False):
+    """ Performs PCA as initialization.
+    
+    #TODO: replace with Scikit Learn version? Pretty sure this is where RCA crashes with
+    too many inputs
+    """
     shap = cube.shape
     if nb_comp is None:
         nb_comp = min(shap[0]*shap[1],shap[2])
@@ -3549,6 +3572,10 @@ def cube_to_mat(cube):
 
 
 def mat_to_cube(mat,n1,n2):
+    """ Literally ``np.swapaxes`` I think.
+    
+    #TODO
+    """
     shap = mat.shape
     cube = zeros((n1,n2,shap[0]))
     k=0
@@ -5323,7 +5350,7 @@ def int_grid_shift(psf_stack): #
     return U
 
 def shift_est(psf_stack): 
-    """Estimates shifts.
+    """Estimates shifts (see SPRITE paper, section 3.4.1., subsection 'Subpixel shifts').
     
     Calls:
     
@@ -5416,7 +5443,7 @@ def thresh_shift_est(im_stack,sig_thresh=None,opt=None):
 
 
 def flux_estimate(im,cent=None,rad=4): # Default value for the flux tunned for Euclid PSF at Euclid resolution
-    """Estimate flux for one image.
+    """Estimate flux for one image (see SPRITE paper, section 3.4.1., subsection 'Photometric flux').
     """
     flux = 0
     if cent is None:

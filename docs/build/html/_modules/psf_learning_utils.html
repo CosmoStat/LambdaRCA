@@ -1742,7 +1742,7 @@
     <span class="k">return</span> <span class="n">psf_interp</span>
 
 <div class="viewcode-block" id="full_displacement"><a class="viewcode-back" href="../psf_learning_utils.html#psf_learning_utils.full_displacement">[docs]</a><span class="k">def</span> <span class="nf">full_displacement</span><span class="p">(</span><span class="n">shap</span><span class="p">,</span><span class="n">supp</span><span class="p">,</span><span class="n">t</span><span class="p">,</span><span class="n">pol_en</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">cent</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">theta_param</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">pol_mod</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">coord_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">knn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">eps</span> <span class="o">=</span> <span class="mf">1.e-16</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;**[???] Something with neighbors... I don&#39;t think it&#39;s what actually computes the transport plan? Or is it?**</span>
+    <span class="sd">&quot;&quot;&quot;Computes all quantities required to compute displacement interpolation at steps ``t``.</span>
 <span class="sd">    </span>
 <span class="sd">    Calls:</span>
 <span class="sd">    </span>

@@ -41,6 +41,8 @@
 <li><a class="reference internal" href="#optim_utils.pow_law_select" title="optim_utils.pow_law_select"><code class="xref py py-func docutils literal notranslate"><span class="pre">optim_utils.pow_law_select()</span></code></a></li>
 <li><a class="reference internal" href="utils.html#utils.feat_dist_mat" title="utils.feat_dist_mat"><code class="xref py py-func docutils literal notranslate"><span class="pre">utils.feat_dist_mat()</span></code></a></li>
 <li><a class="reference internal" href="utils.html#utils.log_sampling" title="utils.log_sampling"><code class="xref py py-func docutils literal notranslate"><span class="pre">utils.log_sampling()</span></code></a></li>
+<li><a class="reference internal" href="#optim_utils.notch_filt_optim_2" title="optim_utils.notch_filt_optim_2"><code class="xref py py-func docutils literal notranslate"><span class="pre">optim_utils.notch_filt_optim_2()</span></code></a></li>
+<li><a class="reference internal" href="utils.html#utils.mat_to_cube" title="utils.mat_to_cube"><code class="xref py py-func docutils literal notranslate"><span class="pre">utils.mat_to_cube()</span></code></a></li>
 </ul>
 </dd></dl>
 
@@ -48,6 +50,56 @@
 <dt id="optim_utils.dist_map_2">
 <code class="descclassname">optim_utils.</code><code class="descname">dist_map_2</code><span class="sig-paren">(</span><em>arr</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/optim_utils.html#dist_map_2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#optim_utils.dist_map_2" title="Permalink to this definition">¶</a></dt>
 <dd><p>Pairwise distances…?</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="optim_utils.non_uniform_smoothing_bas_mat">
+<code class="descclassname">optim_utils.</code><code class="descname">non_uniform_smoothing_bas_mat</code><span class="sig-paren">(</span><em>weights</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/optim_utils.html#non_uniform_smoothing_bas_mat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#optim_utils.non_uniform_smoothing_bas_mat" title="Permalink to this definition">¶</a></dt>
+<dd><p><strong>[???]</strong></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="optim_utils.non_uniform_smoothing_mat_2">
+<code class="descclassname">optim_utils.</code><code class="descname">non_uniform_smoothing_mat_2</code><span class="sig-paren">(</span><em>weights</em>, <em>e</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/optim_utils.html#non_uniform_smoothing_mat_2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#optim_utils.non_uniform_smoothing_mat_2" title="Permalink to this definition">¶</a></dt>
+<dd><p><strong>[???]</strong></p>
+<p>Calls:</p>
+<ul class="simple">
+<li><a class="reference internal" href="#optim_utils.non_uniform_smoothing_bas_mat" title="optim_utils.non_uniform_smoothing_bas_mat"><code class="xref py py-func docutils literal notranslate"><span class="pre">optim_utils.non_uniform_smoothing_bas_mat()</span></code></a></li>
+</ul>
+</dd></dl>
+
+<dl class="function">
+<dt id="optim_utils.non_uniform_smoothing_mat_dist_1">
+<code class="descclassname">optim_utils.</code><code class="descname">non_uniform_smoothing_mat_dist_1</code><span class="sig-paren">(</span><em>dist</em>, <em>expo_range</em>, <em>e</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/optim_utils.html#non_uniform_smoothing_mat_dist_1"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#optim_utils.non_uniform_smoothing_mat_dist_1" title="Permalink to this definition">¶</a></dt>
+<dd><p><strong>[???] Computes some distance matrix, *again*.</strong></p>
+<p>Calls:</p>
+<ul class="simple">
+<li><a class="reference internal" href="#optim_utils.non_uniform_smoothing_mat_2" title="optim_utils.non_uniform_smoothing_mat_2"><code class="xref py py-func docutils literal notranslate"><span class="pre">optim_utils.non_uniform_smoothing_mat_2()</span></code></a></li>
+</ul>
+</dd></dl>
+
+<dl class="function">
+<dt id="optim_utils.non_uniform_smoothing_mat_dist_2">
+<code class="descclassname">optim_utils.</code><code class="descname">non_uniform_smoothing_mat_dist_2</code><span class="sig-paren">(</span><em>dist</em>, <em>expo</em>, <em>e_range</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/optim_utils.html#non_uniform_smoothing_mat_dist_2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#optim_utils.non_uniform_smoothing_mat_dist_2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Same as <a class="reference internal" href="#optim_utils.non_uniform_smoothing_mat_dist_1" title="optim_utils.non_uniform_smoothing_mat_dist_1"><code class="xref py py-func docutils literal notranslate"><span class="pre">optim_utils.non_uniform_smoothing_mat_dist_1()</span></code></a>, but with
+constant <code class="docutils literal notranslate"><span class="pre">expo</span></code> and varying <code class="docutils literal notranslate"><span class="pre">e</span></code> (as opposed to constant <code class="docutils literal notranslate"><span class="pre">e</span></code> and 
+varying <code class="docutils literal notranslate"><span class="pre">expo</span></code>.</p>
+<p>Calls:</p>
+<ul class="simple">
+<li><a class="reference internal" href="#optim_utils.non_uniform_smoothing_mat_2" title="optim_utils.non_uniform_smoothing_mat_2"><code class="xref py py-func docutils literal notranslate"><span class="pre">optim_utils.non_uniform_smoothing_mat_2()</span></code></a></li>
+</ul>
+</dd></dl>
+
+<dl class="function">
+<dt id="optim_utils.notch_filt_optim_2">
+<code class="descclassname">optim_utils.</code><code class="descname">notch_filt_optim_2</code><span class="sig-paren">(</span><em>test_mat</em>, <em>dist</em>, <em>expo_range</em>, <em>e_range</em>, <em>nb_iter=2</em>, <em>tol=0.01</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/optim_utils.html#notch_filt_optim_2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#optim_utils.notch_filt_optim_2" title="Permalink to this definition">¶</a></dt>
+<dd><p><strong>[???]</strong> Finds notch filter hyperparameters I guess?</p>
+<p>Calls:</p>
+<ul class="simple">
+<li><a class="reference internal" href="#optim_utils.non_uniform_smoothing_mat_dist_1" title="optim_utils.non_uniform_smoothing_mat_dist_1"><code class="xref py py-func docutils literal notranslate"><span class="pre">optim_utils.non_uniform_smoothing_mat_dist_1()</span></code></a></li>
+<li><a class="reference internal" href="utils.html#utils.kernel_mat_stack_test_unit" title="utils.kernel_mat_stack_test_unit"><code class="xref py py-func docutils literal notranslate"><span class="pre">utils.kernel_mat_stack_test_unit()</span></code></a></li>
+<li><a class="reference internal" href="#optim_utils.non_uniform_smoothing_mat_dist_2" title="optim_utils.non_uniform_smoothing_mat_dist_2"><code class="xref py py-func docutils literal notranslate"><span class="pre">optim_utils.non_uniform_smoothing_mat_dist_2()</span></code></a></li>
+</ul>
 </dd></dl>
 
 <dl class="function">
@@ -65,6 +117,7 @@
 <li><a class="reference internal" href="utils.html#utils.shift_ker_stack" title="utils.shift_ker_stack"><code class="xref py py-func docutils literal notranslate"><span class="pre">utils.shift_ker_stack()</span></code></a></li>
 <li><a class="reference internal" href="utils.html#utils.flux_estimate_stack" title="utils.flux_estimate_stack"><code class="xref py py-func docutils literal notranslate"><span class="pre">utils.flux_estimate_stack()</span></code></a></li>
 <li><a class="reference internal" href="#optim_utils.analysis" title="optim_utils.analysis"><code class="xref py py-func docutils literal notranslate"><span class="pre">optim_utils.analysis()</span></code></a></li>
+<li><a class="reference internal" href="utils.html#utils.cube_svd" title="utils.cube_svd"><code class="xref py py-func docutils literal notranslate"><span class="pre">utils.cube_svd()</span></code></a></li>
 </ul>
 </dd></dl>
 
