@@ -11023,6 +11023,28 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
     * :func:`utils.flux_estimate_stack` 
     * :func:`optim_utils.analysis` 
     * :func:`utils.cube_svd`
+    * [SAM's] :func:`gradient.polychrom_eigen_psf`
+    * [SAM's] :func:`gradient.polychrom_eigen_psf_coeff_graph`
+    * [SAM's] :func:`gradient.polychrom_eigen_psf_coeff`
+    * [SAM's] :func:`gradient.polychrom_eigen_psf_coeff`
+    * [SAM's] :func:`linear.transport_plan_lin_comb_wavelet`
+    * [SAM's] :func:`linear.transport_plan_marg_wavelet`
+    * [SAM's] :func:`linear.transport_plan_lin_comb`
+    * [SAM's] :func:`linear.transport_plan_lin_comb_coeff`
+    * [SAM's] :func:`proximity.simplex_threshold`
+    * :func:`psf_learning_utils.field_reconstruction`
+    
+    Pure "Sam" imports: #TODO: replace with ModOpt import or something
+    
+    * :func:`linear.Identity`
+    * :func:`proximity.Threshold`
+    * :func:`proximity.Simplex`
+    * :func:`proximity.Positive`
+    * :func:`proximity.KThreshold`
+    * :func:`cost.costFunction`
+    * :func:`optimisation.Condat`
+    * :func:`optimisation:ForwardBackward`
+    
     """
 
     im_stack = copy(im_stack_in)
@@ -11146,7 +11168,7 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
                  tau_update=None, auto_iterate=False)
     print "------------------- Transport plans estimation ------------------"
 
-    condat_min.iterate(max_iter=nb_subiter)
+    condat_min.iterate(max_iter=nb_subiter) # ! actually runs optimisation
     P_stack = condat_min.x_final
     dual_var_plan = condat_min.y_final
 
@@ -11182,7 +11204,7 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
                                             tau_update=None, auto_iterate=False)
 
         print "------------------- Coefficients estimation ----------------------"
-        min_coeff.iterate(max_iter=nb_subiter)
+        min_coeff.iterate(max_iter=nb_subiter) # ! actually runs optimisation
         if graph_cons_en:
             prox_coeff.reset_iter()
             alph = min_coeff.x_final
@@ -11218,7 +11240,7 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
                      tau_update=None, auto_iterate=False)
         print "------------------- Transport plans estimation ------------------"
 
-        condat_min.iterate(max_iter=nb_subiter)
+        condat_min.iterate(max_iter=nb_subiter) # ! actually runs optimisation
         P_stack = condat_min.x_final
         dual_var_plan = condat_min.y_final
 

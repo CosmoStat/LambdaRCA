@@ -1880,25 +1880,30 @@ def transport_plan_projections_flat_field_transpose_coeff(P_mat,P_stack,supp):
     return transpose(P_stack[supp[:,0],supp[:,1],:]).dot(P_mat)
 
 def field_reconstruction(P_stack,shap,supp,neighbors_graph,weights_neighbors,A):
+    """ Computes monochromatic PSFs from eigenTransport plans.
+    
+    Calls:
+    
+    *
+    """
+    from numpy import zeros,ones,prod,median
+    nb_comp = P_stack.shape[-1]
+    nb_bands = neighbors_graph.shape[-1]
+    nb_im = A.shape[1]
+    multi_spec_comp_mat = zeros((shap[0]*shap[1],nb_comp,nb_bands))
+    mono_chromatic_psf = zeros((shap[0],shap[1],nb_im,nb_bands))
+    ones_vect = ones((nb_bands,))
 
-        from numpy import zeros,ones,prod,median
-        nb_comp = P_stack.shape[-1]
-        nb_bands = neighbors_graph.shape[-1]
-        nb_im = A.shape[1]
-        multi_spec_comp_mat = zeros((shap[0]*shap[1],nb_comp,nb_bands))
-        mono_chromatic_psf = zeros((shap[0],shap[1],nb_im,nb_bands))
-        ones_vect = ones((nb_bands,))
+    for i in range(0,nb_comp):
+        multi_spec_comp = transport_plan_projections(P_stack[:,:,i],shap,supp,neighbors_graph,weights_neighbors)
+        multi_spec_comp_mat[:,i,:] = multi_spec_comp.reshape((prod(shap),nb_bands))
 
-        for i in range(0,nb_comp):
-            multi_spec_comp = transport_plan_projections(P_stack[:,:,i],shap,supp,neighbors_graph,weights_neighbors)
-            multi_spec_comp_mat[:,i,:] = multi_spec_comp.reshape((prod(shap),nb_bands))
+    for i in range(0,nb_bands):
+        mono_chromatic_psf_temp = multi_spec_comp_mat[:,:,i].dot(A)
+        for j in range(0,nb_im):
+            mono_chromatic_psf[:,:,j,i] = mono_chromatic_psf_temp[:,j].reshape((shap[0],shap[1]))
 
-        for i in range(0,nb_bands):
-            mono_chromatic_psf_temp = multi_spec_comp_mat[:,:,i].dot(A)
-            for j in range(0,nb_im):
-                mono_chromatic_psf[:,:,j,i] = mono_chromatic_psf_temp[:,j].reshape((shap[0],shap[1]))
-
-        return mono_chromatic_psf
+    return mono_chromatic_psf
 
 def transport_plan_projections_field_transpose(im_stack,supp,neighbors_graph,weights_neighbors,spectrums,A,flux,sig,ker_rot,D):
 
