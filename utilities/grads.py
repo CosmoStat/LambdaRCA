@@ -42,6 +42,7 @@ class polychrom_eigen_psf(GradParent, PowerMethod):
         self.ker = ker
         self.ker_rot  = ker_rot
         PowerMethod.__init__(self, self.trans_op_op, (np.prod(self.shape),np.prod(self.shape),A.shape[0]))
+        print " > SPECTRAL RADIUS:\t{}".format(self.spec_rad)
 
     def set_A(self,A_new,pwr_en=True):
         self.A = np.copy(A_new)
@@ -99,6 +100,7 @@ class polychrom_eigen_psf(GradParent, PowerMethod):
         """
         cost_val = 0.5 * np.linalg.norm(self.MX(x) - self.obs_data) ** 2
         if verbose:
+            print " > MIN(X):\t{}".format(np.min(x))
             print " > Current cost: {}".format(cost_val)
         return cost_val
                 
@@ -217,6 +219,7 @@ class polychrom_eigen_psf_coeff(GradBasic, PowerMethod):
         """
         cost_val = 0.5 * np.linalg.norm(self.MX(x) - self.obs_data) ** 2
         if verbose:
+            print " > MIN(X):\t{}".format(np.min(x))
             print " > Current cost: {}".format(cost_val)
         return cost_val
                 
@@ -337,6 +340,7 @@ class polychrom_eigen_psf_coeff_graph(GradBasic, PowerMethod):
         """
         cost_val = 0.5 * np.linalg.norm(self.MX(x) - self.obs_data) ** 2
         if verbose:
+            print " > MIN(X):\t{}".format(np.min(x))
             print " > Current cost: {}".format(cost_val)
         return cost_val
                 
