@@ -19,7 +19,7 @@ import scipy
 from scipy.optimize import minimize#,linear_sum_assignment
 sys.path.append('../sams')
 import cost as sams_cost
-import gradient as sams_grad
+import grads as grad
 import linear as sams_linear
 import proximity as sams_prox
 import optimisation as sams_optim
@@ -11026,7 +11026,6 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
     * [SAM's] :func:`gradient.polychrom_eigen_psf`
     * [SAM's] :func:`gradient.polychrom_eigen_psf_coeff_graph`
     * [SAM's] :func:`gradient.polychrom_eigen_psf_coeff`
-    * [SAM's] :func:`gradient.polychrom_eigen_psf_coeff`
     * [SAM's] :func:`linear.transport_plan_lin_comb_wavelet`
     * [SAM's] :func:`linear.transport_plan_marg_wavelet`
     * [SAM's] :func:`linear.transport_plan_lin_comb`
@@ -11097,14 +11096,14 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
     print " --------- Optimization instances setting ---------- "
 
     # Data fidelity related instances
-    polychrom_grad = sams_grad.polychrom_eigen_psf(im_stack, supp, neighbors_graph, \
+    polychrom_grad = grad.polychrom_eigen_psf(im_stack, supp, neighbors_graph, \
                 weights_neighbors, spectrums, A, flux, sig, ker, ker_rot, D)
 
     if graph_cons_en:
-        polychrom_grad_coeff = sams_grad.polychrom_eigen_psf_coeff_graph(im_stack, supp, neighbors_graph, \
+        polychrom_grad_coeff = grad.polychrom_eigen_psf_coeff_graph(im_stack, supp, neighbors_graph, \
                 weights_neighbors, spectrums, P_stack, flux, sig, ker, ker_rot, D, basis)
     else:
-        polychrom_grad_coeff = sams_grad.polychrom_eigen_psf_coeff(im_stack, supp, neighbors_graph, \
+        polychrom_grad_coeff = grad.polychrom_eigen_psf_coeff(im_stack, supp, neighbors_graph, \
                 weights_neighbors, spectrums, P_stack, flux, sig, ker, ker_rot, D)
 
 
