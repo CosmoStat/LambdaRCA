@@ -18,7 +18,7 @@ import psf_learning_utils
 import scipy
 from scipy.optimize import minimize#,linear_sum_assignment
 sys.path.append('../sams')
-import cost as sams_cost
+from modopt.opt.cost import costObj
 import grads as grad
 import linear as sams_linear
 import proximity as sams_prox
@@ -11155,13 +11155,14 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
     rho_P = 1
 
     # Cost function instance
-    cost_op = sams_cost.costFunction(im_stack, polychrom_grad, wavelet=None, weights=None,\
+    cost_op = costObj([polychrom_grad])
+    '''sams_cost.costFunction(im_stack, polychrom_grad, wavelet=None, weights=None,\
                  lambda_reg=None, mode='grad',\
                  positivity=True, tolerance=1e-4, window=1, print_cost=True,\
-                 residual=False, output=None)
+                 residual=False, output=None)'''
 
-    condat_min = optimalg.Condat(P_stack, dual_var_plan, polychrom_grad, id_prox, dual_prox_plan, lin_com, cost_op,\
-                 rho_P,  sigma_P, tau_P, rho_update=None, sigma_update=None,
+    condat_min = optimalg.Condat(P_stack, dual_var_plan, polychrom_grad, id_prox, dual_prox_plan, lin_com, cost=cost_op,\
+                 rho=rho_P,  sigma=sigma_P, tau=tau_P, rho_update=None, sigma_update=None,
                  tau_update=None, auto_iterate=False)
     print "------------------- Transport plans estimation ------------------"
 
@@ -11187,17 +11188,17 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
             rho_coeff = 1
 
         # Coefficients cost function instance
-        cost_op_coeff = sams_cost.costFunction(im_stack, polychrom_grad_coeff, wavelet=None, weights=None,\
+        cost_op_coeff = costObj([polychrom_grad_coeff])
+        '''sams_cost.costFunction(im_stack, polychrom_grad_coeff, wavelet=None, weights=None,\
                      lambda_reg=None, mode='grad',\
                      positivity=True, tolerance=1e-4, window=1, print_cost=True,\
-                     residual=False, output=None)
+                     residual=False, output=None)'''
 
         if graph_cons_en:
-            min_coeff = optimalg.ForwardBackward(alph, polychrom_grad_coeff, prox_coeff, cost=cost_op_coeff,\
-                                lambda_init=None,lambda_update=None, use_fista=True, auto_iterate=False)
+            min_coeff = optimalg.ForwardBackward(alph, polychrom_grad_coeff, prox_coeff, cost=cost_op_coeff,auto_iterate=False)
         else:
-            min_coeff = optimalg.Condat(A, dual_var_coeff, polychrom_grad_coeff, id_prox, dual_prox_coeff, lin_com_coeff, \
-                                            cost_op_coeff, rho_coeff,  sigma_coeff, tau_coeff, rho_update=None, sigma_update=None,\
+            min_coeff = optimalg.Condat(A, dual_var_coeff, polychrom_grad_coeff, id_prox, dual_prox_coeff, lin_com_coeff, cost=cost_op_coeff,\
+                                            rho=rho_coeff,  sigma=sigma_coeff, tau=tau_coeff, rho_update=None, sigma_update=None,\
                                             tau_update=None, auto_iterate=False)
 
         print "------------------- Coefficients estimation ----------------------"
@@ -11227,13 +11228,8 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
         rho_P = 1
 
         # Cost function instance
-        cost_op = sams_cost.costFunction(im_stack, polychrom_grad, wavelet=None, weights=None,\
-                     lambda_reg=None, mode='grad',\
-                     positivity=True, tolerance=1e-4, window=1, print_cost=True,\
-                     residual=False, output=None)
-
-        condat_min = optimalg.Condat(P_stack, dual_var_plan, polychrom_grad, id_prox, dual_prox_plan, lin_com, cost_op,\
-                     rho_P,  sigma_P, tau_P, rho_update=None, sigma_update=None,
+        condat_min = optimalg.Condat(P_stack, dual_var_plan, polychrom_grad, id_prox, dual_prox_plan, lin_com, cost=cost_op,\
+                     rho=rho_P,  sigma=sigma_P, tau=tau_P, rho_update=None, sigma_update=None,
                      tau_update=None, auto_iterate=False)
         print "------------------- Transport plans estimation ------------------"
 

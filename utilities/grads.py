@@ -93,6 +93,15 @@ class polychrom_eigen_psf(GradParent, PowerMethod):
         return transport_plan_projections_field_transpose(x,self.supp,self.neighbors_graph,\
                 self.weights_neighbors,self.spectrums,self.A,self.flux,self.sig,self.ker_rot,self.D)
                 
+    def cost(self, x, y=None, verbose=False):
+        """ Compute data fidelity term. ``y`` is unused (it's just so ``modopt.opt.algorithms.Condat`` can feed
+        the dual variable.
+        """
+        cost_val = 0.5 * np.linalg.norm(self.MX(x) - self.obs_data) ** 2
+        if verbose:
+            print " > Current cost: {}".format(cost_val)
+        return cost_val
+                
     def get_grad(self, x):
         """Get the gradient step
         This method calculates the gradient step from the input data
@@ -201,6 +210,15 @@ class polychrom_eigen_psf_coeff(GradBasic, PowerMethod):
         """
         return transport_plan_projections_field_coeff_transpose(x,self.supp,self.neighbors_graph,\
                 self.weights_neighbors,self.spectrums,self.P,self.flux,self.sig,self.ker_rot,self.D)
+                
+    def cost(self, x, y=None, verbose=False):
+        """ Compute data fidelity term. ``y`` is unused (it's just so ``modopt.opt.algorithms.Condat`` can feed
+        the dual variable.
+        """
+        cost_val = 0.5 * np.linalg.norm(self.MX(x) - self.obs_data) ** 2
+        if verbose:
+            print " > Current cost: {}".format(cost_val)
+        return cost_val
                 
     def get_grad(self, x):
         """Get the gradient step
@@ -312,6 +330,15 @@ class polychrom_eigen_psf_coeff_graph(GradBasic, PowerMethod):
         """
         return transport_plan_projections_field_coeff_transpose(x,self.supp,self.neighbors_graph,\
                 self.weights_neighbors,self.spectrums,self.P,self.flux,self.sig,self.ker_rot,self.D).dot(np.transpose(self.basis))
+                
+    def cost(self, x, y=None, verbose=False):
+        """ Compute data fidelity term. ``y`` is unused (it's just so ``modopt.opt.algorithms.Condat`` can feed
+        the dual variable.
+        """
+        cost_val = 0.5 * np.linalg.norm(self.MX(x) - self.obs_data) ** 2
+        if verbose:
+            print " > Current cost: {}".format(cost_val)
+        return cost_val
                 
     def get_grad(self, x):
         """Get the gradient step
