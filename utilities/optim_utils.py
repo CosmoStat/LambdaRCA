@@ -22,7 +22,7 @@ import cost as sams_cost
 import grads as grad
 import linear as sams_linear
 import proximity as sams_prox
-import optimisation as sams_optim
+import modopt.opt.algorithms as optimalg
 
 try:
     import pyct
@@ -11023,9 +11023,9 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
     * :func:`utils.flux_estimate_stack` 
     * :func:`optim_utils.analysis` 
     * :func:`utils.cube_svd`
-    * [SAM's] :func:`gradient.polychrom_eigen_psf`
-    * [SAM's] :func:`gradient.polychrom_eigen_psf_coeff_graph`
-    * [SAM's] :func:`gradient.polychrom_eigen_psf_coeff`
+    * :func:`grads.polychrom_eigen_psf`
+    * :func:`grads.polychrom_eigen_psf_coeff_graph`
+    * :func:`grads.polychrom_eigen_psf_coeff`
     * [SAM's] :func:`linear.transport_plan_lin_comb_wavelet`
     * [SAM's] :func:`linear.transport_plan_marg_wavelet`
     * [SAM's] :func:`linear.transport_plan_lin_comb`
@@ -11041,8 +11041,6 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
     * :func:`proximity.Positive`
     * :func:`proximity.KThreshold`
     * :func:`cost.costFunction`
-    * :func:`optimisation.Condat`
-    * :func:`optimisation:ForwardBackward`
     
     """
 
@@ -11162,7 +11160,7 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
                  positivity=True, tolerance=1e-4, window=1, print_cost=True,\
                  residual=False, output=None)
 
-    condat_min = sams_optim.Condat(P_stack, dual_var_plan, polychrom_grad, id_prox, dual_prox_plan, lin_com, cost_op,\
+    condat_min = optimalg.Condat(P_stack, dual_var_plan, polychrom_grad, id_prox, dual_prox_plan, lin_com, cost_op,\
                  rho_P,  sigma_P, tau_P, rho_update=None, sigma_update=None,
                  tau_update=None, auto_iterate=False)
     print "------------------- Transport plans estimation ------------------"
@@ -11195,10 +11193,10 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
                      residual=False, output=None)
 
         if graph_cons_en:
-            min_coeff = sams_optim.ForwardBackward(alph, polychrom_grad_coeff, prox_coeff, cost=cost_op_coeff,\
+            min_coeff = optimalg.ForwardBackward(alph, polychrom_grad_coeff, prox_coeff, cost=cost_op_coeff,\
                                 lambda_init=None,lambda_update=None, use_fista=True, auto_iterate=False)
         else:
-            min_coeff = sams_optim.Condat(A, dual_var_coeff, polychrom_grad_coeff, id_prox, dual_prox_coeff, lin_com_coeff, \
+            min_coeff = optimalg.Condat(A, dual_var_coeff, polychrom_grad_coeff, id_prox, dual_prox_coeff, lin_com_coeff, \
                                             cost_op_coeff, rho_coeff,  sigma_coeff, tau_coeff, rho_update=None, sigma_update=None,\
                                             tau_update=None, auto_iterate=False)
 
@@ -11234,7 +11232,7 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
                      positivity=True, tolerance=1e-4, window=1, print_cost=True,\
                      residual=False, output=None)
 
-        condat_min = sams_optim.Condat(P_stack, dual_var_plan, polychrom_grad, id_prox, dual_prox_plan, lin_com, cost_op,\
+        condat_min = optimalg.Condat(P_stack, dual_var_plan, polychrom_grad, id_prox, dual_prox_plan, lin_com, cost_op,\
                      rho_P,  sigma_P, tau_P, rho_update=None, sigma_update=None,
                      tau_update=None, auto_iterate=False)
         print "------------------- Transport plans estimation ------------------"

@@ -1,11 +1,11 @@
 import numpy as np
 from psf_learning_utils import transport_plan_projections_field,transport_plan_projections_field_transpose,\
 transport_plan_projections_field_coeff_transpose
-from modopt.opt.gradient import GradBasic
+from modopt.opt.gradient import GradParent, GradBasic
 from modopt.math.matrix import PowerMethod
         
         
-class polychrom_eigen_psf(GradBasic, PowerMethod):
+class polychrom_eigen_psf(GradParent, PowerMethod):
     """Polychromatic eigen PSFs class
 
     This class defines the operators for a field of undersampled space varying
@@ -24,9 +24,11 @@ class polychrom_eigen_psf(GradBasic, PowerMethod):
     """
 
     def __init__(self, data, supp, neighbors_graph, weights_neighbors, spectrums, \
-                A, flux, sig, ker, ker_rot, D):
-
-        self.y = data
+                A, flux, sig, ker, ker_rot, D, data_type=float):
+        self._grad_data_type = data_type
+        self.obs_data = data
+        self.op = self.MX 
+        self.trans_op = self.MtX 
         shap = data.shape
         self.shape = (shap[0]*D,shap[1]*D)
         self.D = D
@@ -39,9 +41,6 @@ class polychrom_eigen_psf(GradBasic, PowerMethod):
         self.sig = sig
         self.ker = ker
         self.ker_rot  = ker_rot
-        
-        self.op = self.MX 
-        self.trans_op = self.MtX 
         PowerMethod.__init__(self, self.trans_op_op, (np.prod(self.shape),np.prod(self.shape),A.shape[0]))
 
     def set_A(self,A_new,pwr_en=True):
@@ -93,6 +92,23 @@ class polychrom_eigen_psf(GradBasic, PowerMethod):
         """
         return transport_plan_projections_field_transpose(x,self.supp,self.neighbors_graph,\
                 self.weights_neighbors,self.spectrums,self.A,self.flux,self.sig,self.ker_rot,self.D)
+                
+    def get_grad(self, x):
+        """Get the gradient step
+        This method calculates the gradient step from the input data
+        Parameters
+        ----------
+        x : np.ndarray
+            Input data array
+        Returns
+        -------
+        np.ndarray gradient value
+        Notes
+        -----
+        Calculates M^T (MX - Y)
+        """
+
+        self.grad = self.MtX(self.MX(x) - self.obs_data)
 
 
 class polychrom_eigen_psf_coeff(GradBasic, PowerMethod):
@@ -112,11 +128,15 @@ class polychrom_eigen_psf_coeff(GradBasic, PowerMethod):
     The properties of `GradBasic` and `PowerMethod` are inherited in this class
 
     """
-
+    
+        
     def __init__(self, data, supp, neighbors_graph, weights_neighbors, spectrums, \
-                P, flux, sig, ker, ker_rot, D):
+                P, flux, sig, ker, ker_rot, D, data_type=float):
 
-        self.y = data
+        self._grad_data_type = data_type
+        self.obs_data = data
+        self.op = self.MX 
+        self.trans_op = self.MtX 
         shap = data.shape
         self.shape = (shap[0]*D,shap[1]*D)
         self.D = D
@@ -129,9 +149,6 @@ class polychrom_eigen_psf_coeff(GradBasic, PowerMethod):
         self.sig = sig
         self.ker = ker
         self.ker_rot  = ker_rot
-        
-        self.op = self.MX 
-        self.trans_op = self.MtX 
         PowerMethod.__init__(self, self.trans_op_op, (P.shape[-1],spectrums.shape[1]))
 
 
@@ -184,6 +201,23 @@ class polychrom_eigen_psf_coeff(GradBasic, PowerMethod):
         """
         return transport_plan_projections_field_coeff_transpose(x,self.supp,self.neighbors_graph,\
                 self.weights_neighbors,self.spectrums,self.P,self.flux,self.sig,self.ker_rot,self.D)
+                
+    def get_grad(self, x):
+        """Get the gradient step
+        This method calculates the gradient step from the input data
+        Parameters
+        ----------
+        x : np.ndarray
+            Input data array
+        Returns
+        -------
+        np.ndarray gradient value
+        Notes
+        -----
+        Calculates M^T (MX - Y)
+        """
+
+        self.grad = self.MtX(self.MX(x) - self.obs_data)
 
 
 class polychrom_eigen_psf_coeff_graph(GradBasic, PowerMethod):
@@ -205,9 +239,12 @@ class polychrom_eigen_psf_coeff_graph(GradBasic, PowerMethod):
     """
 
     def __init__(self, data, supp, neighbors_graph, weights_neighbors, spectrums, \
-                P, flux, sig, ker, ker_rot, D, basis):
+                P, flux, sig, ker, ker_rot, D, basis, data_type=float):
 
-        self.y = data
+        self._grad_data_type = data_type
+        self.obs_data = data
+        self.op = self.MX 
+        self.trans_op = self.MtX 
         shap = data.shape
         self.shape = (shap[0]*D,shap[1]*D)
         self.D = D
@@ -222,8 +259,6 @@ class polychrom_eigen_psf_coeff_graph(GradBasic, PowerMethod):
         self.ker_rot  = ker_rot
         self.basis = basis
         
-        self.op = self.MX 
-        self.trans_op = self.MtX 
         PowerMethod.__init__(self, self.trans_op_op, (P.shape[-1],self.basis.shape[0]))
 
 
@@ -277,3 +312,20 @@ class polychrom_eigen_psf_coeff_graph(GradBasic, PowerMethod):
         """
         return transport_plan_projections_field_coeff_transpose(x,self.supp,self.neighbors_graph,\
                 self.weights_neighbors,self.spectrums,self.P,self.flux,self.sig,self.ker_rot,self.D).dot(np.transpose(self.basis))
+                
+    def get_grad(self, x):
+        """Get the gradient step
+        This method calculates the gradient step from the input data
+        Parameters
+        ----------
+        x : np.ndarray
+            Input data array
+        Returns
+        -------
+        np.ndarray gradient value
+        Notes
+        -----
+        Calculates M^T (MX - Y)
+        """
+
+        self.grad = self.MtX(self.MX(x) - self.obs_data)
