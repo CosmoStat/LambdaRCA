@@ -11195,7 +11195,9 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
                      residual=False, output=None)'''
 
         if graph_cons_en:
-            min_coeff = optimalg.ForwardBackward(alph, polychrom_grad_coeff, prox_coeff, cost=cost_op_coeff,auto_iterate=False)
+            beta_param = polychrom_grad_coeff.inv_spec_rad# set stepsize to inverse spectral radius of coefficient gradient
+            min_coeff = optimalg.ForwardBackward(alph, polychrom_grad_coeff, prox_coeff, beta_param=beta_param, 
+                                                 cost=cost_op_coeff,auto_iterate=False)
         else:
             min_coeff = optimalg.Condat(A, dual_var_coeff, polychrom_grad_coeff, id_prox, dual_prox_coeff, lin_com_coeff, cost=cost_op_coeff,\
                                             rho=rho_coeff,  sigma=sigma_coeff, tau=tau_coeff, rho_update=None, sigma_update=None,\
