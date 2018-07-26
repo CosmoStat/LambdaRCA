@@ -21,8 +21,8 @@ sys.path.append('../sams')
 from modopt.opt.cost import costObj
 import grads as grad
 import linear as sams_linear
-import proximity as sams_prox
 import modopt.opt.proximity as prox
+import proxs as lambdaprox
 import modopt.opt.algorithms as optimalg
 
 try:
@@ -11121,7 +11121,7 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
     if wvl_en and pos_en:
         noise_map = get_noise_arr(lin_com.op(polychrom_grad.MtX(im_stack))[1])
         dual_var_plan = np.array([zeros((supp.shape[0],nb_im)),zeros(noise_map.shape)])
-        dual_prox_plan = sams_prox.simplex_threshold(nsig*noise_map,pos_en=(not simplex_en))
+        dual_prox_plan = lambdaprox.simplex_threshold(lin_com, nsig*noise_map,pos_en=(not simplex_en))
     else:
         if wvl_en:
             # Noise estimation
@@ -11131,16 +11131,16 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
         else:
             dual_var_plan = zeros((supp.shape[0],nb_im))
             if simplex_en:
-                dual_prox_plan = sams_prox.Simplex()
+                dual_prox_plan = lambdaprox.Simplex()
             else:
                 dual_prox_plan = prox.Positivity()
 
     if graph_cons_en:
         iter_func = lambda x: floor(sqrt(x))
-        prox_coeff = sams_prox.KThreshold(iter_func)
+        prox_coeff = lambdaprox.KThreshold(iter_func)
     else:
         if simplex_en:
-            dual_prox_coeff = sams_prox.Simplex()
+            dual_prox_coeff = lambdaprox.Simplex()
         else:
             dual_prox_coeff = prox.Positivity()
     #dual_prox_coeff = sams_linear.Identity()
