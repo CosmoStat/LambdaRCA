@@ -22,6 +22,7 @@ from modopt.opt.cost import costObj
 import grads as grad
 import linear as sams_linear
 import proximity as sams_prox
+import modopt.opt.proximity as prox
 import modopt.opt.algorithms as optimalg
 
 try:
@@ -11036,11 +11037,8 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
     Pure "Sam" imports: #TODO: replace with ModOpt import or something
     
     * :func:`linear.Identity`
-    * :func:`proximity.Threshold`
     * :func:`proximity.Simplex`
-    * :func:`proximity.Positive`
     * :func:`proximity.KThreshold`
-    * :func:`cost.costFunction`
     
     """
 
@@ -11129,13 +11127,13 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
             # Noise estimation
             noise_map = get_noise_arr(lin_com.op(polychrom_grad.MtX(im_stack)))
             dual_var_plan = zeros(noise_map.shape)
-            dual_prox_plan = sams_prox.Threshold(nsig*noise_map)
+            dual_prox_plan = prox.SparseThreshold(lin_com, nsig*noise_map)
         else:
             dual_var_plan = zeros((supp.shape[0],nb_im))
             if simplex_en:
                 dual_prox_plan = sams_prox.Simplex()
             else:
-                dual_prox_plan = sams_prox.Positive()
+                dual_prox_plan = prox.Positivity()
 
     if graph_cons_en:
         iter_func = lambda x: floor(sqrt(x))
@@ -11144,7 +11142,7 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
         if simplex_en:
             dual_prox_coeff = sams_prox.Simplex()
         else:
-            dual_prox_coeff = sams_prox.Positive()
+            dual_prox_coeff = prox.Positivity()
     #dual_prox_coeff = sams_linear.Identity()
 
     # ---- (Re)Setting hyperparameters
