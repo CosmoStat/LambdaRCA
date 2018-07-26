@@ -2,6 +2,7 @@ from modopt.signal.positivity import positive
 from utils import lineskthresholding
 from psf_learning_utils import columns_wise_simplex_proj
 from modopt.opt.proximity import SparseThreshold
+import numpy as np
 
 
 class KThreshold(object):
@@ -99,11 +100,23 @@ class simplex_threshold(object):
     """
     def __init__(self,linop, weights,mass=None,pos_en=False):
         self.linop = linop
-        self.thresh = SparseThreshold(self.linop, weights)
+        self.weights = weights
+        self.thresh = SparseThreshold(self.linop, self.weights)
         self.simplex = Simplex(mass=mass,pos_en=pos_en)
 
     def update_weights(self, weights):
-        self.thresh.update_weights(weights)
+        """Update weights
+
+        This method update the values of the weights
+
+        Parameters
+        ----------
+        weights : np.ndarray
+            Input array of weights
+
+        """
+        self.weights = weights
+        self.thresh = SparseThreshold(self.linop, weights)
 
     def op(self, data, extra_factor=1.0):
         return np.array([self.simplex.op(data[0]),self.thresh.op(data[1],extra_factor=extra_factor)])
