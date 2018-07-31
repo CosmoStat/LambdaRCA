@@ -17,13 +17,13 @@ from pyflann import *
 import psf_learning_utils
 import scipy
 from scipy.optimize import minimize#,linear_sum_assignment
-sys.path.append('../sams')
 from modopt.opt.cost import costObj
 import grads as grad
-import linear as sams_linear
+import operators as lambdaops
 import modopt.opt.proximity as prox
 import proxs as lambdaprox
 import modopt.opt.algorithms as optimalg
+from modopt.opt.linear import Identity
 
 try:
     import pyct
@@ -11031,14 +11031,11 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
     * [SAM's] :func:`linear.transport_plan_marg_wavelet`
     * [SAM's] :func:`linear.transport_plan_lin_comb`
     * [SAM's] :func:`linear.transport_plan_lin_comb_coeff`
-    * [SAM's] :func:`proximity.simplex_threshold`
     * :func:`psf_learning_utils.field_reconstruction`
     
     Pure "Sam" imports: #TODO: replace with ModOpt import or something
     
     * :func:`linear.Identity`
-    * :func:`proximity.Simplex`
-    * :func:`proximity.KThreshold`
     
     """
 
@@ -11106,18 +11103,18 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
     # Dual variable related linear operators instances
     dual_var_coeff = zeros((supp.shape[0],nb_im))
     if wvl_en and pos_en:
-        lin_com = sams_linear.transport_plan_lin_comb_wavelet(A,supp,weights_neighbors,neighbors_graph,shap,wavelet_opt=wvl_opt)
+        lin_com = lambdaops.transport_plan_lin_comb_wavelet(A,supp,weights_neighbors,neighbors_graph,shap,wavelet_opt=wvl_opt)
     else:
         if wvl_en:
-            lin_com = sams_linear.transport_plan_marg_wavelet(supp,weights_neighbors,neighbors_graph,shap,wavelet_opt=wvl_opt)
+            lin_com = lambdaops.transport_plan_marg_wavelet(supp,weights_neighbors,neighbors_graph,shap,wavelet_opt=wvl_opt)
         else:
-            lin_com = sams_linear.transport_plan_lin_comb(A, supp,shap)
+            lin_com = lambdaops.transport_plan_lin_comb(A, supp,shap)
 
     if not graph_cons_en:
-        lin_com_coeff = sams_linear.transport_plan_lin_comb_coeff(P_stack, supp)
+        lin_com_coeff = lambdaops.transport_plan_lin_comb_coeff(P_stack, supp)
 
     # Proximity operators related instances
-    id_prox = sams_linear.Identity()
+    id_prox = Identity()
     if wvl_en and pos_en:
         noise_map = get_noise_arr(lin_com.op(polychrom_grad.MtX(im_stack))[1])
         dual_var_plan = np.array([zeros((supp.shape[0],nb_im)),zeros(noise_map.shape)])
@@ -11143,7 +11140,6 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
             dual_prox_coeff = lambdaprox.Simplex()
         else:
             dual_prox_coeff = prox.Positivity()
-    #dual_prox_coeff = sams_linear.Identity()
 
     # ---- (Re)Setting hyperparameters
     delta  = (polychrom_grad.inv_spec_rad**(-1)/2)**2 + 4*lin_com.mat_norm**2
@@ -11154,10 +11150,6 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
 
     # Cost function instance
     cost_op = costObj([polychrom_grad])
-    '''sams_cost.costFunction(im_stack, polychrom_grad, wavelet=None, weights=None,\
-                 lambda_reg=None, mode='grad',\
-                 positivity=True, tolerance=1e-4, window=1, print_cost=True,\
-                 residual=False, output=None)'''
 
     condat_min = optimalg.Condat(P_stack, dual_var_plan, polychrom_grad, id_prox, dual_prox_plan, lin_com, cost=cost_op,\
                  rho=rho_P,  sigma=sigma_P, tau=tau_P, rho_update=None, sigma_update=None,
@@ -11187,10 +11179,6 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
 
         # Coefficients cost function instance
         cost_op_coeff = costObj([polychrom_grad_coeff])
-        '''sams_cost.costFunction(im_stack, polychrom_grad_coeff, wavelet=None, weights=None,\
-                     lambda_reg=None, mode='grad',\
-                     positivity=True, tolerance=1e-4, window=1, print_cost=True,\
-                     residual=False, output=None)'''
 
         if graph_cons_en:
             beta_param = polychrom_grad_coeff.inv_spec_rad# set stepsize to inverse spectral radius of coefficient gradient
