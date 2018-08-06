@@ -138,7 +138,7 @@ class transport_plan_marg_wavelet(object):
 
     """
 
-    def __init__(self,supp,weights_neighbors,neighbors_graph,shap,wavelet_opt=None):
+    def __init__(self,supp,weights_neighbors,neighbors_graph,shap,wavelet_opt=None, method='scipy'):
 
         self.supp = supp
         self.weights_neighbors = weights_neighbors
@@ -148,6 +148,7 @@ class transport_plan_marg_wavelet(object):
         self.l1norm = np.sqrt(sum((np.sum(np.abs(filt)) ** 2 for
                                        filt in self.filters)))
         self.mat_norm = np.sqrt(shap[0]*shap[1])*self.l1norm
+        self.method = method
 
     def op(self, data):
         """Operator
@@ -164,9 +165,8 @@ class transport_plan_marg_wavelet(object):
         np.ndarray
 
         """
-
         return filter_convolve_stack(transport_plan_projections_field_marg(data,self.shape,\
-                self.supp,self.neighbors_graph,self.weights_neighbors), self.filters)
+                self.supp,self.neighbors_graph,self.weights_neighbors), self.filters, method=self.method)
 
     def adj_op(self, data):
         """Adjoint operator
@@ -185,7 +185,7 @@ class transport_plan_marg_wavelet(object):
         """
 
 
-        return transport_plan_projections_field_marg_transpose(filter_convolve_stack(data, self.filters, filter_rot=True),
+        return transport_plan_projections_field_marg_transpose(filter_convolve_stack(data, self.filters, filter_rot=True, method=self.method),
                                                         self.shape,self.supp,self.neighbors_graph,self.weights_neighbors)
 
 
