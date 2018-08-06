@@ -1789,6 +1789,9 @@ def full_displacement(shap,supp,t,pol_en=False,cent=None,theta_param=1,pol_mod=F
 
 
 def transport_plan_projections(P,shap,supp,neighbors_graph,weights_neighbors,spectrum=None,indices=None):
+    """ Computes monochromatic components (displacement interpolation steps) from transport plan.
+    
+    """
     from numpy import zeros,int,squeeze,add,ones
 
     if indices is None:
@@ -1884,7 +1887,7 @@ def field_reconstruction(P_stack,shap,supp,neighbors_graph,weights_neighbors,A):
     
     Calls:
     
-    *
+    * :func:`psf_learning_utils.transport_plan_projections`
     """
     from numpy import zeros,ones,prod,median
     nb_comp = P_stack.shape[-1]

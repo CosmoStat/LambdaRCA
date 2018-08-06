@@ -11027,16 +11027,14 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
     * :func:`grads.polychrom_eigen_psf`
     * :func:`grads.polychrom_eigen_psf_coeff_graph`
     * :func:`grads.polychrom_eigen_psf_coeff`
-    * [SAM's] :func:`linear.transport_plan_lin_comb_wavelet`
-    * [SAM's] :func:`linear.transport_plan_marg_wavelet`
-    * [SAM's] :func:`linear.transport_plan_lin_comb`
-    * [SAM's] :func:`linear.transport_plan_lin_comb_coeff`
     * :func:`psf_learning_utils.field_reconstruction`
-    
-    Pure "Sam" imports: #TODO: replace with ModOpt import or something
-    
-    * :func:`linear.Identity`
-    
+    * :func:`operators.transport_plan_lin_comb_wavelet`
+    * :func:`operators.transport_plan_marg_wavelet`
+    * :func:`operators.transport_plan_lin_comb`
+    * :func:`operators.transport_plan_lin_comb_coeff`
+    * :func:`proxs.simplex_threshold`
+    * :func:`proxs.Simplex`
+    * :func:`proxs.KThreshold`
     """
 
     im_stack = copy(im_stack_in)
