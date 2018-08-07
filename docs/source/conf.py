@@ -15,6 +15,7 @@
 import os
 import sys
 sys.path.insert(0, os.path.abspath('../../utilities/'))
+from optim_utils import polychromatic_psf_field_est_2
 
 # -- Fix the bug where autodoc adds some numpy.random and stuff docstrings
 # -- see http://read-the-docs.readthedocs.io/en/latest/faq.html#i-get-import-errors-on-libraries-that-depend-on-c-modules
@@ -28,8 +29,8 @@ class Mock(MagicMock):
         return MagicMock()
 
 MOCK_MODULES = ['numpy.core.multiarray', 'numpy.random']
-sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
-class Mock(object):
+sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)'''
+'''class Mock(object):
 
     __all__ = []
 

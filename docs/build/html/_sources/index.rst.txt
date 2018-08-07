@@ -13,6 +13,9 @@ LambdaRCA
    optim_utils
    utils
    psf_learning_utils
+   grads
+   operators
+   proxs
 
 
 Indices and tables

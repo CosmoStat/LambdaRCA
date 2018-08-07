@@ -1,0 +1,165 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>proxs &#8212; LambdaRCA 0.0 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="operators" href="operators.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-proxs">
+<span id="proxs"></span><h1>proxs<a class="headerlink" href="#module-proxs" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="proxs.KThreshold">
+<em class="property">class </em><code class="descclassname">proxs.</code><code class="descname">KThreshold</code><span class="sig-paren">(</span><em>iter_func</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/proxs.html#KThreshold"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#proxs.KThreshold" title="Permalink to this definition">¶</a></dt>
+<dd><p>KThreshold proximity operator</p>
+<p>This class defines linewise hard threshold operator with variable threshold</p>
+<dl class="docutils">
+<dt>iter_func <span class="classifier-delimiter">:</span> <span class="classifier">function</span></dt>
+<dd>Input function that calcultates the number of non-zero values to keep in each line at each iteration</dd>
+</dl>
+<p>CALLS:</p>
+<ul class="simple">
+<li><code class="xref py py-func docutils literal notranslate"><span class="pre">utils.lineskthresholding()</span></code></li>
+</ul>
+<dl class="method">
+<dt id="proxs.KThreshold.op">
+<code class="descname">op</code><span class="sig-paren">(</span><em>data</em>, <em>extra_factor=1.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/proxs.html#KThreshold.op"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#proxs.KThreshold.op" title="Permalink to this definition">¶</a></dt>
+<dd><p>Operator</p>
+<p>This method returns the input data thresholded</p>
+<dl class="docutils">
+<dt>data <span class="classifier-delimiter">:</span> <span class="classifier">np.ndarray</span></dt>
+<dd>Input data array</dd>
+<dt>extra_factor <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd>Additional multiplication factor</dd>
+</dl>
+<p>np.ndarray thresholded data</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="proxs.KThreshold.reset_iter">
+<code class="descname">reset_iter</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/proxs.html#KThreshold.reset_iter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#proxs.KThreshold.reset_iter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reset iter</p>
+<p>This method sets the iterations counter to zero</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="proxs.Simplex">
+<em class="property">class </em><code class="descclassname">proxs.</code><code class="descname">Simplex</code><span class="sig-paren">(</span><em>mass=1</em>, <em>pos_en=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/proxs.html#Simplex"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#proxs.Simplex" title="Permalink to this definition">¶</a></dt>
+<dd><p>Simplex proximity operator</p>
+<p>This class defines a column wise projection onto a given positive simplex</p>
+<p>CALLS:</p>
+<ul class="simple">
+<li><code class="xref py py-func docutils literal notranslate"><span class="pre">psf_learning_utils.columns_wise_simplex_proj()</span></code></li>
+</ul>
+<dl class="method">
+<dt id="proxs.Simplex.op">
+<code class="descname">op</code><span class="sig-paren">(</span><em>data</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/proxs.html#Simplex.op"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#proxs.Simplex.op" title="Permalink to this definition">¶</a></dt>
+<dd><p>Operator</p>
+<p>This method projects each column of the matrix data onto the simplex
+sum_i v_i = mass, v_i&gt;=0</p>
+<dl class="docutils">
+<dt>data <span class="classifier-delimiter">:</span> <span class="classifier">np.ndarray</span></dt>
+<dd>Input data array</dd>
+</dl>
+<p>np.ndarray all positive elements from input data</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="proxs.simplex_threshold">
+<em class="property">class </em><code class="descclassname">proxs.</code><code class="descname">simplex_threshold</code><span class="sig-paren">(</span><em>linop</em>, <em>weights</em>, <em>mass=None</em>, <em>pos_en=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/proxs.html#simplex_threshold"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#proxs.simplex_threshold" title="Permalink to this definition">¶</a></dt>
+<dd><p>Simplex Threshold proximity operator
+This class stacks the proximity operators Simplex and Threshold</p>
+<dl class="method">
+<dt id="proxs.simplex_threshold.update_weights">
+<code class="descname">update_weights</code><span class="sig-paren">(</span><em>weights</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/proxs.html#simplex_threshold.update_weights"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#proxs.simplex_threshold.update_weights" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update weights</p>
+<p>This method update the values of the weights</p>
+<dl class="docutils">
+<dt>weights <span class="classifier-delimiter">:</span> <span class="classifier">np.ndarray</span></dt>
+<dd>Input array of weights</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="operators.html" title="previous chapter">operators</a></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/proxs.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Fred Ngolè, Morgan A Schmitz, Rebeca Araripe, Jean-Luc Starck.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.7</a>
+      
+      |
+      <a href="_sources/proxs.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -16,6 +16,7 @@
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="grads" href="grads.html" />
     <link rel="prev" title="utils" href="utils.html" />
    
   
@@ -30,6 +31,16 @@
             
   <div class="section" id="module-psf_learning_utils">
 <span id="psf-learning-utils"></span><h1>psf_learning_utils<a class="headerlink" href="#module-psf_learning_utils" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="psf_learning_utils.field_reconstruction">
+<code class="descclassname">psf_learning_utils.</code><code class="descname">field_reconstruction</code><span class="sig-paren">(</span><em>P_stack</em>, <em>shap</em>, <em>supp</em>, <em>neighbors_graph</em>, <em>weights_neighbors</em>, <em>A</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/psf_learning_utils.html#field_reconstruction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#psf_learning_utils.field_reconstruction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes monochromatic PSFs from eigenTransport plans.</p>
+<p>Calls:</p>
+<ul class="simple">
+<li><a class="reference internal" href="#psf_learning_utils.transport_plan_projections" title="psf_learning_utils.transport_plan_projections"><code class="xref py py-func docutils literal notranslate"><span class="pre">psf_learning_utils.transport_plan_projections()</span></code></a></li>
+</ul>
+</dd></dl>
+
 <dl class="function">
 <dt id="psf_learning_utils.full_displacement">
 <code class="descclassname">psf_learning_utils.</code><code class="descname">full_displacement</code><span class="sig-paren">(</span><em>shap</em>, <em>supp</em>, <em>t</em>, <em>pol_en=False</em>, <em>cent=None</em>, <em>theta_param=1</em>, <em>pol_mod=False</em>, <em>coord_map=None</em>, <em>knn=None</em>, <em>eps=1e-16</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/psf_learning_utils.html#full_displacement"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#psf_learning_utils.full_displacement" title="Permalink to this definition">¶</a></dt>
@@ -64,7 +75,7 @@ If no argument is given a single Python float is returned.</dd>
 the standard normal distribution, or a single such float if
 no parameters were supplied.</dd>
 </dl>
-<p>random.standard_normal : Similar, but takes a tuple as its argument.</p>
+<p>standard_normal : Similar, but takes a tuple as its argument.</p>
 <p>For random samples from <span class="math notranslate nohighlight">\(N(\mu, \sigma^2)\)</span>, use:</p>
 <p><code class="docutils literal notranslate"><span class="pre">sigma</span> <span class="pre">*</span> <span class="pre">np.random.randn(...)</span> <span class="pre">+</span> <span class="pre">mu</span></code></p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">()</span>
@@ -79,6 +90,12 @@ no parameters were supplied.</dd>
 </div>
 </dd></dl>
 
+<dl class="function">
+<dt id="psf_learning_utils.transport_plan_projections">
+<code class="descclassname">psf_learning_utils.</code><code class="descname">transport_plan_projections</code><span class="sig-paren">(</span><em>P</em>, <em>shap</em>, <em>supp</em>, <em>neighbors_graph</em>, <em>weights_neighbors</em>, <em>spectrum=None</em>, <em>indices=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/psf_learning_utils.html#transport_plan_projections"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#psf_learning_utils.transport_plan_projections" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes monochromatic components (displacement interpolation steps) from transport plan.</p>
+</dd></dl>
+
 </div>
 
 
@@ -91,6 +108,7 @@ no parameters were supplied.</dd>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
       <li>Previous: <a href="utils.html" title="previous chapter">utils</a></li>
+      <li>Next: <a href="grads.html" title="next chapter">grads</a></li>
   </ul></li>
 </ul>
 </div>
