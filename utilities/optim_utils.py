@@ -17,12 +17,13 @@ from pyflann import *
 import psf_learning_utils
 import scipy
 from scipy.optimize import minimize#,linear_sum_assignment
-sys.path.append('../sams')
-import cost as sams_cost
-import gradient as sams_grad
-import linear as sams_linear
-import proximity as sams_prox
-import optimisation as sams_optim
+from modopt.opt.cost import costObj
+import grads as grad
+import operators as lambdaops
+import modopt.opt.proximity as prox
+import proxs as lambdaprox
+import modopt.opt.algorithms as optimalg
+from modopt.opt.linear import Identity
 
 try:
     import pyct
@@ -11023,28 +11024,17 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
     * :func:`utils.flux_estimate_stack` 
     * :func:`optim_utils.analysis` 
     * :func:`utils.cube_svd`
-    * [SAM's] :func:`gradient.polychrom_eigen_psf`
-    * [SAM's] :func:`gradient.polychrom_eigen_psf_coeff_graph`
-    * [SAM's] :func:`gradient.polychrom_eigen_psf_coeff`
-    * [SAM's] :func:`gradient.polychrom_eigen_psf_coeff`
-    * [SAM's] :func:`linear.transport_plan_lin_comb_wavelet`
-    * [SAM's] :func:`linear.transport_plan_marg_wavelet`
-    * [SAM's] :func:`linear.transport_plan_lin_comb`
-    * [SAM's] :func:`linear.transport_plan_lin_comb_coeff`
-    * [SAM's] :func:`proximity.simplex_threshold`
+    * :func:`grads.polychrom_eigen_psf`
+    * :func:`grads.polychrom_eigen_psf_coeff_graph`
+    * :func:`grads.polychrom_eigen_psf_coeff`
     * :func:`psf_learning_utils.field_reconstruction`
-    
-    Pure "Sam" imports: #TODO: replace with ModOpt import or something
-    
-    * :func:`linear.Identity`
-    * :func:`proximity.Threshold`
-    * :func:`proximity.Simplex`
-    * :func:`proximity.Positive`
-    * :func:`proximity.KThreshold`
-    * :func:`cost.costFunction`
-    * :func:`optimisation.Condat`
-    * :func:`optimisation:ForwardBackward`
-    
+    * :func:`operators.transport_plan_lin_comb_wavelet`
+    * :func:`operators.transport_plan_marg_wavelet`
+    * :func:`operators.transport_plan_lin_comb`
+    * :func:`operators.transport_plan_lin_comb_coeff`
+    * :func:`proxs.simplex_threshold`
+    * :func:`proxs.Simplex`
+    * :func:`proxs.KThreshold`
     """
 
     im_stack = copy(im_stack_in)
@@ -11097,58 +11087,57 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
     print " --------- Optimization instances setting ---------- "
 
     # Data fidelity related instances
-    polychrom_grad = sams_grad.polychrom_eigen_psf(im_stack, supp, neighbors_graph, \
+    polychrom_grad = grad.polychrom_eigen_psf(im_stack, supp, neighbors_graph, \
                 weights_neighbors, spectrums, A, flux, sig, ker, ker_rot, D)
 
     if graph_cons_en:
-        polychrom_grad_coeff = sams_grad.polychrom_eigen_psf_coeff_graph(im_stack, supp, neighbors_graph, \
+        polychrom_grad_coeff = grad.polychrom_eigen_psf_coeff_graph(im_stack, supp, neighbors_graph, \
                 weights_neighbors, spectrums, P_stack, flux, sig, ker, ker_rot, D, basis)
     else:
-        polychrom_grad_coeff = sams_grad.polychrom_eigen_psf_coeff(im_stack, supp, neighbors_graph, \
+        polychrom_grad_coeff = grad.polychrom_eigen_psf_coeff(im_stack, supp, neighbors_graph, \
                 weights_neighbors, spectrums, P_stack, flux, sig, ker, ker_rot, D)
 
 
     # Dual variable related linear operators instances
     dual_var_coeff = zeros((supp.shape[0],nb_im))
     if wvl_en and pos_en:
-        lin_com = sams_linear.transport_plan_lin_comb_wavelet(A,supp,weights_neighbors,neighbors_graph,shap,wavelet_opt=wvl_opt)
+        lin_com = lambdaops.transport_plan_lin_comb_wavelet(A,supp,weights_neighbors,neighbors_graph,shap,wavelet_opt=wvl_opt)
     else:
         if wvl_en:
-            lin_com = sams_linear.transport_plan_marg_wavelet(supp,weights_neighbors,neighbors_graph,shap,wavelet_opt=wvl_opt)
+            lin_com = lambdaops.transport_plan_marg_wavelet(supp,weights_neighbors,neighbors_graph,shap,wavelet_opt=wvl_opt)
         else:
-            lin_com = sams_linear.transport_plan_lin_comb(A, supp,shap)
+            lin_com = lambdaops.transport_plan_lin_comb(A, supp,shap)
 
     if not graph_cons_en:
-        lin_com_coeff = sams_linear.transport_plan_lin_comb_coeff(P_stack, supp)
+        lin_com_coeff = lambdaops.transport_plan_lin_comb_coeff(P_stack, supp)
 
     # Proximity operators related instances
-    id_prox = sams_linear.Identity()
+    id_prox = Identity()
     if wvl_en and pos_en:
         noise_map = get_noise_arr(lin_com.op(polychrom_grad.MtX(im_stack))[1])
         dual_var_plan = np.array([zeros((supp.shape[0],nb_im)),zeros(noise_map.shape)])
-        dual_prox_plan = sams_prox.simplex_threshold(nsig*noise_map,pos_en=(not simplex_en))
+        dual_prox_plan = lambdaprox.simplex_threshold(lin_com, nsig*noise_map,pos_en=(not simplex_en))
     else:
         if wvl_en:
             # Noise estimation
             noise_map = get_noise_arr(lin_com.op(polychrom_grad.MtX(im_stack)))
             dual_var_plan = zeros(noise_map.shape)
-            dual_prox_plan = sams_prox.Threshold(nsig*noise_map)
+            dual_prox_plan = prox.SparseThreshold(lin_com, nsig*noise_map)
         else:
             dual_var_plan = zeros((supp.shape[0],nb_im))
             if simplex_en:
-                dual_prox_plan = sams_prox.Simplex()
+                dual_prox_plan = lambdaprox.Simplex()
             else:
-                dual_prox_plan = sams_prox.Positive()
+                dual_prox_plan = prox.Positivity()
 
     if graph_cons_en:
         iter_func = lambda x: floor(sqrt(x))
-        prox_coeff = sams_prox.KThreshold(iter_func)
+        prox_coeff = lambdaprox.KThreshold(iter_func)
     else:
         if simplex_en:
-            dual_prox_coeff = sams_prox.Simplex()
+            dual_prox_coeff = lambdaprox.Simplex()
         else:
-            dual_prox_coeff = sams_prox.Positive()
-    #dual_prox_coeff = sams_linear.Identity()
+            dual_prox_coeff = prox.Positivity()
 
     # ---- (Re)Setting hyperparameters
     delta  = (polychrom_grad.inv_spec_rad**(-1)/2)**2 + 4*lin_com.mat_norm**2
@@ -11158,13 +11147,10 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
     rho_P = 1
 
     # Cost function instance
-    cost_op = sams_cost.costFunction(im_stack, polychrom_grad, wavelet=None, weights=None,\
-                 lambda_reg=None, mode='grad',\
-                 positivity=True, tolerance=1e-4, window=1, print_cost=True,\
-                 residual=False, output=None)
+    cost_op = costObj([polychrom_grad])
 
-    condat_min = sams_optim.Condat(P_stack, dual_var_plan, polychrom_grad, id_prox, dual_prox_plan, lin_com, cost_op,\
-                 rho_P,  sigma_P, tau_P, rho_update=None, sigma_update=None,
+    condat_min = optimalg.Condat(P_stack, dual_var_plan, polychrom_grad, id_prox, dual_prox_plan, lin_com, cost=cost_op,\
+                 rho=rho_P,  sigma=sigma_P, tau=tau_P, rho_update=None, sigma_update=None,
                  tau_update=None, auto_iterate=False)
     print "------------------- Transport plans estimation ------------------"
 
@@ -11190,17 +11176,15 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
             rho_coeff = 1
 
         # Coefficients cost function instance
-        cost_op_coeff = sams_cost.costFunction(im_stack, polychrom_grad_coeff, wavelet=None, weights=None,\
-                     lambda_reg=None, mode='grad',\
-                     positivity=True, tolerance=1e-4, window=1, print_cost=True,\
-                     residual=False, output=None)
+        cost_op_coeff = costObj([polychrom_grad_coeff])
 
         if graph_cons_en:
-            min_coeff = sams_optim.ForwardBackward(alph, polychrom_grad_coeff, prox_coeff, cost=cost_op_coeff,\
-                                lambda_init=None,lambda_update=None, use_fista=True, auto_iterate=False)
+            beta_param = polychrom_grad_coeff.inv_spec_rad# set stepsize to inverse spectral radius of coefficient gradient
+            min_coeff = optimalg.ForwardBackward(alph, polychrom_grad_coeff, prox_coeff, beta_param=beta_param, 
+                                                 cost=cost_op_coeff,auto_iterate=False)
         else:
-            min_coeff = sams_optim.Condat(A, dual_var_coeff, polychrom_grad_coeff, id_prox, dual_prox_coeff, lin_com_coeff, \
-                                            cost_op_coeff, rho_coeff,  sigma_coeff, tau_coeff, rho_update=None, sigma_update=None,\
+            min_coeff = optimalg.Condat(A, dual_var_coeff, polychrom_grad_coeff, id_prox, dual_prox_coeff, lin_com_coeff, cost=cost_op_coeff,\
+                                            rho=rho_coeff,  sigma=sigma_coeff, tau=tau_coeff, rho_update=None, sigma_update=None,\
                                             tau_update=None, auto_iterate=False)
 
         print "------------------- Coefficients estimation ----------------------"
@@ -11230,13 +11214,8 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
         rho_P = 1
 
         # Cost function instance
-        cost_op = sams_cost.costFunction(im_stack, polychrom_grad, wavelet=None, weights=None,\
-                     lambda_reg=None, mode='grad',\
-                     positivity=True, tolerance=1e-4, window=1, print_cost=True,\
-                     residual=False, output=None)
-
-        condat_min = sams_optim.Condat(P_stack, dual_var_plan, polychrom_grad, id_prox, dual_prox_plan, lin_com, cost_op,\
-                     rho_P,  sigma_P, tau_P, rho_update=None, sigma_update=None,
+        condat_min = optimalg.Condat(P_stack, dual_var_plan, polychrom_grad, id_prox, dual_prox_plan, lin_com, cost=cost_op,\
+                     rho=rho_P,  sigma=sigma_P, tau=tau_P, rho_update=None, sigma_update=None,
                      tau_update=None, auto_iterate=False)
         print "------------------- Transport plans estimation ------------------"
 
