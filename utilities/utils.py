@@ -179,6 +179,7 @@ def field_spectrum(data_cube,field_shap):
 
 
 def decim(im,d,av_en=1,fft=1):
+    """ Decimate image to lower resolution."""
 
     im_filt=copy(im)
     im_d = copy(im)
@@ -227,6 +228,7 @@ def feat_dist_mat(feat_mat):
     return mat_out
 
 def transpose_decim(im,decim_fact,av_en=0):
+    """ Applies the transpose of the decimation matrix."""
     shap = im.shape
     im_out = zeros((shap[0]*decim_fact,shap[1]*decim_fact))
 

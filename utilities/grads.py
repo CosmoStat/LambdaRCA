@@ -20,6 +20,12 @@ class polychrom_eigen_psf(GradParent, PowerMethod):
     Notes
     -----
     The properties of `GradBasic` and `PowerMethod` are inherited in this class
+    
+    Calls:
+    
+    * :func:`psf_learning_utils.transport_plan_projections_field`
+    * :func:`psf_learning_utils.transport_plan_projections_field_transpose`
+    
 
     """
 
@@ -99,7 +105,7 @@ class polychrom_eigen_psf(GradParent, PowerMethod):
                 
     def cost(self, x, y=None, verbose=False):
         """ Compute data fidelity term. ``y`` is unused (it's just so ``modopt.opt.algorithms.Condat`` can feed
-        the dual variable.
+        the dual variable.)
         """
         if isinstance(self._current_rec, type(None)):
             self._current_rec = self.MX(x)
@@ -131,8 +137,9 @@ class polychrom_eigen_psf_coeff(GradBasic, PowerMethod):
     """Polychromatic eigen PSFs class
 
     This class defines the operators for a field of undersampled space varying
-    polychromatic PSFs. These operators are related to the eigen PSFs weights estimation.
-
+    polychromatic PSFs. These operators are related to the estimation of weights,
+    when there is no spatial constraints.
+    
     Parameters
     ----------
     data : np.ndarray
@@ -142,6 +149,11 @@ class polychrom_eigen_psf_coeff(GradBasic, PowerMethod):
     Notes
     -----
     The properties of `GradBasic` and `PowerMethod` are inherited in this class
+    
+    Calls:
+    
+    * :func:`psf_learning_utils.transport_plan_projections_field`
+    * :func:`psf_learning_utils.transport_plan_projections_field_coeff_transpose`
 
     """
     
@@ -254,7 +266,9 @@ class polychrom_eigen_psf_coeff_graph(GradBasic, PowerMethod):
     """Polychromatic eigen PSFs class
 
     This class defines the operators for a field of undersampled space varying
-    polychromatic PSFs. These operators are related to the eigen PSFs weights estimation.
+    polychromatic PSFs. These operators are related to the estimation of weights,
+    when the graph constraint is activated (i.e. weights are further factorized
+    by the spatial constraints matrix).
 
     Parameters
     ----------
@@ -265,7 +279,12 @@ class polychrom_eigen_psf_coeff_graph(GradBasic, PowerMethod):
     Notes
     -----
     The properties of `GradBasic` and `PowerMethod` are inherited in this class
-
+    
+    Calls:
+    
+    * :func:`psf_learning_utils.transport_plan_projections_field`
+    * :func:`psf_learning_utils.transport_plan_projections_field_coeff_transpose`
+    
     """
 
     def __init__(self, data, supp, neighbors_graph, weights_neighbors, spectrums, \

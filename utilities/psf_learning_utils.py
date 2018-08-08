@@ -1846,7 +1846,13 @@ def transport_plan_projections_field_marg_transpose(im_stack,shap,supp,neighbors
     return output
 
 def transport_plan_projections_field(P_stack,shap,supp,neighbors_graph,weights_neighbors,spectrums,A,flux,sig,ker,D):
-
+    """ Reconstruct all stars in the field from current eigen transport plans.
+    
+    Calls:
+    
+    * :func:`psf_learning_utils.transport_plan_projections`
+    * :func:`utils.decim`
+    """
     from numpy import zeros,ones,prod,median
     nb_comp = P_stack.shape[-1]
     nb_bands = spectrums.shape[0]
@@ -1909,6 +1915,14 @@ def field_reconstruction(P_stack,shap,supp,neighbors_graph,weights_neighbors,A):
     return mono_chromatic_psf
 
 def transport_plan_projections_field_transpose(im_stack,supp,neighbors_graph,weights_neighbors,spectrums,A,flux,sig,ker_rot,D):
+    """ Adjoint operator to :func:`psf_learning_utils.transport_plan_projections_field`
+    (with regards to transport plans).
+    
+    Calls:
+    
+    * :func:`utils.transpose_decim`
+    * :func:`psf_learning_utils.transport_plan_projections_transpose_2`
+    """
 
     from numpy import zeros,ones,prod,median,diag
     nb_comp = A.shape[0]
@@ -1995,7 +2009,15 @@ def transport_plan_projections_field_coeff_gradient(obs_stars,P_est,supp,neighbo
 
 
 def transport_plan_projections_field_coeff_transpose(im_stack,supp,neighbors_graph,weights_neighbors,spectrums,P_stack,flux,sig,ker_rot,D):
-
+    """ Adjoint operator to :func:`psf_learning_utils.transport_plan_projections_field`
+    (with regards to weights).
+    
+    Calls:
+    
+    * :func:`utils.transpose_decim`
+    * :func:`psf_learning_utils.transport_plan_projections`
+    
+    """
     from numpy import zeros,ones,prod,median,diag
 
     nb_comp = P_stack.shape[2]
@@ -2026,6 +2048,8 @@ def transport_plan_projections_field_coeff_transpose(im_stack,supp,neighbors_gra
 
 
 def transport_plan_projections_transpose_2(im_stack,supp,neighbors_graph,weights_neighbors,spectrum):
+    """ Computes the adjoint operator of the displacement inteerpolation for a
+    given transport plan."""
     from numpy import zeros,squeeze,sqrt,add,repeat
     shap = im_stack.shape
     nb_proj = neighbors_graph.shape[3]
