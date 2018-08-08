@@ -1810,6 +1810,9 @@ def transport_plan_projections(P,shap,supp,neighbors_graph,weights_neighbors,spe
     return squeeze(im_proj)
 
 def transport_plan_projections_transpose(im,supp,neighbors_graph,weights_neighbors,spectrum=None,indices=None):
+    """ Adjoint operator to :func:`transport_plan_projections` 
+    
+    """
     from numpy import zeros,squeeze,sqrt,add,repeat
 
     shap = im.shape
@@ -1831,6 +1834,13 @@ def transport_plan_projections_transpose(im,supp,neighbors_graph,weights_neighbo
     return squeeze(P_out)
 
 def transport_plan_projections_field_marg(P_stack,shap,supp,neighbors_graph,weights_neighbors):
+    """ Computes marginals of a set of transport plans.
+    
+    Calls:
+    
+    * :func:`psf_learning_utils.transport_plan_projections`
+    
+    """
     nb_plans = P_stack.shape[-1]
     output = zeros((shap[0],shap[1],nb_plans))
     for i in range(0,nb_plans):
@@ -1839,6 +1849,13 @@ def transport_plan_projections_field_marg(P_stack,shap,supp,neighbors_graph,weig
     return output
 
 def transport_plan_projections_field_marg_transpose(im_stack,shap,supp,neighbors_graph,weights_neighbors):
+    """ Adjoint operator to :func:`transport_plan_projections_field_marg`.
+    
+    Calls:
+    
+    * :func:`psf_learning_utils.transport_plan_projections_transpose`
+    
+    """
     nb_plans = im_stack.shape[-1]
     output = zeros((shap[0]*shap[1],shap[0]*shap[1],nb_plans))
     for i in range(0,nb_plans):
@@ -1877,15 +1894,24 @@ def transport_plan_projections_field(P_stack,shap,supp,neighbors_graph,weights_n
     return stars_est
 
 def transport_plan_projections_flat_field(P_stack,supp,A):
+    """ This method returns linear combinations of the slices of the input cube
+        on the support, following the mixing matrix A
+    """
     return P_stack[supp[:,0],supp[:,1],:].dot(A)
 
 def transport_plan_projections_flat_field_transpose(P_mat,supp,A,shap):
+    """ Adjoint operator to :func:`transport_plan_projections_flat_field`(with
+    regards to transport plans).
+    """
     temp_mat = P_mat.dot(transpose(A))
     P_stack = zeros((prod(shap),prod(shap),A.shape[0]))
     P_stack[supp[:,0],supp[:,1],:] = temp_mat
     return P_stack
 
 def transport_plan_projections_flat_field_transpose_coeff(P_mat,P_stack,supp):
+    """ Adjoint operator to :func:`transport_plan_projections_flat_field` (with
+    regards to weights).
+    """
     return transpose(P_stack[supp[:,0],supp[:,1],:]).dot(P_mat)
 
 def field_reconstruction(P_stack,shap,supp,neighbors_graph,weights_neighbors,A):

@@ -14,6 +14,11 @@ class transport_plan_lin_comb(object):
     ----------
     data : np.ndarray
         Input data array, normally a cube of 2D coupling matrices
+        
+    Calls:
+    
+    * :func:`psf_learning_utils.transport_plan_projections_flat_field`
+    * :func:`psf_learning_utils.transport_plan_projections_flat_field_transpose`
 
     """
 
@@ -75,6 +80,11 @@ class transport_plan_lin_comb_coeff(object):
     ----------
     data : np.ndarray
         Input data array, normally a cube of 2D coupling matrices
+        
+    Calls:
+    
+    * :func:`psf_learning_utils.transport_plan_projections_flat_field`
+    * :func:`psf_learning_utils.transport_plan_projections_flat_field_transpose_coeff`
 
     """
 
@@ -136,6 +146,11 @@ class transport_plan_marg_wavelet(object):
     data : np.ndarray
         Input data array, normally a cube of 2D coupling matrices
 
+    Calls:
+    
+    * :func:`psf_learning_utils.transport_plan_projections_field_marg`
+    * :func:`psf_learning_utils.transport_plan_projections_field_marg_transpose`
+
     """
 
     def __init__(self,supp,weights_neighbors,neighbors_graph,shap,wavelet_opt=None, method='scipy'):
@@ -193,6 +208,11 @@ class transport_plan_lin_comb_wavelet(object):
     """transport_plan_lin_comb_wavelet class
 
     This class stacks the operators from transport_plan_marg_wavelet and transport_plan_lin_comb
+    
+    Calls:
+    
+    * :func:`operators.transport_plan_lin_comb`
+    * :func:`operators.transport_plan_marg_wavelet`
 
     """
 
