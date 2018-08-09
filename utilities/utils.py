@@ -1657,6 +1657,8 @@ def threshold_perc(x,perc=0.99):
 
 
 def kthresholding(x,k):
+    """ Applies k-thresholding (keep only k highest values, set rest to 0).
+    """
     k = int(k)
     if k<1:
         print "Warning: wrong k value for k-thresholding"
@@ -1695,6 +1697,13 @@ def khighest(x,k):
 
 
 def lineskthresholding(mat,k):
+    """ Applies k-thresholding to each line of input matrix.
+    
+    Calls:
+    
+    * :func:`utils.kthresholding`
+    
+    """
     mat_out = copy(mat)
     shap = mat.shape
     for j in range(0,shap[0]):

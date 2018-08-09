@@ -42,6 +42,11 @@ polychromatic PSFs. These operators are related to the eigen PSFs estimation.</p
 <dd>Input data array, a array of 2D observed images (i.e. with noise)</dd>
 </dl>
 <p>The properties of <cite>GradBasic</cite> and <cite>PowerMethod</cite> are inherited in this class</p>
+<p>Calls:</p>
+<ul class="simple">
+<li><a class="reference internal" href="psf_learning_utils.html#psf_learning_utils.transport_plan_projections_field" title="psf_learning_utils.transport_plan_projections_field"><code class="xref py py-func docutils literal notranslate"><span class="pre">psf_learning_utils.transport_plan_projections_field()</span></code></a></li>
+<li><a class="reference internal" href="psf_learning_utils.html#psf_learning_utils.transport_plan_projections_field_transpose" title="psf_learning_utils.transport_plan_projections_field_transpose"><code class="xref py py-func docutils literal notranslate"><span class="pre">psf_learning_utils.transport_plan_projections_field_transpose()</span></code></a></li>
+</ul>
 <dl class="method">
 <dt id="grads.polychrom_eigen_psf.MX">
 <code class="descname">MX</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grads.html#polychrom_eigen_psf.MX"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grads.polychrom_eigen_psf.MX" title="Permalink to this definition">¶</a></dt>
@@ -69,7 +74,7 @@ the data X</p>
 <dt id="grads.polychrom_eigen_psf.cost">
 <code class="descname">cost</code><span class="sig-paren">(</span><em>x</em>, <em>y=None</em>, <em>verbose=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grads.html#polychrom_eigen_psf.cost"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grads.polychrom_eigen_psf.cost" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute data fidelity term. <code class="docutils literal notranslate"><span class="pre">y</span></code> is unused (it’s just so <code class="docutils literal notranslate"><span class="pre">modopt.opt.algorithms.Condat</span></code> can feed
-the dual variable.</p>
+the dual variable.)</p>
 </dd></dl>
 
 <dl class="method">
@@ -95,12 +100,18 @@ Calculates M^T (MX - Y)</p>
 <em class="property">class </em><code class="descclassname">grads.</code><code class="descname">polychrom_eigen_psf_coeff</code><span class="sig-paren">(</span><em>data</em>, <em>supp</em>, <em>neighbors_graph</em>, <em>weights_neighbors</em>, <em>spectrums</em>, <em>P</em>, <em>flux</em>, <em>sig</em>, <em>ker</em>, <em>ker_rot</em>, <em>D</em>, <em>data_type=&lt;type 'float'&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grads.html#polychrom_eigen_psf_coeff"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grads.polychrom_eigen_psf_coeff" title="Permalink to this definition">¶</a></dt>
 <dd><p>Polychromatic eigen PSFs class</p>
 <p>This class defines the operators for a field of undersampled space varying
-polychromatic PSFs. These operators are related to the eigen PSFs weights estimation.</p>
+polychromatic PSFs. These operators are related to the estimation of weights,
+when there is no spatial constraints.</p>
 <dl class="docutils">
 <dt>data <span class="classifier-delimiter">:</span> <span class="classifier">np.ndarray</span></dt>
 <dd>Input data array, a array of 2D observed images (i.e. with noise)</dd>
 </dl>
 <p>The properties of <cite>GradBasic</cite> and <cite>PowerMethod</cite> are inherited in this class</p>
+<p>Calls:</p>
+<ul class="simple">
+<li><a class="reference internal" href="psf_learning_utils.html#psf_learning_utils.transport_plan_projections_field" title="psf_learning_utils.transport_plan_projections_field"><code class="xref py py-func docutils literal notranslate"><span class="pre">psf_learning_utils.transport_plan_projections_field()</span></code></a></li>
+<li><a class="reference internal" href="psf_learning_utils.html#psf_learning_utils.transport_plan_projections_field_coeff_transpose" title="psf_learning_utils.transport_plan_projections_field_coeff_transpose"><code class="xref py py-func docutils literal notranslate"><span class="pre">psf_learning_utils.transport_plan_projections_field_coeff_transpose()</span></code></a></li>
+</ul>
 <dl class="method">
 <dt id="grads.polychrom_eigen_psf_coeff.MX">
 <code class="descname">MX</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grads.html#polychrom_eigen_psf_coeff.MX"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grads.polychrom_eigen_psf_coeff.MX" title="Permalink to this definition">¶</a></dt>
@@ -154,12 +165,19 @@ Calculates M^T (MX - Y)</p>
 <em class="property">class </em><code class="descclassname">grads.</code><code class="descname">polychrom_eigen_psf_coeff_graph</code><span class="sig-paren">(</span><em>data</em>, <em>supp</em>, <em>neighbors_graph</em>, <em>weights_neighbors</em>, <em>spectrums</em>, <em>P</em>, <em>flux</em>, <em>sig</em>, <em>ker</em>, <em>ker_rot</em>, <em>D</em>, <em>basis</em>, <em>data_type=&lt;type 'float'&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grads.html#polychrom_eigen_psf_coeff_graph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grads.polychrom_eigen_psf_coeff_graph" title="Permalink to this definition">¶</a></dt>
 <dd><p>Polychromatic eigen PSFs class</p>
 <p>This class defines the operators for a field of undersampled space varying
-polychromatic PSFs. These operators are related to the eigen PSFs weights estimation.</p>
+polychromatic PSFs. These operators are related to the estimation of weights,
+when the graph constraint is activated (i.e. weights are further factorized
+by the spatial constraints matrix).</p>
 <dl class="docutils">
 <dt>data <span class="classifier-delimiter">:</span> <span class="classifier">np.ndarray</span></dt>
 <dd>Input data array, a array of 2D observed images (i.e. with noise)</dd>
 </dl>
 <p>The properties of <cite>GradBasic</cite> and <cite>PowerMethod</cite> are inherited in this class</p>
+<p>Calls:</p>
+<ul class="simple">
+<li><a class="reference internal" href="psf_learning_utils.html#psf_learning_utils.transport_plan_projections_field" title="psf_learning_utils.transport_plan_projections_field"><code class="xref py py-func docutils literal notranslate"><span class="pre">psf_learning_utils.transport_plan_projections_field()</span></code></a></li>
+<li><a class="reference internal" href="psf_learning_utils.html#psf_learning_utils.transport_plan_projections_field_coeff_transpose" title="psf_learning_utils.transport_plan_projections_field_coeff_transpose"><code class="xref py py-func docutils literal notranslate"><span class="pre">psf_learning_utils.transport_plan_projections_field_coeff_transpose()</span></code></a></li>
+</ul>
 <dl class="method">
 <dt id="grads.polychrom_eigen_psf_coeff_graph.MX">
 <code class="descname">MX</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grads.html#polychrom_eigen_psf_coeff_graph.MX"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grads.polychrom_eigen_psf_coeff_graph.MX" title="Permalink to this definition">¶</a></dt>

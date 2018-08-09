@@ -208,7 +208,8 @@
     <span class="k">return</span> <span class="n">spectrum</span><span class="p">,</span><span class="n">dct_stack</span><span class="p">,</span><span class="n">data_field</span>
 
 
-<span class="k">def</span> <span class="nf">decim</span><span class="p">(</span><span class="n">im</span><span class="p">,</span><span class="n">d</span><span class="p">,</span><span class="n">av_en</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">fft</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<div class="viewcode-block" id="decim"><a class="viewcode-back" href="../utils.html#utils.decim">[docs]</a><span class="k">def</span> <span class="nf">decim</span><span class="p">(</span><span class="n">im</span><span class="p">,</span><span class="n">d</span><span class="p">,</span><span class="n">av_en</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">fft</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Decimate image to lower resolution.&quot;&quot;&quot;</span>
 
     <span class="n">im_filt</span><span class="o">=</span><span class="n">copy</span><span class="p">(</span><span class="n">im</span><span class="p">)</span>
     <span class="n">im_d</span> <span class="o">=</span> <span class="n">copy</span><span class="p">(</span><span class="n">im</span><span class="p">)</span>
@@ -228,7 +229,7 @@
     <span class="k">if</span> <span class="n">av_en</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">(</span><span class="n">im_filt</span><span class="p">,</span><span class="n">im_d</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">im_d</span>
+        <span class="k">return</span> <span class="n">im_d</span></div>
 
 
 <span class="k">def</span> <span class="nf">space_dist_filt</span><span class="p">(</span><span class="n">r</span><span class="p">,</span><span class="n">a</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">exp</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
@@ -256,7 +257,8 @@
             <span class="n">mat_out</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">sqrt</span><span class="p">(</span><span class="nb">sum</span><span class="p">((</span><span class="n">feat_mat</span><span class="p">[</span><span class="n">i</span><span class="p">,:]</span><span class="o">-</span><span class="n">feat_mat</span><span class="p">[</span><span class="n">ind_i</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">k</span><span class="p">],:])</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">mat_out</span></div>
 
-<span class="k">def</span> <span class="nf">transpose_decim</span><span class="p">(</span><span class="n">im</span><span class="p">,</span><span class="n">decim_fact</span><span class="p">,</span><span class="n">av_en</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<div class="viewcode-block" id="transpose_decim"><a class="viewcode-back" href="../utils.html#utils.transpose_decim">[docs]</a><span class="k">def</span> <span class="nf">transpose_decim</span><span class="p">(</span><span class="n">im</span><span class="p">,</span><span class="n">decim_fact</span><span class="p">,</span><span class="n">av_en</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Applies the transpose of the decimation matrix.&quot;&quot;&quot;</span>
     <span class="n">shap</span> <span class="o">=</span> <span class="n">im</span><span class="o">.</span><span class="n">shape</span>
     <span class="n">im_out</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">((</span><span class="n">shap</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">decim_fact</span><span class="p">,</span><span class="n">shap</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">decim_fact</span><span class="p">))</span>
 
@@ -269,7 +271,7 @@
         <span class="n">mask</span> <span class="o">=</span> <span class="n">ones</span><span class="p">((</span><span class="n">siz</span><span class="p">,</span><span class="n">siz</span><span class="p">))</span><span class="o">/</span><span class="n">siz</span><span class="o">**</span><span class="mi">2</span>
         <span class="n">im_out</span> <span class="o">=</span> <span class="n">scisig</span><span class="o">.</span><span class="n">fftconvolve</span><span class="p">(</span><span class="n">im</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;same&#39;</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">im_out</span>
+    <span class="k">return</span> <span class="n">im_out</span></div>
 
 <span class="k">def</span> <span class="nf">decim_arr</span><span class="p">(</span><span class="n">im_arr</span><span class="p">,</span><span class="n">d</span><span class="p">,</span><span class="n">av_en</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">fft</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
     <span class="n">n3</span> <span class="o">=</span> <span class="n">im_arr</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
@@ -1684,7 +1686,9 @@
     <span class="k">return</span> <span class="n">v</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
 
 
-<span class="k">def</span> <span class="nf">kthresholding</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">k</span><span class="p">):</span>
+<div class="viewcode-block" id="kthresholding"><a class="viewcode-back" href="../utils.html#utils.kthresholding">[docs]</a><span class="k">def</span> <span class="nf">kthresholding</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">k</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Applies k-thresholding (keep only k highest values, set rest to 0).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">k</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">k</span><span class="o">&lt;</span><span class="mi">1</span><span class="p">:</span>
         <span class="nb">print</span> <span class="s2">&quot;Warning: wrong k value for k-thresholding&quot;</span>
@@ -1695,7 +1699,7 @@
         <span class="n">xout</span> <span class="o">=</span> <span class="n">copy</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">*</span><span class="mi">0</span>
         <span class="n">ind</span> <span class="o">=</span> <span class="n">argsort</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
         <span class="n">xout</span><span class="p">[</span><span class="n">ind</span><span class="p">[</span><span class="o">-</span><span class="n">k</span><span class="p">:]]</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="n">ind</span><span class="p">[</span><span class="o">-</span><span class="n">k</span><span class="p">:]]</span>
-        <span class="k">return</span> <span class="n">xout</span>
+        <span class="k">return</span> <span class="n">xout</span></div>
 
 <span class="k">def</span> <span class="nf">kthresholding_im</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">thresh_type</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">k</span><span class="o">&lt;</span><span class="mi">1</span><span class="p">:</span>
@@ -1722,12 +1726,19 @@
     <span class="k">return</span> <span class="nb">map</span>
 
 
-<span class="k">def</span> <span class="nf">lineskthresholding</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span><span class="n">k</span><span class="p">):</span>
+<div class="viewcode-block" id="lineskthresholding"><a class="viewcode-back" href="../utils.html#utils.lineskthresholding">[docs]</a><span class="k">def</span> <span class="nf">lineskthresholding</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span><span class="n">k</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Applies k-thresholding to each line of input matrix.</span>
+<span class="sd">    </span>
+<span class="sd">    Calls:</span>
+<span class="sd">    </span>
+<span class="sd">    * :func:`utils.kthresholding`</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">mat_out</span> <span class="o">=</span> <span class="n">copy</span><span class="p">(</span><span class="n">mat</span><span class="p">)</span>
     <span class="n">shap</span> <span class="o">=</span> <span class="n">mat</span><span class="o">.</span><span class="n">shape</span>
     <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">shap</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
         <span class="n">mat_out</span><span class="p">[</span><span class="n">j</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">kthresholding</span><span class="p">(</span><span class="n">mat</span><span class="p">[</span><span class="n">j</span><span class="p">,:],</span><span class="n">k</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">mat_out</span>
+    <span class="k">return</span> <span class="n">mat_out</span></div>
 
 
 <span class="k">def</span> <span class="nf">l_inf_ball_proj</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">thresh</span><span class="p">,</span><span class="n">thresh_type</span><span class="p">,</span><span class="n">cent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>

@@ -39,9 +39,9 @@
 <dt>iter_func <span class="classifier-delimiter">:</span> <span class="classifier">function</span></dt>
 <dd>Input function that calcultates the number of non-zero values to keep in each line at each iteration</dd>
 </dl>
-<p>CALLS:</p>
+<p>Calls:</p>
 <ul class="simple">
-<li><code class="xref py py-func docutils literal notranslate"><span class="pre">utils.lineskthresholding()</span></code></li>
+<li><a class="reference internal" href="utils.html#utils.lineskthresholding" title="utils.lineskthresholding"><code class="xref py py-func docutils literal notranslate"><span class="pre">utils.lineskthresholding()</span></code></a></li>
 </ul>
 <dl class="method">
 <dt id="proxs.KThreshold.op">
@@ -71,9 +71,9 @@
 <em class="property">class </em><code class="descclassname">proxs.</code><code class="descname">Simplex</code><span class="sig-paren">(</span><em>mass=1</em>, <em>pos_en=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/proxs.html#Simplex"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#proxs.Simplex" title="Permalink to this definition">¶</a></dt>
 <dd><p>Simplex proximity operator</p>
 <p>This class defines a column wise projection onto a given positive simplex</p>
-<p>CALLS:</p>
+<p>Calls:</p>
 <ul class="simple">
-<li><code class="xref py py-func docutils literal notranslate"><span class="pre">psf_learning_utils.columns_wise_simplex_proj()</span></code></li>
+<li><a class="reference internal" href="psf_learning_utils.html#psf_learning_utils.columns_wise_simplex_proj" title="psf_learning_utils.columns_wise_simplex_proj"><code class="xref py py-func docutils literal notranslate"><span class="pre">psf_learning_utils.columns_wise_simplex_proj()</span></code></a></li>
 </ul>
 <dl class="method">
 <dt id="proxs.Simplex.op">
@@ -95,6 +95,10 @@ sum_i v_i = mass, v_i&gt;=0</p>
 <em class="property">class </em><code class="descclassname">proxs.</code><code class="descname">simplex_threshold</code><span class="sig-paren">(</span><em>linop</em>, <em>weights</em>, <em>mass=None</em>, <em>pos_en=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/proxs.html#simplex_threshold"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#proxs.simplex_threshold" title="Permalink to this definition">¶</a></dt>
 <dd><p>Simplex Threshold proximity operator
 This class stacks the proximity operators Simplex and Threshold</p>
+<p>Calls:</p>
+<ul class="simple">
+<li><a class="reference internal" href="#proxs.Simplex" title="proxs.Simplex"><code class="xref py py-func docutils literal notranslate"><span class="pre">proxs.Simplex()</span></code></a></li>
+</ul>
 <dl class="method">
 <dt id="proxs.simplex_threshold.update_weights">
 <code class="descname">update_weights</code><span class="sig-paren">(</span><em>weights</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/proxs.html#simplex_threshold.update_weights"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#proxs.simplex_threshold.update_weights" title="Permalink to this definition">¶</a></dt>

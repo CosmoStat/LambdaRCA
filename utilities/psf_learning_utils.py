@@ -2315,6 +2315,13 @@ def prox_pos(Px,mass=1,simplex_en=True):
     return Pout
 
 def columns_wise_simplex_proj(mat,mass=None):
+    """ Projects each column of input matrix onto simplex.
+    
+    Calls:
+    
+    * simplex_projection.euclidean_proj_simplex
+    
+    """
 
     from simplex_projection import euclidean_proj_simplex
     nb_columns = mat.shape[1]

@@ -15,7 +15,7 @@ class KThreshold(object):
     iter_func : function
         Input function that calcultates the number of non-zero values to keep in each line at each iteration
         
-    CALLS:
+    Calls:
     
     * :func:`utils.lineskthresholding`
 
@@ -63,7 +63,7 @@ class Simplex(object):
 
     This class defines a column wise projection onto a given positive simplex
 
-    CALLS:
+    Calls:
     
     * :func:`psf_learning_utils.columns_wise_simplex_proj`
     """
@@ -95,7 +95,11 @@ class Simplex(object):
             
 class simplex_threshold(object):
     """ Simplex Threshold proximity operator
-        This class stacks the proximity operators Simplex and Threshold
+    This class stacks the proximity operators Simplex and Threshold
+        
+    Calls:
+    
+    * :func:`proxs.Simplex`
 
     """
     def __init__(self,linop, weights,mass=None,pos_en=False):

@@ -32,6 +32,16 @@
   <div class="section" id="module-psf_learning_utils">
 <span id="psf-learning-utils"></span><h1>psf_learning_utils<a class="headerlink" href="#module-psf_learning_utils" title="Permalink to this headline">¶</a></h1>
 <dl class="function">
+<dt id="psf_learning_utils.columns_wise_simplex_proj">
+<code class="descclassname">psf_learning_utils.</code><code class="descname">columns_wise_simplex_proj</code><span class="sig-paren">(</span><em>mat</em>, <em>mass=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/psf_learning_utils.html#columns_wise_simplex_proj"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#psf_learning_utils.columns_wise_simplex_proj" title="Permalink to this definition">¶</a></dt>
+<dd><p>Projects each column of input matrix onto simplex.</p>
+<p>Calls:</p>
+<ul class="simple">
+<li>simplex_projection.euclidean_proj_simplex</li>
+</ul>
+</dd></dl>
+
+<dl class="function">
 <dt id="psf_learning_utils.field_reconstruction">
 <code class="descclassname">psf_learning_utils.</code><code class="descname">field_reconstruction</code><span class="sig-paren">(</span><em>P_stack</em>, <em>shap</em>, <em>supp</em>, <em>neighbors_graph</em>, <em>weights_neighbors</em>, <em>A</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/psf_learning_utils.html#field_reconstruction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#psf_learning_utils.field_reconstruction" title="Permalink to this definition">¶</a></dt>
 <dd><p>Computes monochromatic PSFs from eigenTransport plans.</p>
@@ -94,6 +104,95 @@ no parameters were supplied.</dd>
 <dt id="psf_learning_utils.transport_plan_projections">
 <code class="descclassname">psf_learning_utils.</code><code class="descname">transport_plan_projections</code><span class="sig-paren">(</span><em>P</em>, <em>shap</em>, <em>supp</em>, <em>neighbors_graph</em>, <em>weights_neighbors</em>, <em>spectrum=None</em>, <em>indices=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/psf_learning_utils.html#transport_plan_projections"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#psf_learning_utils.transport_plan_projections" title="Permalink to this definition">¶</a></dt>
 <dd><p>Computes monochromatic components (displacement interpolation steps) from transport plan.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="psf_learning_utils.transport_plan_projections_field">
+<code class="descclassname">psf_learning_utils.</code><code class="descname">transport_plan_projections_field</code><span class="sig-paren">(</span><em>P_stack</em>, <em>shap</em>, <em>supp</em>, <em>neighbors_graph</em>, <em>weights_neighbors</em>, <em>spectrums</em>, <em>A</em>, <em>flux</em>, <em>sig</em>, <em>ker</em>, <em>D</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/psf_learning_utils.html#transport_plan_projections_field"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#psf_learning_utils.transport_plan_projections_field" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reconstruct all stars in the field from current eigen transport plans.</p>
+<p>Calls:</p>
+<ul class="simple">
+<li><a class="reference internal" href="#psf_learning_utils.transport_plan_projections" title="psf_learning_utils.transport_plan_projections"><code class="xref py py-func docutils literal notranslate"><span class="pre">psf_learning_utils.transport_plan_projections()</span></code></a></li>
+<li><a class="reference internal" href="utils.html#utils.decim" title="utils.decim"><code class="xref py py-func docutils literal notranslate"><span class="pre">utils.decim()</span></code></a></li>
+</ul>
+</dd></dl>
+
+<dl class="function">
+<dt id="psf_learning_utils.transport_plan_projections_field_coeff_transpose">
+<code class="descclassname">psf_learning_utils.</code><code class="descname">transport_plan_projections_field_coeff_transpose</code><span class="sig-paren">(</span><em>im_stack</em>, <em>supp</em>, <em>neighbors_graph</em>, <em>weights_neighbors</em>, <em>spectrums</em>, <em>P_stack</em>, <em>flux</em>, <em>sig</em>, <em>ker_rot</em>, <em>D</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/psf_learning_utils.html#transport_plan_projections_field_coeff_transpose"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#psf_learning_utils.transport_plan_projections_field_coeff_transpose" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adjoint operator to <a class="reference internal" href="#psf_learning_utils.transport_plan_projections_field" title="psf_learning_utils.transport_plan_projections_field"><code class="xref py py-func docutils literal notranslate"><span class="pre">psf_learning_utils.transport_plan_projections_field()</span></code></a>
+(with regards to weights).</p>
+<p>Calls:</p>
+<ul class="simple">
+<li><a class="reference internal" href="utils.html#utils.transpose_decim" title="utils.transpose_decim"><code class="xref py py-func docutils literal notranslate"><span class="pre">utils.transpose_decim()</span></code></a></li>
+<li><a class="reference internal" href="#psf_learning_utils.transport_plan_projections" title="psf_learning_utils.transport_plan_projections"><code class="xref py py-func docutils literal notranslate"><span class="pre">psf_learning_utils.transport_plan_projections()</span></code></a></li>
+</ul>
+</dd></dl>
+
+<dl class="function">
+<dt id="psf_learning_utils.transport_plan_projections_field_marg">
+<code class="descclassname">psf_learning_utils.</code><code class="descname">transport_plan_projections_field_marg</code><span class="sig-paren">(</span><em>P_stack</em>, <em>shap</em>, <em>supp</em>, <em>neighbors_graph</em>, <em>weights_neighbors</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/psf_learning_utils.html#transport_plan_projections_field_marg"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#psf_learning_utils.transport_plan_projections_field_marg" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes marginals of a set of transport plans.</p>
+<p>Calls:</p>
+<ul class="simple">
+<li><a class="reference internal" href="#psf_learning_utils.transport_plan_projections" title="psf_learning_utils.transport_plan_projections"><code class="xref py py-func docutils literal notranslate"><span class="pre">psf_learning_utils.transport_plan_projections()</span></code></a></li>
+</ul>
+</dd></dl>
+
+<dl class="function">
+<dt id="psf_learning_utils.transport_plan_projections_field_marg_transpose">
+<code class="descclassname">psf_learning_utils.</code><code class="descname">transport_plan_projections_field_marg_transpose</code><span class="sig-paren">(</span><em>im_stack</em>, <em>shap</em>, <em>supp</em>, <em>neighbors_graph</em>, <em>weights_neighbors</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/psf_learning_utils.html#transport_plan_projections_field_marg_transpose"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#psf_learning_utils.transport_plan_projections_field_marg_transpose" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adjoint operator to <a class="reference internal" href="#psf_learning_utils.transport_plan_projections_field_marg" title="psf_learning_utils.transport_plan_projections_field_marg"><code class="xref py py-func docutils literal notranslate"><span class="pre">transport_plan_projections_field_marg()</span></code></a>.</p>
+<p>Calls:</p>
+<ul class="simple">
+<li><a class="reference internal" href="#psf_learning_utils.transport_plan_projections_transpose" title="psf_learning_utils.transport_plan_projections_transpose"><code class="xref py py-func docutils literal notranslate"><span class="pre">psf_learning_utils.transport_plan_projections_transpose()</span></code></a></li>
+</ul>
+</dd></dl>
+
+<dl class="function">
+<dt id="psf_learning_utils.transport_plan_projections_field_transpose">
+<code class="descclassname">psf_learning_utils.</code><code class="descname">transport_plan_projections_field_transpose</code><span class="sig-paren">(</span><em>im_stack</em>, <em>supp</em>, <em>neighbors_graph</em>, <em>weights_neighbors</em>, <em>spectrums</em>, <em>A</em>, <em>flux</em>, <em>sig</em>, <em>ker_rot</em>, <em>D</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/psf_learning_utils.html#transport_plan_projections_field_transpose"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#psf_learning_utils.transport_plan_projections_field_transpose" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adjoint operator to <a class="reference internal" href="#psf_learning_utils.transport_plan_projections_field" title="psf_learning_utils.transport_plan_projections_field"><code class="xref py py-func docutils literal notranslate"><span class="pre">psf_learning_utils.transport_plan_projections_field()</span></code></a>
+(with regards to transport plans).</p>
+<p>Calls:</p>
+<ul class="simple">
+<li><a class="reference internal" href="utils.html#utils.transpose_decim" title="utils.transpose_decim"><code class="xref py py-func docutils literal notranslate"><span class="pre">utils.transpose_decim()</span></code></a></li>
+<li><a class="reference internal" href="#psf_learning_utils.transport_plan_projections_transpose_2" title="psf_learning_utils.transport_plan_projections_transpose_2"><code class="xref py py-func docutils literal notranslate"><span class="pre">psf_learning_utils.transport_plan_projections_transpose_2()</span></code></a></li>
+</ul>
+</dd></dl>
+
+<dl class="function">
+<dt id="psf_learning_utils.transport_plan_projections_flat_field">
+<code class="descclassname">psf_learning_utils.</code><code class="descname">transport_plan_projections_flat_field</code><span class="sig-paren">(</span><em>P_stack</em>, <em>supp</em>, <em>A</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/psf_learning_utils.html#transport_plan_projections_flat_field"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#psf_learning_utils.transport_plan_projections_flat_field" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method returns linear combinations of the slices of the input cube
+on the support, following the mixing matrix A</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="psf_learning_utils.transport_plan_projections_flat_field_transpose">
+<code class="descclassname">psf_learning_utils.</code><code class="descname">transport_plan_projections_flat_field_transpose</code><span class="sig-paren">(</span><em>P_mat</em>, <em>supp</em>, <em>A</em>, <em>shap</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/psf_learning_utils.html#transport_plan_projections_flat_field_transpose"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#psf_learning_utils.transport_plan_projections_flat_field_transpose" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adjoint operator to :func:<a href="#id1"><span class="problematic" id="id2">`</span></a>transport_plan_projections_flat_field`(with
+regards to transport plans).</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="psf_learning_utils.transport_plan_projections_flat_field_transpose_coeff">
+<code class="descclassname">psf_learning_utils.</code><code class="descname">transport_plan_projections_flat_field_transpose_coeff</code><span class="sig-paren">(</span><em>P_mat</em>, <em>P_stack</em>, <em>supp</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/psf_learning_utils.html#transport_plan_projections_flat_field_transpose_coeff"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#psf_learning_utils.transport_plan_projections_flat_field_transpose_coeff" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adjoint operator to <a class="reference internal" href="#psf_learning_utils.transport_plan_projections_flat_field" title="psf_learning_utils.transport_plan_projections_flat_field"><code class="xref py py-func docutils literal notranslate"><span class="pre">transport_plan_projections_flat_field()</span></code></a> (with
+regards to weights).</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="psf_learning_utils.transport_plan_projections_transpose">
+<code class="descclassname">psf_learning_utils.</code><code class="descname">transport_plan_projections_transpose</code><span class="sig-paren">(</span><em>im</em>, <em>supp</em>, <em>neighbors_graph</em>, <em>weights_neighbors</em>, <em>spectrum=None</em>, <em>indices=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/psf_learning_utils.html#transport_plan_projections_transpose"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#psf_learning_utils.transport_plan_projections_transpose" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adjoint operator to <a class="reference internal" href="#psf_learning_utils.transport_plan_projections" title="psf_learning_utils.transport_plan_projections"><code class="xref py py-func docutils literal notranslate"><span class="pre">transport_plan_projections()</span></code></a></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="psf_learning_utils.transport_plan_projections_transpose_2">
+<code class="descclassname">psf_learning_utils.</code><code class="descname">transport_plan_projections_transpose_2</code><span class="sig-paren">(</span><em>im_stack</em>, <em>supp</em>, <em>neighbors_graph</em>, <em>weights_neighbors</em>, <em>spectrum</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/psf_learning_utils.html#transport_plan_projections_transpose_2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#psf_learning_utils.transport_plan_projections_transpose_2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the adjoint operator of the displacement inteerpolation for a
+given transport plan.</p>
 </dd></dl>
 
 </div>
