@@ -7,7 +7,7 @@ from numpy import arange
 import numpy as np
 import time
 
-[output_stack,dec_stack,sig,flux,spectrums,field_pos] = pickle.load( open( "../Data/sim_starsx100_10dB.sav", "rb" ) )
+[output_stack,dec_stack,sig,flux,spectrums,field_pos] = pickle.load( open( "/Users/rararipe/Documents/Data/LambdaRCA/sim_starsx100_10dB.sav", "rb" ) )
 wvl = arange(0,dec_stack[0].shape[2])
 
 
