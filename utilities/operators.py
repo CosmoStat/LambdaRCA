@@ -71,6 +71,8 @@ class transport_plan_lin_comb(object):
         return transport_plan_projections_flat_field_transpose(data,self.supp,self.A,self.shape)
 
     def adj_op_wdl(self, data):
+        """get back D_stack
+        """
         return transport_plan_projections_flat_field_transpose_wdl(data,self.A)
 
 
@@ -210,6 +212,10 @@ class transport_plan_marg_wavelet(object):
         return transport_plan_projections_field_marg_transpose(filter_convolve_stack(data, self.filters, filter_rot=True, method=self.method),
                                                         self.shape,self.supp,self.neighbors_graph,self.weights_neighbors)
 
+    def adj_op_wdl(self, data):
+        # returns atoms used to compute data
+        return self.grad.get_atoms()
+
 
 class transport_plan_lin_comb_wavelet(object):
     """transport_plan_lin_comb_wavelet class
@@ -218,7 +224,8 @@ class transport_plan_lin_comb_wavelet(object):
 
     """
 
-    def __init__(self,A,supp,weights_neighbors,neighbors_graph,shap,w_stack,C,gamma,n_iter_sink,wavelet_opt=None):
+    def __init__(self,polychrom_grad,A,supp,weights_neighbors,neighbors_graph,shap,w_stack,C,gamma,n_iter_sink,wavelet_opt=None):
+        self.grad = polychrom_grad
         self.lin_comb = transport_plan_lin_comb(A, supp,shap)
         self.marg_wvl = transport_plan_marg_wavelet(supp,weights_neighbors,neighbors_graph,shap,w_stack,C,gamma,n_iter_sink,wavelet_opt=wavelet_opt)
         self.mat_norm = np.sqrt(self.lin_comb.mat_norm**2+self.marg_wvl.mat_norm**2)
@@ -235,3 +242,6 @@ class transport_plan_lin_comb_wavelet(object):
 
     def adj_op(self, data):
         return self.lin_comb.adj_op(data[0])+self.marg_wvl.adj_op(data[1])
+
+    def adj_op_wdl(self, data):
+        return self.lin_comb.adj_op_wdl(data[0])+self.marg_wvl.adj_op(data[1])

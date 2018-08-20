@@ -11134,7 +11134,7 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
     # Dual variable related linear operators instances
     dual_var_coeff = zeros((supp.shape[0],nb_im))
     if wvl_en and pos_en:
-        lin_com = lambdaops.transport_plan_lin_comb_wavelet(A,supp,weights_neighbors,neighbors_graph,shap,w_stack,C,gamma,n_iter_sink,wavelet_opt=wvl_opt)
+        lin_com = lambdaops.transport_plan_lin_comb_wavelet(polychrom_grad,A,supp,weights_neighbors,neighbors_graph,shap,w_stack,C,gamma,n_iter_sink,wavelet_opt=wvl_opt)
     else:
         if wvl_en:
             lin_com = lambdaops.transport_plan_marg_wavelet(supp,weights_neighbors,neighbors_graph,shap,wavelet_opt=wvl_opt)
@@ -11224,7 +11224,7 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
 
 
     import pdb; pdb.set_trace()  # breakpoint e92f3226 //
-    
+
 
     obs_est = polychrom_grad.MX(P_stack)
     res = im_stack - obs_est

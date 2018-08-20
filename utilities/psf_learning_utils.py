@@ -1850,7 +1850,7 @@ def transport_plan_projections_wdl(Mtx,shap,w_stack,gamma,C,n_iter_sink,spectrum
     if spectrum is None: #yes
         spectrum = ones((nb_proj,))
     D_stack = np.expand_dims(Mtx, axis=2) #Theano_bary takes a cubic as input
-    only_barys_ = ot.Theano_bary(D_stack,w_stack,gamma,C,n_iter_sink)
+    only_barys_ = ot.Theano_bary(D_stack,w_stack,gamma,C,n_iter_sink) # TO DO: move this to next for loop. Avoid computation of non used barys.
 
     im_proj = zeros((shap[0],shap[1],nb_proj)) # use append here in the future when we are sure no unsorted indices are passed
     for i in range(0,nb_proj):#doesn't account for repetition in each wvl, in opposition with transport_plan_projections
@@ -1862,8 +1862,18 @@ def transport_plan_projections_wdl(Mtx,shap,w_stack,gamma,C,n_iter_sink,spectrum
 
 
 def transport_plan_projections_transpose(im,supp,neighbors_graph,weights_neighbors,spectrum=None,indices=None):
+    """
+
+        PARAMETERS
+        ----------
+        im: <42,42>
+
+
+    """
 
     from numpy import zeros,squeeze,sqrt,add,repeat
+
+
 
     shap = im.shape
     if indices is None:
@@ -1883,6 +1893,16 @@ def transport_plan_projections_transpose(im,supp,neighbors_graph,weights_neighbo
                                 *im[neighbors_graph[:,0,:,indices[i]],neighbors_graph[:,1,:,indices[i]]])
     return squeeze(P_out)
 
+
+
+# def transport_plan_projections_transpose_wdl(im):
+#     """
+#         When called by transport_plan_projections_field_marg_transpose, takes the barycenter at the first wvl for a
+#         particular component and returns the corresponding atoms for this component.
+#         PARAMETERS
+#         ----------
+#         im: <42,42>
+#     """
 
 
 def transport_plan_projections_field_marg(P_stack,shap,supp,neighbors_graph,weights_neighbors):
@@ -1913,7 +1933,7 @@ def transport_plan_projections_field_marg(P_stack,shap,supp,neighbors_graph,weig
 
 def transport_plan_projections_field_marg_wdl(Mtx_stack,shap,w_stack,gamma,C,n_iter_sink):
     """Computes monochromatic components (displacement interpolation steps) from dictionary.
-        Obs: Mtx here is the gradient of the loos func wrt the atoms when it's called by transport_plan_projections_field_marg,
+        Obs: Mtx here is the gradient of the loss func wrt the atoms when it's called by transport_plan_projections_field_marg,
         but in other references  Mtx could be the dictionary itself and not the gradient. I didn't check yet.
 
         PARAMETERS
@@ -1921,6 +1941,11 @@ def transport_plan_projections_field_marg_wdl(Mtx_stack,shap,w_stack,gamma,C,n_i
         Mtx_stack: <42X42,2,5>
         shap: (42,42)
         w_stack: <100,2>
+
+
+        OUTPUT
+        ------
+        output: <42,42,5> image projection in the first wvl for every component (not multiplied by SED)
     """
     nb_plans = Mtx_stack.shape[-1]
     output = zeros((shap[0],shap[1],nb_plans))
@@ -1934,6 +1959,13 @@ def transport_plan_projections_field_marg_wdl(Mtx_stack,shap,w_stack,gamma,C,n_i
 
 
 def transport_plan_projections_field_marg_transpose(im_stack,shap,supp,neighbors_graph,weights_neighbors):
+    """
+        PARAMETERS
+        ----------
+        im_stack: <42,42,5> y prox in shape of image, projection into the first wvl.
+
+    """
+
     nb_plans = im_stack.shape[-1]
     output = zeros((shap[0]*shap[1],shap[0]*shap[1],nb_plans))
     for i in range(0,nb_plans):

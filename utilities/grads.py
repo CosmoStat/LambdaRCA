@@ -95,6 +95,9 @@ class polychrom_eigen_psf(GradParent, PowerMethod):
         return self._current_rec
 
     def MtX_wdl(self,x):
+        """
+            x: input data array, a cube of 2D images
+        """
         self._current_rec_wdl = transport_plan_projections_field_transpose_wdl(x,self.shape,self.A, self.flux, self.sig, self.ker,self.spectrums, self.D_stack,self.w_stack,self.C,self.gamma,self.n_iter_sink)
         #[Mx_stack,Mtx,barys_stack]
 
@@ -103,7 +106,7 @@ class polychrom_eigen_psf(GradParent, PowerMethod):
 
     def MX_wdl(self,x):
         #Do the if self._current_rec_wdl==None thing after finding out wich one is called first in the Condat iterations, MX or MtX        
-        self._current_rec_wdl = transport_plan_projections_field_transpose_wdl(x,self.shape,self.A, self.flux, self.sig, self.ker,self.spectrums, self.D_stack,self.w_stack,self.C,self.gamma,self.n_iter_sink)
+        self._current_rec_wdl = transport_plan_projections_field_transpose_wdl(self.obs_data,self.shape,self.A, self.flux, self.sig, self.ker,self.spectrums, x,self.w_stack,self.C,self.gamma,self.n_iter_sink)
 
         return self._current_rec_wdl[0]
 
@@ -145,6 +148,7 @@ class polychrom_eigen_psf(GradParent, PowerMethod):
         ----------
         x : np.ndarray
             Input data array
+            current transport plans
         Returns
         -------
         np.ndarray gradient value
@@ -157,8 +161,14 @@ class polychrom_eigen_psf(GradParent, PowerMethod):
 
 
     def get_grad_wdl(self,x):
-        self.grad = self.MtX_wdl(self.MX_wdl(x) - self.obs_data)
+        self.D_stack = x 
+        self.grad = self.MtX_wdl(self,x)
 
+    def get_atoms(self):
+        return self.D_stack
+
+    def get_current_grad(self):
+        return self.grad
 
 class polychrom_eigen_psf_coeff(GradBasic, PowerMethod):
     """Polychromatic eigen PSFs class
