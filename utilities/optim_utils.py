@@ -24,6 +24,8 @@ import modopt.opt.proximity as prox
 import proxs as lambdaprox
 import modopt.opt.algorithms as optimalg
 from modopt.opt.linear import Identity
+sys.path.append('../baryOT')
+import OT_bary as ot
 
 try:
     import pyct
@@ -11053,6 +11055,30 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
     neighbors_graph,weights_neighbors,cent,coord_map,knn = psf_learning_utils.full_displacement(shap,supp,t,\
     pol_en=True,cent=None,theta_param=1,pol_mod=True,coord_map=None,knn=None)
 
+
+    print "------------------ WASS parameters initialization ------------------"
+    #initialize multi_comp D_stack <42x42,2,5> <p,nb_atoms,nb_comp> and the weights (t,1-t) w_stack <100,2> <nb_wvl,nb_atoms>
+    nb_atoms = 2
+    p = shap[0]*shap[1] # number of pixels
+    feat_init = "random"
+    D_stack = []
+    for i in range(nb_comp):
+        if feat_init == "uniform":
+            Ys = np.ones((p,nb_atoms)) / p
+        elif feat_init == "random":
+            Ys = np.random.rand(p,nb_atoms) #<2,42x42>
+            Ys = (Ys.T / np.sum(Ys, axis = 1)).T #normalize the total of mass in each line
+        D_stack.append(Ys)
+    D_stack = np.array(D_stack)
+    D_stack = D_stack.swapaxes(0,1).swapaxes(1,2)
+    w_stack = np.array([t + 1e-10, 1 - t - 1e-10]).T
+
+    gamma = 0.3
+    n_iter_sink = 13
+    C = ot.EuclidCost(shap[0],shap[1])
+
+
+
     print "------------------- Forward operator parameters estimation ------------------------"
     centroids = None
     if sig is None:
@@ -11083,25 +11109,32 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
     print "------------- Coeff init ------------"
     A,comp,cube_est = utils.cube_svd(im_stack,nb_comp=nb_comp)
 
+
+
+
+
+
     i=0
     print " --------- Optimization instances setting ---------- "
 
     # Data fidelity related instances
-    polychrom_grad = grad.polychrom_eigen_psf(im_stack, supp, neighbors_graph, \
-                weights_neighbors, spectrums, A, flux, sig, ker, ker_rot, D)
+    polychrom_grad = grad.polychrom_eigen_psf(im_stack, supp, neighbors_graph,weights_neighbors, spectrums, A, flux, sig, ker, ker_rot,D_stack,w_stack,C,gamma,n_iter_sink,D)
+
 
     if graph_cons_en:
         polychrom_grad_coeff = grad.polychrom_eigen_psf_coeff_graph(im_stack, supp, neighbors_graph, \
-                weights_neighbors, spectrums, P_stack, flux, sig, ker, ker_rot, D, basis)
+                weights_neighbors, spectrums, P_stack, flux, sig, ker, ker_rot, D, basis,D_stack,w_stack,C,gamma,n_iter_sink)
     else:
         polychrom_grad_coeff = grad.polychrom_eigen_psf_coeff(im_stack, supp, neighbors_graph, \
                 weights_neighbors, spectrums, P_stack, flux, sig, ker, ker_rot, D)
 
 
+
+
     # Dual variable related linear operators instances
     dual_var_coeff = zeros((supp.shape[0],nb_im))
     if wvl_en and pos_en:
-        lin_com = lambdaops.transport_plan_lin_comb_wavelet(A,supp,weights_neighbors,neighbors_graph,shap,wavelet_opt=wvl_opt)
+        lin_com = lambdaops.transport_plan_lin_comb_wavelet(A,supp,weights_neighbors,neighbors_graph,shap,w_stack,C,gamma,n_iter_sink,wavelet_opt=wvl_opt)
     else:
         if wvl_en:
             lin_com = lambdaops.transport_plan_marg_wavelet(supp,weights_neighbors,neighbors_graph,shap,wavelet_opt=wvl_opt)
@@ -11114,9 +11147,29 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
     # Proximity operators related instances
     id_prox = Identity()
     if wvl_en and pos_en:
-        noise_map = get_noise_arr(lin_com.op(polychrom_grad.MtX(im_stack))[1])
-        dual_var_plan = np.array([zeros((supp.shape[0],nb_im)),zeros(noise_map.shape)])
-        dual_prox_plan = lambdaprox.simplex_threshold(lin_com, nsig*noise_map,pos_en=(not simplex_en))
+        # testMX = polychrom_grad.MX_wdl(im_stack)
+        # testMtX = polychrom_grad.MtX_wdl(im_stack)
+        # outputs for Mx:
+        # barys_stack: <100,5,100,42x42>, <nb_obj,nb_comp,nb_wvl,42x42>
+        # Mx_stack: <100,21,21> star estimated for each object
+        # Mtx: <42x42,2,5>, <42x42,nb_atoms,nb_comp> gradient of loss function with respect to each atom for each component
+        
+        # temp2 = lin_com.op(polychrom_grad.MtX(im_stack))[1] 
+        # temp3 = lin_com.op_wdl(polychrom_grad.MtX_wdl(im_stack)) #(1, 22, 1, 22, 3) the first 1 is extra
+
+        noise_map_wdl = get_noise_arr(lin_com.op_wdl(polychrom_grad.MtX_wdl(im_stack))[1]) 
+        noise_map = get_noise_arr(lin_com.op(polychrom_grad.MtX(im_stack))[1]) 
+
+        ## lin_com.op(.)[1] computes the "image"(only the gradient of transport plan is used) projection to the first wvl
+        ## in each component in the starlet domain <42,1,42,5>. The one is due to the fact that only one filter is used.
+
+        dual_var_plan = np.array([zeros((supp.shape[0],nb_im)),zeros(noise_map.shape)]) # dual_var_plan[0] = linear.op[0] dual_var_plan[1] = get_nois_array(linear.op[1])
+        dual_var_plan_wdl = np.array([zeros((p,nb_atoms,nb_im)),zeros(noise_map_wdl.shape)]) 
+
+        dual_prox_plan = lambdaprox.simplex_threshold(lin_com, nsig*noise_map,pos_en=(not simplex_en)) #initializing ok
+        dual_prox_plan_wdl = lambdaprox.simplex_threshold(lin_com, nsig*noise_map_wdl,pos_en=(not simplex_en)) #initializing ok
+
+
     else:
         if wvl_en:
             # Noise estimation
@@ -11130,7 +11183,7 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
             else:
                 dual_prox_plan = prox.Positivity()
 
-    if graph_cons_en:
+    if graph_cons_en:#yes
         iter_func = lambda x: floor(sqrt(x))
         prox_coeff = lambdaprox.KThreshold(iter_func)
     else:
@@ -11139,7 +11192,7 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
         else:
             dual_prox_coeff = prox.Positivity()
 
-    # ---- (Re)Setting hyperparameters
+    # ---- (Re)Setting hyperparameters (innofensive)
     delta  = (polychrom_grad.inv_spec_rad**(-1)/2)**2 + 4*lin_com.mat_norm**2
     w = 0.9
     sigma_P = w*(np.sqrt(delta)-polychrom_grad.inv_spec_rad**(-1)/2)/(2*lin_com.mat_norm**2)
@@ -11149,14 +11202,29 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
     # Cost function instance
     cost_op = costObj([polychrom_grad])
 
+
     condat_min = optimalg.Condat(P_stack, dual_var_plan, polychrom_grad, id_prox, dual_prox_plan, lin_com, cost=cost_op,\
                  rho=rho_P,  sigma=sigma_P, tau=tau_P, rho_update=None, sigma_update=None,
                  tau_update=None, auto_iterate=False)
+
+    condat_min_wdl = optimalg.Condat(D_stack, dual_var_plan_wdl, polychrom_grad, id_prox, dual_prox_plan_wdl, lin_com, cost=cost_op,\
+                 rho=rho_P,  sigma=sigma_P, tau=tau_P, rho_update=None, sigma_update=None,
+                 tau_update=None, auto_iterate=False)
+
+
+
+
+
+
     print "------------------- Transport plans estimation ------------------"
 
     condat_min.iterate(max_iter=nb_subiter) # ! actually runs optimisation
     P_stack = condat_min.x_final
     dual_var_plan = condat_min.y_final
+
+
+    import pdb; pdb.set_trace()  # breakpoint e92f3226 //
+    
 
     obs_est = polychrom_grad.MX(P_stack)
     res = im_stack - obs_est

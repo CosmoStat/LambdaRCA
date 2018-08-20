@@ -1,6 +1,6 @@
 import numpy as np
 from psf_learning_utils import transport_plan_projections_field,transport_plan_projections_field_transpose,\
-transport_plan_projections_field_coeff_transpose
+transport_plan_projections_field_coeff_transpose,transport_plan_projections_field_transpose_wdl
 from modopt.opt.gradient import GradParent, GradBasic
 from modopt.math.matrix import PowerMethod
         
@@ -30,7 +30,10 @@ class polychrom_eigen_psf(GradParent, PowerMethod):
     """
 
     def __init__(self, data, supp, neighbors_graph, weights_neighbors, spectrums, \
-                A, flux, sig, ker, ker_rot, D, data_type=float):
+                A, flux, sig, ker, ker_rot,D_stack,w_stack,C,gamma,n_iter_sink,D, data_type=float):
+
+        #polychrom_grad
+
         self._grad_data_type = data_type
         self.obs_data = data
         self.op = self.MX 
@@ -47,10 +50,17 @@ class polychrom_eigen_psf(GradParent, PowerMethod):
         self.sig = sig
         self.ker = ker
         self.ker_rot  = ker_rot
+        self.D_stack = D_stack
+        self.w_stack = w_stack
+        self.C = C
+        self.gamma = gamma
+        self.n_iter_sink = n_iter_sink
+     
         PowerMethod.__init__(self, self.trans_op_op, (np.prod(self.shape),np.prod(self.shape),A.shape[0]))
         print " > SPECTRAL RADIUS:\t{}".format(self.spec_rad)
         
         self._current_rec = None # stores latest application of self.MX
+        self._current_rec_wdl = None # stores latest application of self.MX_wdl (that includes MX and MtX)
 
     def set_A(self,A_new,pwr_en=True):
         self.A = np.copy(A_new)
@@ -83,6 +93,19 @@ class polychrom_eigen_psf(GradParent, PowerMethod):
         self._current_rec = transport_plan_projections_field(x,self.shape,self.supp,self.neighbors_graph\
                 ,self.weights_neighbors,self.spectrums,self.A,self.flux,self.sig,self.ker,self.D)
         return self._current_rec
+
+    def MtX_wdl(self,x):
+        self._current_rec_wdl = transport_plan_projections_field_transpose_wdl(x,self.shape,self.A, self.flux, self.sig, self.ker,self.spectrums, self.D_stack,self.w_stack,self.C,self.gamma,self.n_iter_sink)
+        #[Mx_stack,Mtx,barys_stack]
+
+        return self._current_rec_wdl[1]
+
+
+    def MX_wdl(self,x):
+        #Do the if self._current_rec_wdl==None thing after finding out wich one is called first in the Condat iterations, MX or MtX        
+        self._current_rec_wdl = transport_plan_projections_field_transpose_wdl(x,self.shape,self.A, self.flux, self.sig, self.ker,self.spectrums, self.D_stack,self.w_stack,self.C,self.gamma,self.n_iter_sink)
+
+        return self._current_rec_wdl[0]
 
     def MtX(self, x):
         """MtX
@@ -131,6 +154,10 @@ class polychrom_eigen_psf(GradParent, PowerMethod):
         """
 
         self.grad = self.MtX(self.MX(x) - self.obs_data)
+
+
+    def get_grad_wdl(self,x):
+        self.grad = self.MtX_wdl(self.MX_wdl(x) - self.obs_data)
 
 
 class polychrom_eigen_psf_coeff(GradBasic, PowerMethod):
@@ -243,7 +270,8 @@ class polychrom_eigen_psf_coeff(GradBasic, PowerMethod):
             print " > MIN(X):\t{}".format(np.min(x))
             print " > Current cost: {}".format(cost_val)
         return cost_val
-                
+
+
     def get_grad(self, x):
         """Get the gradient step
         This method calculates the gradient step from the input data
@@ -260,6 +288,9 @@ class polychrom_eigen_psf_coeff(GradBasic, PowerMethod):
         """
 
         self.grad = self.MtX(self.MX(x) - self.obs_data)
+
+    
+                
 
 
 class polychrom_eigen_psf_coeff_graph(GradBasic, PowerMethod):
@@ -288,7 +319,9 @@ class polychrom_eigen_psf_coeff_graph(GradBasic, PowerMethod):
     """
 
     def __init__(self, data, supp, neighbors_graph, weights_neighbors, spectrums, \
-                P, flux, sig, ker, ker_rot, D, basis, data_type=float):
+                P, flux, sig, ker, ker_rot, D, basis,D_stack,w_stack,C,gamma,n_iter_sink, data_type=float):
+
+    #polychrom_grad_coeff
 
         self._grad_data_type = data_type
         self.obs_data = data
@@ -307,6 +340,11 @@ class polychrom_eigen_psf_coeff_graph(GradBasic, PowerMethod):
         self.ker = ker
         self.ker_rot  = ker_rot
         self.basis = basis
+        self.D_stack = D_stack
+        self.w_stack = w_stack
+        self.C = C
+        self.gamma = gamma
+        self.n_iter_sink = n_iter_sink
         
         PowerMethod.__init__(self, self.trans_op_op, (P.shape[-1],self.basis.shape[0]))
 

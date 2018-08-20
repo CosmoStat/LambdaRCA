@@ -1,6 +1,6 @@
 from modopt.signal.positivity import positive
 from utils import lineskthresholding
-from psf_learning_utils import columns_wise_simplex_proj
+from psf_learning_utils import columns_wise_simplex_proj,columns_wise_simplex_proj_wdl
 from modopt.opt.proximity import SparseThreshold
 import numpy as np
 
@@ -88,10 +88,18 @@ class Simplex(object):
         np.ndarray all positive elements from input data
 
         """
+
         if self.pos_en:
             return positive(data)
-        else:
+        else:#yes
             return columns_wise_simplex_proj(data,mass=self.mass)
+
+
+    def op_wdl(self, data, **kwargs):
+        if self.pos_en:
+            return positive(data)
+        else:#yes
+            return columns_wise_simplex_proj_wdl(data,mass=self.mass)       
             
 class simplex_threshold(object):
     """ Simplex Threshold proximity operator
@@ -119,4 +127,5 @@ class simplex_threshold(object):
         self.thresh = SparseThreshold(self.linop, weights)
 
     def op(self, data, extra_factor=1.0):
-        return np.array([self.simplex.op(data[0]),self.thresh.op(data[1],extra_factor=extra_factor)])
+
+        return np.array([self.simplex.op(data[0]),self.thresh.op(data[1],extra_factor=extra_factor)]) #data[0] is the dual transport plan important advection points

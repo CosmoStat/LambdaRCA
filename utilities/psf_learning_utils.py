@@ -12,6 +12,8 @@ sys.path.append('../../Github/python_lib/python/psf')
 sys.path.append('../utilities')
 import isap
 from numpy.random import randn
+sys.path.append('../baryOT')
+import OT_bary as ot
 
 
 def stack_wavelets_transform(stack,opt=['-t2','-n2'],kmad=5):
@@ -1788,28 +1790,79 @@ def full_displacement(shap,supp,t,pol_en=False,cent=None,theta_param=1,pol_mod=F
 
 
 
+
+
+
+
 def transport_plan_projections(P,shap,supp,neighbors_graph,weights_neighbors,spectrum=None,indices=None):
     """ Computes monochromatic components (displacement interpolation steps) from transport plan.
-    
+        
+        PARAMETERS when called by transport_plan_projections_field_marg 
+        ----------
+        P: <42x42,42x42> transport plan for a given component(when called by lin_com.op(), the gradient of the loss function with respect to the transport plans)
+        shap: (42,42)
+        supp: <17042,2> every line is a pair of non-zero indices of diafonally dominated matrix
+        neighbors_graph: <170408,2,4,100>int, (possible points?, 2 coordinates (cartesian, I guess),4 neighbors, for each wvl)
+        weights_neighbors: <170408,4,100>float, weights for every neighbor in each wvl for every pixel (?). They are the w in F'(Gamma)?
+        spectrum: None
+        indices: [0]
+
+        OUTPUT
+        ------
+        im_proj: <42,42,1> image projection in each wvl for a given eigen transport plan. In this case, only for the first wvl.
+
     """
+
     from numpy import zeros,int,squeeze,add,ones
 
-    if indices is None:
-        nb_proj = neighbors_graph.shape[3]
-        indices = arange(0,nb_proj)
+    if indices is None: 
+        nb_proj = neighbors_graph.shape[3] # projection in 100 wvls
+        indices = arange(0,nb_proj) # index for every wvl
     else:
-        nb_proj = size(indices)
-    if spectrum is None:
+        nb_proj = size(indices) # 1 projection only at the first wvl
+    if spectrum is None: #yes
         spectrum = ones((nb_proj,))
-    im_proj = zeros((shap[0],shap[1],nb_proj))
+    im_proj = zeros((shap[0],shap[1],nb_proj)) #image projected in every wvl <42,42,100>
     siz_supp = neighbors_graph.shape[0]
-    for i in range(0,nb_proj):
+    for i in range(0,nb_proj): #if indices has elements with values greater than its size thant we would get error. So the elements are either the indices with different orders or repeated indices, but I don't see why.
         add.at(im_proj[:,:,indices[i]],(neighbors_graph[:,0,:,indices[i]],neighbors_graph[:,1,:,indices[i]]),\
         spectrum[indices[i]]*weights_neighbors[:,:,indices[i]]*P[supp[:,0],supp[:,1]].reshape((siz_supp,1)).dot(ones((1,4))))
+    return squeeze(im_proj)
+
+
+
+def transport_plan_projections_wdl(Mtx,shap,w_stack,gamma,C,n_iter_sink,spectrum=None,indices=None):
+    """Computes monochromatic components (displacement interpolation steps) from dictionary.
+        Obs: Mtx here is the gradient of the loos func wrt the atoms when it's called by transport_plan_projections_field_marg,
+        but in other references  Mtx could be the dictionary itself and not the gradient. I didn't check yet.
+
+        PARAMETERS
+        ----------
+        Mtx: <42X42,2>
+        shap: (42,42)
+        w_stack: <100,2>
+    """
+    if indices is None: 
+        nb_proj = neighbors_graph.shape[3] # projection in 100 wvls
+        indices = arange(0,nb_proj) # index for every wvl
+    else:
+        nb_proj = size(indices) # 1 projection only at the first wvl
+    if spectrum is None: #yes
+        spectrum = ones((nb_proj,))
+    D_stack = np.expand_dims(Mtx, axis=2) #Theano_bary takes a cubic as input
+    only_barys_ = ot.Theano_bary(D_stack,w_stack,gamma,C,n_iter_sink)
+
+    im_proj = zeros((shap[0],shap[1],nb_proj)) # use append here in the future when we are sure no unsorted indices are passed
+    for i in range(0,nb_proj):#doesn't account for repetition in each wvl, in opposition with transport_plan_projections
+        im_proj[:,:,indices[i]] = spectrum[indices[i]] * only_barys_[indices[i],:].reshape(shap)
 
     return squeeze(im_proj)
 
+
+
+
 def transport_plan_projections_transpose(im,supp,neighbors_graph,weights_neighbors,spectrum=None,indices=None):
+
     from numpy import zeros,squeeze,sqrt,add,repeat
 
     shap = im.shape
@@ -1830,13 +1883,55 @@ def transport_plan_projections_transpose(im,supp,neighbors_graph,weights_neighbo
                                 *im[neighbors_graph[:,0,:,indices[i]],neighbors_graph[:,1,:,indices[i]]])
     return squeeze(P_out)
 
+
+
 def transport_plan_projections_field_marg(P_stack,shap,supp,neighbors_graph,weights_neighbors):
+    #  """ Computes monochromatic components (displacement interpolation steps) from transport plan.
+        
+    #     PARAMETERS
+    #     ----------
+    #     P_stack: <42x42,42x42,5> eigen transport plans(when called by lin_com.op(), the gradient of the loss function with respect to the transport plans)
+    #     shap: (42,42)
+    #     supp: <17042,2> every line is a pair of non-zero indices of diagonally dominated matrix
+    #     neighbors_graph: <170408,2,4,100>int, (possible points?, 2 coordinates (cartesian, I guess),4 neighbors, for each wvl)
+    #     weights_neighbors: <170408,4,100>float, weights for every neighbor in each wvl for every pixel (?). They are the w in F'(Gamma)?
+
+    #     OUTPUT
+    #     ------
+    #     output: im_proj <42,42,5> image projection in the first wvl for every component (not multiplied by SED)
+
+    # """
+
     nb_plans = P_stack.shape[-1]
     output = zeros((shap[0],shap[1],nb_plans))
     for i in range(0,nb_plans):
         output[:,:,i] = transport_plan_projections(P_stack[:,:,i],shap,supp,neighbors_graph,weights_neighbors,indices=[0])
 
+
+    return squeeze(output)
+
+
+def transport_plan_projections_field_marg_wdl(Mtx_stack,shap,w_stack,gamma,C,n_iter_sink):
+    """Computes monochromatic components (displacement interpolation steps) from dictionary.
+        Obs: Mtx here is the gradient of the loos func wrt the atoms when it's called by transport_plan_projections_field_marg,
+        but in other references  Mtx could be the dictionary itself and not the gradient. I didn't check yet.
+
+        PARAMETERS
+        ----------
+        Mtx_stack: <42X42,2,5>
+        shap: (42,42)
+        w_stack: <100,2>
+    """
+    nb_plans = Mtx_stack.shape[-1]
+    output = zeros((shap[0],shap[1],nb_plans))
+
+
+    for i in range(nb_plans):
+        output[:,:,i] = transport_plan_projections_wdl(Mtx_stack[:,:,i],shap,w_stack,gamma,C,n_iter_sink,indices=[0])
+
+
     return output
+
 
 def transport_plan_projections_field_marg_transpose(im_stack,shap,supp,neighbors_graph,weights_neighbors):
     nb_plans = im_stack.shape[-1]
@@ -1876,14 +1971,76 @@ def transport_plan_projections_field(P_stack,shap,supp,neighbors_graph,weights_n
 
     return stars_est
 
-def transport_plan_projections_flat_field(P_stack,supp,A):
+
+def transport_plan_projections_field_transpose_wdl(data,shap,A, flux, sig, ker,spectrums, D_stack,w_stack,C,gamma,n_iter_sink):
+    """
+        data <21,21,100>
+        D_stack: <42x42,2,5>
+
+        OUTPUT
+        ------
+        barys_stack: <100,5,100,42x42>, <nb_obj,nb_comp,nb_wvl,42x42>
+        Mx_stack: <100,11,11> star estimated for each object
+        Mtx: <42x42,2,5>, <42x42,nb_atoms,nb_comp> gradient of loss function with respect to each atom for each component
+    """
+
+
+    # f = open( "/Users/rararipe/Documents/Data/LambdaRCA_OTbaryv2/barys.pickle", "wb" )
+    # pickle.dump([barysRCA,pos],f)
+    # f.close()
+    nb_im = size(flux)
+    Mx_stack = []
+    barys_stack = []
+    Mtx_total = np.zeros(D_stack.shape)
+    for obj in range(nb_im):
+        [Mx,Mtx,barys] = ot.Theano_wass_MXMtX(D_stack,w_stack,ker[:,:,obj],spectrums[:,obj],A[:,obj],gamma,C,n_iter_sink,sig[obj],flux[obj],data[:,:,obj])
+        Mx_stack.append(Mx)
+        barys_stack.append(barys)
+        Mtx_total += Mtx
+    Mx_stack = np.array(Mx_stack)
+    barys_stack = np.array(barys_stack)
+    return Mx_stack,Mtx,barys_stack
+
+def transport_plan_projections_flat_field(P_stack,supp,A): 
+    """P_stack[supp[:,0],supp[:,1],:] the transported mass between the relevant points
+        
+    """
     return P_stack[supp[:,0],supp[:,1],:].dot(A)
 
+
+def transport_plan_projections_flat_field_wdl(D_stack,A):
+    """
+    I'm not sure on how to write P_stack[supp[:,0],supp[:,1],:].dot(A) in our vesion with wdl barycenters. 
+    OUTPUT
+    ------
+    <42x42,2,100nb_obj> not exactly flat
+    """
+    return D_stack.dot(A)
+
+
+
 def transport_plan_projections_flat_field_transpose(P_mat,supp,A,shap):
+    """
+        PARAMETERS
+        ----------
+        P_mat: <nb of relevant transport coordinates,nb_obj>
+
+        OUTPUT
+        ------
+        P_stack: recovered transport plans
+    """
     temp_mat = P_mat.dot(transpose(A))
     P_stack = zeros((prod(shap),prod(shap),A.shape[0]))
     P_stack[supp[:,0],supp[:,1],:] = temp_mat
+
     return P_stack
+
+
+def transport_plan_projections_flat_field_transpose_wdl(D_mat,A):
+    return D_mat.dot(transpose(A))
+
+
+
 
 def transport_plan_projections_flat_field_transpose_coeff(P_mat,P_stack,supp):
     return transpose(P_stack[supp[:,0],supp[:,1],:]).dot(P_mat)
@@ -2289,17 +2446,29 @@ def prox_pos(Px,mass=1,simplex_en=True):
     return Pout
 
 def columns_wise_simplex_proj(mat,mass=None):
-
     from simplex_projection import euclidean_proj_simplex
     nb_columns = mat.shape[1]
     mat_out = zeros(mat.shape)
-    if mass is None:
-        mass = max(0,((mat*(mat>=0)).sum(axis=0)).mean())
+    if mass is None: #yes
+        mass = max(0,((mat*(mat>=0)).sum(axis=0)).mean()) #add up thourgh the rows, equivalent to all the mass transported. Mean of total mass of all components. What is the max for, everything is already positive because of the boolean.
     if mass>0:
         for i in range(0,nb_columns):
             mat_out[:,i] = euclidean_proj_simplex(mat[:,i],s=mass)
 
     return mat_out
+
+def columns_wise_simplex_proj_wdl(mat,mass=None):
+    from simplex_projection import euclidean_proj_simplex
+    nb_columns = mat.shape[2]
+    nb_atoms = mat.shape[1]
+    mat_out = zeros(mat.shape)
+    if mass is None: #yes
+        mass = max(0,((mat*(mat>=0)).sum(axis=0)).mean())
+    if mass>0:
+        for i in range(nb_columns):
+            for j in range(nb_atoms):
+                mat_out[:,j,i] = euclidean_proj_simplex(mat[:,j,i],s=mass)
+
 
 def prox_pos_dual_stack(Px_stack,ind_i,mass=1,simplex_en=True):
     Px_stack_out = zeros(Px_stack.shape)

@@ -1,7 +1,7 @@
 import numpy as np
 from psf_learning_utils import transport_plan_projections_flat_field,transport_plan_projections_flat_field_transpose,\
                                 transport_plan_projections_flat_field_transpose_coeff, transport_plan_projections_field_marg,\
-                                transport_plan_projections_field_marg_transpose
+                                transport_plan_projections_field_marg_transpose,transport_plan_projections_field_marg_wdl,transport_plan_projections_flat_field_wdl
 from modopt.signal.wavelet import get_mr_filters, filter_convolve_stack
 
 
@@ -47,6 +47,11 @@ class transport_plan_lin_comb(object):
 
         return transport_plan_projections_flat_field(data,self.supp,self.A)
 
+
+    def op_wdl(self,data):
+        return transport_plan_projections_flat_field_wdl(data,self.A)
+
+
     def adj_op(self, data):
         """Adjoint operator
 
@@ -64,6 +69,9 @@ class transport_plan_lin_comb(object):
         """
 
         return transport_plan_projections_flat_field_transpose(data,self.supp,self.A,self.shape)
+
+    def adj_op_wdl(self, data):
+        return transport_plan_projections_flat_field_transpose_wdl(data,self.A)
 
 
 class transport_plan_lin_comb_coeff(object):
@@ -138,7 +146,7 @@ class transport_plan_marg_wavelet(object):
 
     """
 
-    def __init__(self,supp,weights_neighbors,neighbors_graph,shap,wavelet_opt=None, method='scipy'):
+    def __init__(self,supp,weights_neighbors,neighbors_graph,shap,w_stack,C,gamma,n_iter_sink,wavelet_opt=None, method='scipy'):
 
         self.supp = supp
         self.weights_neighbors = weights_neighbors
@@ -149,11 +157,15 @@ class transport_plan_marg_wavelet(object):
                                        filt in self.filters)))
         self.mat_norm = np.sqrt(shap[0]*shap[1])*self.l1norm
         self.method = method
+        self.w_stack = w_stack
+        self.C = C
+        self.gamma = gamma
+        self.n_iter_sink = n_iter_sink
 
     def op(self, data):
         """Operator
 
-        This method returns the wavelets coefficients of the first marginals of the coupling matrices given as entry
+        This method returns the wavelets coefficients of the first marginals of the coupling matrices given as entry. What does he mean by the first marginals??
 
         Parameters
         ----------
@@ -163,10 +175,20 @@ class transport_plan_marg_wavelet(object):
         Returns
         -------
         np.ndarray
+        im_proj <42,42,5> image projection in the first wvl for every component (not multiplied by SED) in the starlet domain
 
         """
-        return filter_convolve_stack(transport_plan_projections_field_marg(data,self.shape,\
-                self.supp,self.neighbors_graph,self.weights_neighbors), self.filters, method=self.method)
+
+        return filter_convolve_stack(transport_plan_projections_field_marg(data,self.shape,self.supp,self.neighbors_graph,self.weights_neighbors),\
+         self.filters, method=self.method)
+
+
+    def op_wdl(self,data):
+
+        #TO DO: Later: check if it's possible(and desirable) to store the barycenters as a class variable
+        
+        return filter_convolve_stack(transport_plan_projections_field_marg_wdl(data,self.shape,self.w_stack,self.gamma,self.C,self.n_iter_sink),\
+            self.filters, method=self.method)
 
     def adj_op(self, data):
         """Adjoint operator
@@ -196,16 +218,20 @@ class transport_plan_lin_comb_wavelet(object):
 
     """
 
-    def __init__(self,A,supp,weights_neighbors,neighbors_graph,shap,wavelet_opt=None):
+    def __init__(self,A,supp,weights_neighbors,neighbors_graph,shap,w_stack,C,gamma,n_iter_sink,wavelet_opt=None):
         self.lin_comb = transport_plan_lin_comb(A, supp,shap)
-        self.marg_wvl = transport_plan_marg_wavelet(supp,weights_neighbors,neighbors_graph,shap,wavelet_opt=wavelet_opt)
+        self.marg_wvl = transport_plan_marg_wavelet(supp,weights_neighbors,neighbors_graph,shap,w_stack,C,gamma,n_iter_sink,wavelet_opt=wavelet_opt)
         self.mat_norm = np.sqrt(self.lin_comb.mat_norm**2+self.marg_wvl.mat_norm**2)
 
     def set_A(self,A_new):
-        self.lin_comb.set_A(A_new)
+        self.lin_comb.set_A(A_new) 
 
     def op(self, data):
         return np.array([self.lin_comb.op(data),self.marg_wvl.op(data)])
+
+    def op_wdl(self,data):
+
+        return np.array([self.lin_comb.op_wdl(data),self.marg_wvl.op_wdl(data)])
 
     def adj_op(self, data):
         return self.lin_comb.adj_op(data[0])+self.marg_wvl.adj_op(data[1])
