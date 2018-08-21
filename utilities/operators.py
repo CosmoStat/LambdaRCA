@@ -1,7 +1,8 @@
 import numpy as np
 from psf_learning_utils import transport_plan_projections_flat_field,transport_plan_projections_flat_field_transpose,\
                                 transport_plan_projections_flat_field_transpose_coeff, transport_plan_projections_field_marg,\
-                                transport_plan_projections_field_marg_transpose,transport_plan_projections_field_marg_wdl,transport_plan_projections_flat_field_wdl
+                                transport_plan_projections_field_marg_transpose,transport_plan_projections_field_marg_wdl,transport_plan_projections_flat_field_wdl,\
+                                transport_plan_projections_flat_field_transpose_wdl
 from modopt.signal.wavelet import get_mr_filters, filter_convolve_stack
 
 
@@ -148,8 +149,8 @@ class transport_plan_marg_wavelet(object):
 
     """
 
-    def __init__(self,supp,weights_neighbors,neighbors_graph,shap,w_stack,C,gamma,n_iter_sink,wavelet_opt=None, method='scipy'):
-
+    def __init__(self,polychrom_grad,supp,weights_neighbors,neighbors_graph,shap,w_stack,C,gamma,n_iter_sink,wavelet_opt=None, method='scipy'):
+        self.grad = polychrom_grad
         self.supp = supp
         self.weights_neighbors = weights_neighbors
         self.neighbors_graph = neighbors_graph
@@ -187,7 +188,6 @@ class transport_plan_marg_wavelet(object):
 
     def op_wdl(self,data):
 
-        #TO DO: Later: check if it's possible(and desirable) to store the barycenters as a class variable
         
         return filter_convolve_stack(transport_plan_projections_field_marg_wdl(data,self.shape,self.w_stack,self.gamma,self.C,self.n_iter_sink),\
             self.filters, method=self.method)
@@ -214,6 +214,7 @@ class transport_plan_marg_wavelet(object):
 
     def adj_op_wdl(self, data):
         # returns atoms used to compute data
+
         return self.grad.get_atoms()
 
 
@@ -225,23 +226,23 @@ class transport_plan_lin_comb_wavelet(object):
     """
 
     def __init__(self,polychrom_grad,A,supp,weights_neighbors,neighbors_graph,shap,w_stack,C,gamma,n_iter_sink,wavelet_opt=None):
-        self.grad = polychrom_grad
         self.lin_comb = transport_plan_lin_comb(A, supp,shap)
-        self.marg_wvl = transport_plan_marg_wavelet(supp,weights_neighbors,neighbors_graph,shap,w_stack,C,gamma,n_iter_sink,wavelet_opt=wavelet_opt)
+        self.marg_wvl = transport_plan_marg_wavelet(polychrom_grad,supp,weights_neighbors,neighbors_graph,shap,w_stack,C,gamma,n_iter_sink,wavelet_opt=wavelet_opt)
         self.mat_norm = np.sqrt(self.lin_comb.mat_norm**2+self.marg_wvl.mat_norm**2)
 
     def set_A(self,A_new):
         self.lin_comb.set_A(A_new) 
 
-    def op(self, data):
+    def op_old(self, data):
         return np.array([self.lin_comb.op(data),self.marg_wvl.op(data)])
 
-    def op_wdl(self,data):
+    def op(self,data):
 
         return np.array([self.lin_comb.op_wdl(data),self.marg_wvl.op_wdl(data)])
 
-    def adj_op(self, data):
+    def adj_op_old(self, data):
         return self.lin_comb.adj_op(data[0])+self.marg_wvl.adj_op(data[1])
 
-    def adj_op_wdl(self, data):
-        return self.lin_comb.adj_op_wdl(data[0])+self.marg_wvl.adj_op(data[1])
+    def adj_op(self, data):
+        
+        return self.lin_comb.adj_op_wdl(data[0])+self.marg_wvl.adj_op_wdl(data[1])

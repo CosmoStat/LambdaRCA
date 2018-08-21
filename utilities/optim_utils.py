@@ -11157,16 +11157,16 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
         # temp2 = lin_com.op(polychrom_grad.MtX(im_stack))[1] 
         # temp3 = lin_com.op_wdl(polychrom_grad.MtX_wdl(im_stack)) #(1, 22, 1, 22, 3) the first 1 is extra
 
-        noise_map_wdl = get_noise_arr(lin_com.op_wdl(polychrom_grad.MtX_wdl(im_stack))[1]) 
-        noise_map = get_noise_arr(lin_com.op(polychrom_grad.MtX(im_stack))[1]) 
+        noise_map_wdl = get_noise_arr(lin_com.op(polychrom_grad.MtX(im_stack))[1]) 
+        # noise_map = get_noise_arr(lin_com.op(polychrom_grad.MtX(im_stack))[1]) 
 
         ## lin_com.op(.)[1] computes the "image"(only the gradient of transport plan is used) projection to the first wvl
         ## in each component in the starlet domain <42,1,42,5>. The one is due to the fact that only one filter is used.
 
-        dual_var_plan = np.array([zeros((supp.shape[0],nb_im)),zeros(noise_map.shape)]) # dual_var_plan[0] = linear.op[0] dual_var_plan[1] = get_nois_array(linear.op[1])
+        # dual_var_plan = np.array([zeros((supp.shape[0],nb_im)),zeros(noise_map.shape)]) # dual_var_plan[0] = linear.op[0] dual_var_plan[1] = get_nois_array(linear.op[1])
         dual_var_plan_wdl = np.array([zeros((p,nb_atoms,nb_im)),zeros(noise_map_wdl.shape)]) 
 
-        dual_prox_plan = lambdaprox.simplex_threshold(lin_com, nsig*noise_map,pos_en=(not simplex_en)) #initializing ok
+        # dual_prox_plan = lambdaprox.simplex_threshold(lin_com, nsig*noise_map,pos_en=(not simplex_en)) #initializing ok
         dual_prox_plan_wdl = lambdaprox.simplex_threshold(lin_com, nsig*noise_map_wdl,pos_en=(not simplex_en)) #initializing ok
 
 
@@ -11203,9 +11203,12 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
     cost_op = costObj([polychrom_grad])
 
 
-    condat_min = optimalg.Condat(P_stack, dual_var_plan, polychrom_grad, id_prox, dual_prox_plan, lin_com, cost=cost_op,\
-                 rho=rho_P,  sigma=sigma_P, tau=tau_P, rho_update=None, sigma_update=None,
-                 tau_update=None, auto_iterate=False)
+    # condat_min = optimalg.Condat(P_stack, dual_var_plan, polychrom_grad, id_prox, dual_prox_plan, lin_com, cost=cost_op,\
+    #              rho=rho_P,  sigma=sigma_P, tau=tau_P, rho_update=None, sigma_update=None,
+    #              tau_update=None, auto_iterate=False)
+
+
+
 
     condat_min_wdl = optimalg.Condat(D_stack, dual_var_plan_wdl, polychrom_grad, id_prox, dual_prox_plan_wdl, lin_com, cost=cost_op,\
                  rho=rho_P,  sigma=sigma_P, tau=tau_P, rho_update=None, sigma_update=None,
@@ -11218,9 +11221,13 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
 
     print "------------------- Transport plans estimation ------------------"
 
-    condat_min.iterate(max_iter=nb_subiter) # ! actually runs optimisation
-    P_stack = condat_min.x_final
-    dual_var_plan = condat_min.y_final
+    condat_min_wdl.iterate(max_iter=nb_subiter) # ! actually runs optimisation
+    D_stack = condat_min_wdl.x_final
+    dual_var_plan = condat_min_wdl.y_final
+
+
+    # P_stack = condat_min.x_final
+    # dual_var_plan = condat_min.y_final
 
 
     import pdb; pdb.set_trace()  # breakpoint e92f3226 //

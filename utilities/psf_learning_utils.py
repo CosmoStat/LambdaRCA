@@ -2030,6 +2030,8 @@ def transport_plan_projections_field_transpose_wdl(data,shap,A, flux, sig, ker,s
         barys_stack.append(barys)
         Mtx_total += Mtx
     Mx_stack = np.array(Mx_stack)
+
+    Mx_stack = Mx_stack.swapaxes(0,1).swapaxes(1,2)
     barys_stack = np.array(barys_stack)
     return Mx_stack,Mtx,barys_stack
 
@@ -2490,16 +2492,21 @@ def columns_wise_simplex_proj(mat,mass=None):
     return mat_out
 
 def columns_wise_simplex_proj_wdl(mat,mass=None):
+
     from simplex_projection import euclidean_proj_simplex
     nb_columns = mat.shape[2]
     nb_atoms = mat.shape[1]
     mat_out = zeros(mat.shape)
+
+
     if mass is None: #yes
         mass = max(0,((mat*(mat>=0)).sum(axis=0)).mean())
     if mass>0:
         for i in range(nb_columns):
             for j in range(nb_atoms):
                 mat_out[:,j,i] = euclidean_proj_simplex(mat[:,j,i],s=mass)
+
+    return mat_out
 
 
 def prox_pos_dual_stack(Px_stack,ind_i,mass=1,simplex_en=True):

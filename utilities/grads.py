@@ -55,12 +55,15 @@ class polychrom_eigen_psf(GradParent, PowerMethod):
         self.C = C
         self.gamma = gamma
         self.n_iter_sink = n_iter_sink
-     
-        PowerMethod.__init__(self, self.trans_op_op, (np.prod(self.shape),np.prod(self.shape),A.shape[0]))
-        print " > SPECTRAL RADIUS:\t{}".format(self.spec_rad)
+
+        self._current_rec_wdl = None # stores latest application of self.MX_wdl (that includes MX and MtX)
+
+        self.spec_rad = 30.9100819105
+        self.inv_spec_rad = 0.03235190391
+        # PowerMethod.__init__(self, self.trans_op_op, (np.prod(self.shape),D_stack.shape[1],A.shape[0]))
+        # print " > SPECTRAL RADIUS:\t{}".format(self.spec_rad)
         
         self._current_rec = None # stores latest application of self.MX
-        self._current_rec_wdl = None # stores latest application of self.MX_wdl (that includes MX and MtX)
 
     def set_A(self,A_new,pwr_en=True):
         self.A = np.copy(A_new)
@@ -75,7 +78,28 @@ class polychrom_eigen_psf(GradParent, PowerMethod):
     def get_flux(self):
         return self.flux
 
-    def MX(self, x):
+    
+
+    def MtX(self,x):
+        """
+            x: input data array, a cube of 2D images, residuous MX-Y
+        """
+        self._current_rec_wdl = transport_plan_projections_field_transpose_wdl(self.obs_data,self.shape,self.A, self.flux, self.sig, self.ker,self.spectrums, self.D_stack,self.w_stack,self.C,self.gamma,self.n_iter_sink)
+        #[Mx_stack,Mtx,barys_stack]
+
+        return self._current_rec_wdl[1]
+
+
+    def MX(self,x):
+        if self._current_rec_wdl == None:
+            self._current_rec_wdl = transport_plan_projections_field_transpose_wdl(self.obs_data,self.shape,self.A, self.flux, self.sig, self.ker,self.spectrums, self.D_stack,self.w_stack,self.C,self.gamma,self.n_iter_sink)
+
+        return self._current_rec_wdl[0]
+
+
+
+
+    def MX_old(self, x):
         """MX
 
         This method calculates the action of the matrix M on the data X
@@ -94,23 +118,7 @@ class polychrom_eigen_psf(GradParent, PowerMethod):
                 ,self.weights_neighbors,self.spectrums,self.A,self.flux,self.sig,self.ker,self.D)
         return self._current_rec
 
-    def MtX_wdl(self,x):
-        """
-            x: input data array, a cube of 2D images
-        """
-        self._current_rec_wdl = transport_plan_projections_field_transpose_wdl(x,self.shape,self.A, self.flux, self.sig, self.ker,self.spectrums, self.D_stack,self.w_stack,self.C,self.gamma,self.n_iter_sink)
-        #[Mx_stack,Mtx,barys_stack]
-
-        return self._current_rec_wdl[1]
-
-
-    def MX_wdl(self,x):
-        #Do the if self._current_rec_wdl==None thing after finding out wich one is called first in the Condat iterations, MX or MtX        
-        self._current_rec_wdl = transport_plan_projections_field_transpose_wdl(self.obs_data,self.shape,self.A, self.flux, self.sig, self.ker,self.spectrums, x,self.w_stack,self.C,self.gamma,self.n_iter_sink)
-
-        return self._current_rec_wdl[0]
-
-    def MtX(self, x):
+    def MtX_old(self, x):
         """MtX
 
         This method calculates the action of the transpose of the matrix Mt on
@@ -135,13 +143,14 @@ class polychrom_eigen_psf(GradParent, PowerMethod):
         """
         if isinstance(self._current_rec, type(None)):
             self._current_rec = self.MX(x)
+
         cost_val = 0.5 * np.linalg.norm(self._current_rec - self.obs_data) ** 2
         if verbose:
             print " > MIN(X):\t{}".format(np.min(x))
             print " > Current cost: {}".format(cost_val)
         return cost_val
                 
-    def get_grad(self, x):
+    def get_grad_old(self, x):
         """Get the gradient step
         This method calculates the gradient step from the input data
         Parameters
@@ -160,9 +169,10 @@ class polychrom_eigen_psf(GradParent, PowerMethod):
         self.grad = self.MtX(self.MX(x) - self.obs_data)
 
 
-    def get_grad_wdl(self,x):
+    def get_grad(self,x):
+
         self.D_stack = x 
-        self.grad = self.MtX_wdl(self,x)
+        self.grad = self.MtX(x)
 
     def get_atoms(self):
         return self.D_stack

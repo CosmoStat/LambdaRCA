@@ -72,7 +72,7 @@ class Simplex(object):
         self.pos_en = pos_en
         self.mass = mass
 
-    def op(self, data, **kwargs):
+    def op_old(self, data, **kwargs):
         """Operator
 
         This method projects each column of the matrix data onto the simplex
@@ -95,7 +95,7 @@ class Simplex(object):
             return columns_wise_simplex_proj(data,mass=self.mass)
 
 
-    def op_wdl(self, data, **kwargs):
+    def op(self, data, **kwargs):
         if self.pos_en:
             return positive(data)
         else:#yes
@@ -127,5 +127,7 @@ class simplex_threshold(object):
         self.thresh = SparseThreshold(self.linop, weights)
 
     def op(self, data, extra_factor=1.0):
+
+
 
         return np.array([self.simplex.op(data[0]),self.thresh.op(data[1],extra_factor=extra_factor)]) #data[0] is the dual transport plan important advection points
