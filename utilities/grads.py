@@ -1,8 +1,11 @@
 import numpy as np
-from psf_learning_utils import transport_plan_projections_field,transport_plan_projections_field_transpose,\
-transport_plan_projections_field_coeff_transpose,transport_plan_projections_field_transpose_wdl
+from psf_learning_utils import transport_plan_projections_field,\
+transport_plan_projections_field_coeff_transpose
 from modopt.opt.gradient import GradParent, GradBasic
 from modopt.math.matrix import PowerMethod
+import sys
+sys.path.append('../baryOT')
+import OT_bary as ot
         
         
 class polychrom_eigen_psf(GradParent, PowerMethod):
@@ -56,14 +59,17 @@ class polychrom_eigen_psf(GradParent, PowerMethod):
         self.gamma = gamma
         self.n_iter_sink = n_iter_sink
 
-        self._current_rec_wdl = None # stores latest application of self.MX_wdl (that includes MX and MtX)
+        self._current_rec_MtX = None # stores latest application of self.MX_wdl (that includes MX and MtX)
+        self._current_rec_MX = None # stores latest application of self.MX
 
-        self.spec_rad = 30.9100819105
-        self.inv_spec_rad = 0.03235190391
-        # PowerMethod.__init__(self, self.trans_op_op, (np.prod(self.shape),D_stack.shape[1],A.shape[0]))
-        # print " > SPECTRAL RADIUS:\t{}".format(self.spec_rad)
+        # self.spec_rad = 30.9100819105
+        # self.inv_spec_rad = 0.03235190391
+        PowerMethod.__init__(self, self.trans_op_op, (np.prod(self.shape),D_stack.shape[1],A.shape[0]))
+        print " > SPECTRAL RADIUS:\t{}".format(self.spec_rad)
         
-        self._current_rec = None # stores latest application of self.MX
+        
+
+        self._current_rec = None
 
     def set_A(self,A_new,pwr_en=True):
         self.A = np.copy(A_new)
@@ -82,19 +88,19 @@ class polychrom_eigen_psf(GradParent, PowerMethod):
 
     def MtX(self,x):
         """
-            x: input data array, a cube of 2D images, residuous MX-Y
+            x: input data array, a cube of 2D images, residuous MX-Y. x not used.
         """
-        self._current_rec_wdl = transport_plan_projections_field_transpose_wdl(self.obs_data,self.shape,self.A, self.flux, self.sig, self.ker,self.spectrums, self.D_stack,self.w_stack,self.C,self.gamma,self.n_iter_sink)
+        self._current_rec_MtX = ot.Theano_wdl_MtX(self.A,self.spectrums,self.flux,self.sig,self.ker,self.D_stack,self.w_stack,self.C,self.gamma,self.n_iter_sink,self.obs_data)
         #[Mx_stack,Mtx,barys_stack]
 
-        return self._current_rec_wdl[1]
+        return self._current_rec_MtX[0]
 
 
     def MX(self,x):
-        if self._current_rec_wdl == None:
-            self._current_rec_wdl = transport_plan_projections_field_transpose_wdl(self.obs_data,self.shape,self.A, self.flux, self.sig, self.ker,self.spectrums, self.D_stack,self.w_stack,self.C,self.gamma,self.n_iter_sink)
 
-        return self._current_rec_wdl[0]
+        self._current_rec_MX = ot.Theano_wdl_MX(self.A,self.spectrums,self.flux,self.sig,self.ker,x,self.w_stack,self.C,self.gamma,self.n_iter_sink)
+
+        return self._current_rec_MX
 
 
 
@@ -339,7 +345,7 @@ class polychrom_eigen_psf_coeff_graph(GradBasic, PowerMethod):
     """
 
     def __init__(self, data, supp, neighbors_graph, weights_neighbors, spectrums, \
-                P, flux, sig, ker, ker_rot, D, basis,D_stack,w_stack,C,gamma,n_iter_sink, data_type=float):
+                P, flux, sig, ker, ker_rot, D, basis,D_stack,w_stack,C,gamma,n_iter_sink,polychrom_grad, data_type=float):
 
     #polychrom_grad_coeff
 
@@ -365,10 +371,21 @@ class polychrom_eigen_psf_coeff_graph(GradBasic, PowerMethod):
         self.C = C
         self.gamma = gamma
         self.n_iter_sink = n_iter_sink
+        self.polychrom_grad = polychrom_grad
+
+
+        self._current_rec_wdl = None
         
-        PowerMethod.__init__(self, self.trans_op_op, (P.shape[-1],self.basis.shape[0]))
+        PowerMethod.__init__(self, self.trans_op_op, (D_stack.shape[-1],self.basis.shape[0]))
 
         self._current_rec = None # stores latest application of self.MX
+
+
+
+    def set_D_stack(self,D_stack_new,pwr_en=True):
+        self.D_stack = np.copy(D_stack_new)
+        if pwr_en:
+            PowerMethod.__init__(self, self.trans_op_op, (self.D_stack.shape[-1],self.basis.shape[0]))
 
     def set_P(self,P_new,pwr_en=True):
         self.P = np.copy(P_new)
@@ -399,8 +416,19 @@ class polychrom_eigen_psf_coeff_graph(GradBasic, PowerMethod):
         np.ndarray result
 
         """
+
         self._current_rec = transport_plan_projections_field(self.P,self.shape,self.supp,self.neighbors_graph\
                             ,self.weights_neighbors,self.spectrums,x.dot(self.basis),self.flux,self.sig,self.ker,self.D)
+        return self._current_rec
+
+
+    def MX_wdl(self, x):
+        # x: <5,5*100> What is it
+        # basis: <5*100, 100>
+        import pdb; pdb.set_trace()  # breakpoint 5d77999b //
+
+        self._current_rec = Theano_coeff_MX(x.dot(self.basis),self.spectrums,self.polychrom_grad._current_rec_wdl[2],self.flux,self.sig,self.ker)
+        
         return self._current_rec
 
     def MtX(self, x):
@@ -421,6 +449,15 @@ class polychrom_eigen_psf_coeff_graph(GradBasic, PowerMethod):
         """
         return transport_plan_projections_field_coeff_transpose(x,self.supp,self.neighbors_graph,\
                 self.weights_neighbors,self.spectrums,self.P,self.flux,self.sig,self.ker_rot,self.D).dot(np.transpose(self.basis))
+
+    # def MtX_wdl(self, x):
+
+    #     return transport_plan_projections_field_coeff_transpose(self.obs_data,self.supp,self.neighbors_graph,\
+    #         self.weights_neighbors,self.spectrums,self.P,self.flux,self.sig,self.ker_rot,self.D).dot(np.transpose(self.basis))
+
+    #polychrom_grad
+
+
                 
     def cost(self, x, y=None, verbose=False):
         """ Compute data fidelity term. ``y`` is unused (it's just so ``modopt.opt.algorithms.Condat`` can feed

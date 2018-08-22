@@ -1849,12 +1849,25 @@ def transport_plan_projections_wdl(Mtx,shap,w_stack,gamma,C,n_iter_sink,spectrum
         nb_proj = size(indices) # 1 projection only at the first wvl
     if spectrum is None: #yes
         spectrum = ones((nb_proj,))
+
+    chosen_lbdas = []
+    for i in range(nb_proj):
+        chosen_lbdas.append(w_stack[indices[i],:])
+
     D_stack = np.expand_dims(Mtx, axis=2) #Theano_bary takes a cubic as input
-    only_barys_ = ot.Theano_bary(D_stack,w_stack,gamma,C,n_iter_sink) # TO DO: move this to next for loop. Avoid computation of non used barys.
+    barys = ot.Theano_bary(D_stack,chosen_lbdas,gamma,C,n_iter_sink) # <pixels,nb_comp, nb_wvl>
+    barys = barys[:,0,:] # because transport_plan_projections_wdl is called for every component
+
+    # print np.argwhere(np.isnan(barys))
 
     im_proj = zeros((shap[0],shap[1],nb_proj)) # use append here in the future when we are sure no unsorted indices are passed
     for i in range(0,nb_proj):#doesn't account for repetition in each wvl, in opposition with transport_plan_projections
-        im_proj[:,:,indices[i]] = spectrum[indices[i]] * only_barys_[indices[i],:].reshape(shap)
+        im_proj[:,:,indices[i]] = spectrum[indices[i]] * barys[:,indices[i]].reshape(shap)
+
+
+
+    # print np.argwhere(np.isnan(im_proj))
+
 
     return squeeze(im_proj)
 
@@ -1950,7 +1963,7 @@ def transport_plan_projections_field_marg_wdl(Mtx_stack,shap,w_stack,gamma,C,n_i
     nb_plans = Mtx_stack.shape[-1]
     output = zeros((shap[0],shap[1],nb_plans))
 
-
+    #TO DO: check other implementations of transport_plan_projections_wdl and see if I can remove it and do all components at once with theano.
     for i in range(nb_plans):
         output[:,:,i] = transport_plan_projections_wdl(Mtx_stack[:,:,i],shap,w_stack,gamma,C,n_iter_sink,indices=[0])
 
@@ -2004,36 +2017,36 @@ def transport_plan_projections_field(P_stack,shap,supp,neighbors_graph,weights_n
     return stars_est
 
 
-def transport_plan_projections_field_transpose_wdl(data,shap,A, flux, sig, ker,spectrums, D_stack,w_stack,C,gamma,n_iter_sink):
-    """
-        data <21,21,100>
-        D_stack: <42x42,2,5>
+# def transport_plan_projections_field_transpose_wdl(data,shap,A, flux, sig, ker,spectrums, D_stack,w_stack,C,gamma,n_iter_sink):
+#     """
+#         data <21,21,100>
+#         D_stack: <42x42,2,5>
 
-        OUTPUT
-        ------
-        barys_stack: <100,5,100,42x42>, <nb_obj,nb_comp,nb_wvl,42x42>
-        Mx_stack: <100,11,11> star estimated for each object
-        Mtx: <42x42,2,5>, <42x42,nb_atoms,nb_comp> gradient of loss function with respect to each atom for each component
-    """
+#         OUTPUT
+#         ------
+#         barys_stack: <100,5,100,42x42>, <nb_obj,nb_comp,nb_wvl,42x42>
+#         Mx_stack: <100,11,11> star estimated for each object
+#         Mtx: <42x42,2,5>, <42x42,nb_atoms,nb_comp> gradient of loss function with respect to each atom for each component
+#     """
 
 
-    # f = open( "/Users/rararipe/Documents/Data/LambdaRCA_OTbaryv2/barys.pickle", "wb" )
-    # pickle.dump([barysRCA,pos],f)
-    # f.close()
-    nb_im = size(flux)
-    Mx_stack = []
-    barys_stack = []
-    Mtx_total = np.zeros(D_stack.shape)
-    for obj in range(nb_im):
-        [Mx,Mtx,barys] = ot.Theano_wass_MXMtX(D_stack,w_stack,ker[:,:,obj],spectrums[:,obj],A[:,obj],gamma,C,n_iter_sink,sig[obj],flux[obj],data[:,:,obj])
-        Mx_stack.append(Mx)
-        barys_stack.append(barys)
-        Mtx_total += Mtx
-    Mx_stack = np.array(Mx_stack)
+#     # f = open( "/Users/rararipe/Documents/Data/LambdaRCA_OTbaryv2/barys.pickle", "wb" )
+#     # pickle.dump([barysRCA,pos],f)
+#     # f.close()
+#     nb_im = size(flux)
+#     Mx_stack = []
+#     barys_stack = []
+#     Mtx_total = np.zeros(D_stack.shape)
+#     for obj in range(nb_im):
+#         [Mx,Mtx,barys] = ot.Theano_wass_MXMtX(D_stack,w_stack,ker[:,:,obj],spectrums[:,obj],A[:,obj],gamma,C,n_iter_sink,sig[obj],flux[obj],data[:,:,obj])
+#         Mx_stack.append(Mx)
+#         barys_stack.append(barys)
+#         Mtx_total += Mtx
+#     Mx_stack = np.array(Mx_stack)
 
-    Mx_stack = Mx_stack.swapaxes(0,1).swapaxes(1,2)
-    barys_stack = np.array(barys_stack)
-    return Mx_stack,Mtx,barys_stack
+#     Mx_stack = Mx_stack.swapaxes(0,1).swapaxes(1,2)
+#     barys_stack = np.array(barys_stack)
+#     return Mx_stack,Mtx,barys_stack
 
 def transport_plan_projections_flat_field(P_stack,supp,A): 
     """P_stack[supp[:,0],supp[:,1],:] the transported mass between the relevant points

@@ -11123,7 +11123,7 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
 
     if graph_cons_en:
         polychrom_grad_coeff = grad.polychrom_eigen_psf_coeff_graph(im_stack, supp, neighbors_graph, \
-                weights_neighbors, spectrums, P_stack, flux, sig, ker, ker_rot, D, basis,D_stack,w_stack,C,gamma,n_iter_sink)
+                weights_neighbors, spectrums, P_stack, flux, sig, ker, ker_rot, D, basis,D_stack,w_stack,C,gamma,n_iter_sink,polychrom_grad)
     else:
         polychrom_grad_coeff = grad.polychrom_eigen_psf_coeff(im_stack, supp, neighbors_graph, \
                 weights_neighbors, spectrums, P_stack, flux, sig, ker, ker_rot, D)
@@ -11219,6 +11219,8 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
 
 
 
+    # print np.argwhere(np.isnan(noise_map_wdl))
+    
     print "------------------- Transport plans estimation ------------------"
 
     condat_min_wdl.iterate(max_iter=nb_subiter) # ! actually runs optimisation
@@ -11226,22 +11228,32 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
     dual_var_plan = condat_min_wdl.y_final
 
 
+    # condat_min.iterate(max_iter=nb_subiter) # ! actually runs optimisation
     # P_stack = condat_min.x_final
     # dual_var_plan = condat_min.y_final
 
 
-    import pdb; pdb.set_trace()  # breakpoint e92f3226 //
+    print np.argwhere(np.isnan(D_stack))
+    print np.argwhere(np.isnan(dual_var_plan[0])) #negative values, is it ok?
+
+
+    import pdb; pdb.set_trace()  # breakpoint c7e6bae9 //
+
 
 
     obs_est = polychrom_grad.MX(P_stack)
     res = im_stack - obs_est
+
+    import pdb; pdb.set_trace()  # breakpoint 185fbbc9 //
+
+
 
     for i in range(0,nb_iter):
         print "----------------Iter ",i+1,"/",nb_iter,"-------------------"
 
         # Parameters update
         polychrom_grad_coeff.set_P(P_stack)
-        if not graph_cons_en:
+        if not graph_cons_en:#no
             lin_com_coeff.set_P_stack(P_stack)
             # ---- (Re)Setting hyperparameters
             delta  = (polychrom_grad_coeff.inv_spec_rad**(-1)/2)**2 + 4*lin_com_coeff.mat_norm**2
