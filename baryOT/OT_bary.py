@@ -75,7 +75,7 @@ beta_mat = T.matrix('beta_mat')  #<100wvls,100objs>
 def sinkhorn_step(a,b,p,D_stack,lbda_stack,Ker,Tau,i,v):
     newa = D_stack[:,:,i]/T.dot(Ker,b)
     a = a**Tau * abs(newa)**(1.-Tau)
-    p = T.prod(T.dot(Ker.T,a)**lbda_stack[v,:], axis=1)
+    p = T.prod(abs(T.dot(Ker.T,a))**lbda_stack[v,:], axis=1)
     newb = p.dimshuffle(0,'x')/T.dot(Ker.T,a)
     b = b**Tau * newb**(1.-Tau)
     return a,b,p
@@ -154,6 +154,10 @@ MtX_wdl = T.grad(Loss, D_stack)
 Theano_wdl_MX = theano.function([A_mat,beta_mat,Flux_all,Sigma_all,K_all,D_stack,lbda_stack,Cost,Gamma,n_iter,theano.In(Tau,value=-0.3)],res_B_rshp)
 
 Theano_wdl_MtX = theano.function([A_mat,beta_mat,Flux_all,Sigma_all,K_all,D_stack,lbda_stack,Cost,Gamma,n_iter,Datapoint,theano.In(Tau,value=-0.3)],[MtX_wdl,res_B_rshp,barycenters])
+
+MtX_coeff = T.grad(Loss,A_mat)
+
+Theano_coeff_MtX = theano.function([A_mat,beta_mat,barycenters,Flux_all,Sigma_all,K_all,Datapoint],[MtX_coeff,res_B_rshp])
 
 
 

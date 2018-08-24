@@ -11074,7 +11074,7 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
     w_stack = np.array([t + 1e-10, 1 - t - 1e-10]).T
 
     gamma = 0.3
-    n_iter_sink = 13
+    n_iter_sink = 200
     C = ot.EuclidCost(shap[0],shap[1])
 
 
@@ -11117,17 +11117,26 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
     i=0
     print " --------- Optimization instances setting ---------- "
 
+
+    print "=======initializing polychrom_grad..."
+
     # Data fidelity related instances
     polychrom_grad = grad.polychrom_eigen_psf(im_stack, supp, neighbors_graph,weights_neighbors, spectrums, A, flux, sig, ker, ker_rot,D_stack,w_stack,C,gamma,n_iter_sink,D)
 
+    print "=======polychrom_grad initialized"
+
+
+
+    print "=======initializing polychrom_grad_coeff..."
 
     if graph_cons_en:
         polychrom_grad_coeff = grad.polychrom_eigen_psf_coeff_graph(im_stack, supp, neighbors_graph, \
-                weights_neighbors, spectrums, P_stack, flux, sig, ker, ker_rot, D, basis,D_stack,w_stack,C,gamma,n_iter_sink,polychrom_grad)
+                weights_neighbors, spectrums, P_stack, flux, sig, ker, ker_rot, D, basis,D_stack,w_stack,C,gamma,n_iter_sink,polychrom_grad,A)
     else:
         polychrom_grad_coeff = grad.polychrom_eigen_psf_coeff(im_stack, supp, neighbors_graph, \
                 weights_neighbors, spectrums, P_stack, flux, sig, ker, ker_rot, D)
-
+    
+    print "=======polychrom_grad_coeff initialized"
 
 
 
@@ -11144,6 +11153,9 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
     if not graph_cons_en:
         lin_com_coeff = lambdaops.transport_plan_lin_comb_coeff(P_stack, supp)
 
+
+
+
     # Proximity operators related instances
     id_prox = Identity()
     if wvl_en and pos_en:
@@ -11157,7 +11169,21 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
         # temp2 = lin_com.op(polychrom_grad.MtX(im_stack))[1] 
         # temp3 = lin_com.op_wdl(polychrom_grad.MtX_wdl(im_stack)) #(1, 22, 1, 22, 3) the first 1 is extra
 
+
+        #do step here
+        # temp = polychrom_grad.MtX(im_stack)
+
+
+        # temp2 = lin_com.op(temp)[1]
+
+        # temp3 = get_noise_arr(temp2)
+
         noise_map_wdl = get_noise_arr(lin_com.op(polychrom_grad.MtX(im_stack))[1]) 
+
+
+        import pdb; pdb.set_trace()  # breakpoint d784a3e4 //
+
+        
         # noise_map = get_noise_arr(lin_com.op(polychrom_grad.MtX(im_stack))[1]) 
 
         ## lin_com.op(.)[1] computes the "image"(only the gradient of transport plan is used) projection to the first wvl
@@ -11225,7 +11251,7 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
 
     condat_min_wdl.iterate(max_iter=nb_subiter) # ! actually runs optimisation
     D_stack = condat_min_wdl.x_final
-    dual_var_plan = condat_min_wdl.y_final
+    dual_var_plan_wdl = condat_min_wdl.y_final
 
 
     # condat_min.iterate(max_iter=nb_subiter) # ! actually runs optimisation
@@ -11234,17 +11260,15 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
 
 
     print np.argwhere(np.isnan(D_stack))
-    print np.argwhere(np.isnan(dual_var_plan[0])) #negative values, is it ok?
-
-
-    import pdb; pdb.set_trace()  # breakpoint c7e6bae9 //
+    print np.argwhere(np.isnan(dual_var_plan_wdl[0])) #negative values, is it ok?
 
 
 
-    obs_est = polychrom_grad.MX(P_stack)
+    # obs_est = polychrom_grad.MX(P_stack)
+    obs_est = polychrom_grad.MX(D_stack)
     res = im_stack - obs_est
 
-    import pdb; pdb.set_trace()  # breakpoint 185fbbc9 //
+
 
 
 
@@ -11252,7 +11276,10 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
         print "----------------Iter ",i+1,"/",nb_iter,"-------------------"
 
         # Parameters update
-        polychrom_grad_coeff.set_P(P_stack)
+
+        # polychrom_grad_coeff.set_P(P_stack)
+        polychrom_grad_coeff.set_D_stack(D_stack)
+
         if not graph_cons_en:#no
             lin_com_coeff.set_P_stack(P_stack)
             # ---- (Re)Setting hyperparameters
@@ -11265,16 +11292,20 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
         # Coefficients cost function instance
         cost_op_coeff = costObj([polychrom_grad_coeff])
 
-        if graph_cons_en:
+
+
+        if graph_cons_en:#yes
             beta_param = polychrom_grad_coeff.inv_spec_rad# set stepsize to inverse spectral radius of coefficient gradient
             min_coeff = optimalg.ForwardBackward(alph, polychrom_grad_coeff, prox_coeff, beta_param=beta_param, 
-                                                 cost=cost_op_coeff,auto_iterate=False)
+                                                 cost=cost_op_coeff,auto_iterate=False) # no dual variable here
         else:
             min_coeff = optimalg.Condat(A, dual_var_coeff, polychrom_grad_coeff, id_prox, dual_prox_coeff, lin_com_coeff, cost=cost_op_coeff,\
                                             rho=rho_coeff,  sigma=sigma_coeff, tau=tau_coeff, rho_update=None, sigma_update=None,\
                                             tau_update=None, auto_iterate=False)
 
         print "------------------- Coefficients estimation ----------------------"
+
+
         min_coeff.iterate(max_iter=nb_subiter) # ! actually runs optimisation
         if graph_cons_en:
             prox_coeff.reset_iter()
@@ -11288,10 +11319,12 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
         polychrom_grad.set_A(A)
         if not wvl_en:
             lin_com.set_A(A)
-        if wvl_en:
+        if wvl_en:#yes
             # Noise estimate update
-            noise_map = get_noise_arr(lin_com.op(polychrom_grad.MtX(im_stack))[1])
-            dual_prox_plan.update_weights(noise_map)
+            # noise_map = get_noise_arr(lin_com.op(polychrom_grad.MtX(im_stack))[1])
+            noise_map_wdl = get_noise_arr(lin_com.op(polychrom_grad.MtX(im_stack))[1]) 
+            # dual_prox_plan.update_weights(noise_map)
+            dual_prox_plan_wdl.update_weights(noise_map_wdl)
 
         # ---- (Re)Setting hyperparameters
         delta  = (polychrom_grad.inv_spec_rad**(-1)/2)**2 + 4*lin_com.mat_norm**2
@@ -11301,41 +11334,68 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
         rho_P = 1
 
         # Cost function instance
-        condat_min = optimalg.Condat(P_stack, dual_var_plan, polychrom_grad, id_prox, dual_prox_plan, lin_com, cost=cost_op,\
-                     rho=rho_P,  sigma=sigma_P, tau=tau_P, rho_update=None, sigma_update=None,
-                     tau_update=None, auto_iterate=False)
+
+
+        condat_min_wdl = optimalg.Condat(D_stack, dual_var_plan_wdl, polychrom_grad, id_prox, dual_prox_plan_wdl, lin_com, cost=cost_op,\
+                 rho=rho_P,  sigma=sigma_P, tau=tau_P, rho_update=None, sigma_update=None,
+                 tau_update=None, auto_iterate=False)
+
+
         print "------------------- Transport plans estimation ------------------"
 
-        condat_min.iterate(max_iter=nb_subiter) # ! actually runs optimisation
-        P_stack = condat_min.x_final
-        dual_var_plan = condat_min.y_final
 
-        # Normalization
-        for j in range(0,nb_comp):
-            l1_P = sum(abs(P_stack[:,:,j]))
-            P_stack[:,:,j]/= l1_P
-            A[j,:] *= l1_P
+        condat_min_wdl.iterate(max_iter=nb_subiter) # ! actually runs optimisation
+        D_stack = condat_min_wdl.x_final
+        dual_var_plan_wdl = condat_min_wdl.y_final
+
+
+        # Normalization     REVIEW THIS
+        for j in range(nb_comp):
+            for at in range(nb_atoms):
+                l1_D = sum(abs(D_stack[:,at,j])) 
+                D_stack[:,at,j] /= l1_D
+            const = sum(polychrom_grad._current_rec_MtX[2][:,j,:]) #maybe taking the mean instead of adding up?
+            A[j,:] *= const
             if graph_cons_en:
-                alph[j,:] *= l1_P
+                alph[j,:] *= const
         polychrom_grad.set_A(A)
+
+        # # Normalization
+        # for j in range(0,nb_comp):
+        #     l1_P = sum(abs(P_stack[:,:,j]))
+        #     P_stack[:,:,j]/= l1_P
+        #     A[j,:] *= l1_P
+        #     if graph_cons_en:
+        #         alph[j,:] *= l1_P
+        # polychrom_grad.set_A(A)
+
+
+
         # Flux update
-        obs_est = polychrom_grad.MX(P_stack)
+        obs_est = polychrom_grad.MX(D_stack)
         err_ref = 0.5*sum((obs_est-im_stack)**2)
         flux_new = (obs_est*im_stack).sum(axis=(0,1))/(obs_est**2).sum(axis=(0,1))
         print "Flux correction: ",flux_new
         polychrom_grad.set_flux(polychrom_grad.get_flux()*flux_new)
         polychrom_grad_coeff.set_flux(polychrom_grad_coeff.get_flux()*flux_new)
 
-        obs_est = polychrom_grad.MX(P_stack)
+
+
+        obs_est = polychrom_grad.MX(D_stack)
         res = im_stack - obs_est
         err_rec = 0.5*sum(res**2)
         print "err_ref : ",err_ref," ; err_rec : ", err_rec
         # Computing residual
 
 
-    psf_est = psf_learning_utils.field_reconstruction(P_stack,shap,supp,neighbors_graph,weights_neighbors,A)
+    # psf_est = psf_learning_utils.field_reconstruction(P_stack,shap,supp,neighbors_graph,weights_neighbors,A)
 
-    return psf_est,P_stack,A,res
+
+
+    psf_est = psf_learning_utils.field_reconstruction_wdl(polychrom_grad._current_rec_MtX[2],A,shap)
+
+
+    return psf_est,D_stack,A,res
 
 
 def test_lsq(Y,A,nb_iter=1000):

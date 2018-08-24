@@ -1853,6 +1853,7 @@ def transport_plan_projections_wdl(Mtx,shap,w_stack,gamma,C,n_iter_sink,spectrum
     chosen_lbdas = []
     for i in range(nb_proj):
         chosen_lbdas.append(w_stack[indices[i],:])
+    chosen_lbdas = np.array(chosen_lbdas)
 
     D_stack = np.expand_dims(Mtx, axis=2) #Theano_bary takes a cubic as input
     barys = ot.Theano_bary(D_stack,chosen_lbdas,gamma,C,n_iter_sink) # <pixels,nb_comp, nb_wvl>
@@ -1981,7 +1982,7 @@ def transport_plan_projections_field_marg_transpose(im_stack,shap,supp,neighbors
 
     nb_plans = im_stack.shape[-1]
     output = zeros((shap[0]*shap[1],shap[0]*shap[1],nb_plans))
-    for i in range(0,nb_plans):
+    for i in range(0,nb_plans): # step when i=1
         output[:,:,i] = transport_plan_projections_transpose(im_stack[:,:,i],supp,neighbors_graph,weights_neighbors,indices=[0])
     return output
 
@@ -2091,6 +2092,21 @@ def transport_plan_projections_flat_field_transpose_wdl(D_mat,A):
 
 def transport_plan_projections_flat_field_transpose_coeff(P_mat,P_stack,supp):
     return transpose(P_stack[supp[:,0],supp[:,1],:]).dot(P_mat)
+
+def field_reconstruction_wdl(barycenters,A,shap): #TO DO: implement that in theano
+    nb_bands = barycenters.shape[2]
+    nb_comp = barycenters.shape[1]
+    nb_obj = A.shape[1]
+    mono_chromatic_psf = zeros((shap[0],shap[1],nb_obj,nb_bands))
+
+    for v in range(nb_bands):
+        mono_chromatic_psf_temp = barycenters[:,:,v].dot(A)
+        for k in range(nb_obj):
+            mono_chromatic_psf[:,:,k,v] = mono_chromatic_psf_temp[:,k].reshape((shap[0],shap[1]))
+
+    return mono_chromatic_psf
+
+
 
 def field_reconstruction(P_stack,shap,supp,neighbors_graph,weights_neighbors,A):
     """ Computes monochromatic PSFs from eigenTransport plans.
@@ -2239,6 +2255,9 @@ def transport_plan_projections_field_coeff_transpose(im_stack,supp,neighbors_gra
     for i in range(0,nb_comp):
         multi_spec_comp = transport_plan_projections(P_stack[:,:,i],shap,supp,neighbors_graph,weights_neighbors)
         multi_spec_comp_mat[:,i,:] = multi_spec_comp.reshape((prod(shap),nb_bands))
+
+
+
 
     A = zeros((nb_comp,nb_im))
     for i in range(0,nb_im):

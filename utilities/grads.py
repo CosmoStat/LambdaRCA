@@ -62,9 +62,9 @@ class polychrom_eigen_psf(GradParent, PowerMethod):
         self._current_rec_MtX = None # stores latest application of self.MX_wdl (that includes MX and MtX)
         self._current_rec_MX = None # stores latest application of self.MX
 
-        # self.spec_rad = 30.9100819105
-        # self.inv_spec_rad = 0.03235190391
-        PowerMethod.__init__(self, self.trans_op_op, (np.prod(self.shape),D_stack.shape[1],A.shape[0]))
+        self.spec_rad = 30.9930631176
+        self.inv_spec_rad = 0.03226528453
+        # PowerMethod.__init__(self, self.trans_op, (np.prod(self.shape),D_stack.shape[1],A.shape[0]))
         print " > SPECTRAL RADIUS:\t{}".format(self.spec_rad)
         
         
@@ -74,29 +74,33 @@ class polychrom_eigen_psf(GradParent, PowerMethod):
     def set_A(self,A_new,pwr_en=True):
         self.A = np.copy(A_new)
         if pwr_en:
-            PowerMethod.__init__(self, self.trans_op_op, (np.prod(self.shape),np.prod(self.shape),self.A.shape[0]))
+            PowerMethod.__init__(self, self.trans_op, (np.prod(self.shape),self.D_stack.shape[1],self.A.shape[0]))
 
     def set_flux(self,flux_new,pwr_en=False):
         self.flux = np.copy(flux_new)
         if pwr_en:
-            PowerMethod.__init__(self, self.trans_op_op, (np.prod(self.shape),np.prod(self.shape),self.A.shape[0]))
+            PowerMethod.__init__(self, self.trans_op, (np.prod(self.shape),self.D_stack.shape[1],self.A.shape[0]))
 
     def get_flux(self):
         return self.flux
 
     
 
-    def MtX(self,x):
+    def MtX(self,x,y=None):
         """
             x: input data array, a cube of 2D images, residuous MX-Y. x not used.
         """
-        self._current_rec_MtX = ot.Theano_wdl_MtX(self.A,self.spectrums,self.flux,self.sig,self.ker,self.D_stack,self.w_stack,self.C,self.gamma,self.n_iter_sink,self.obs_data)
-        #[Mx_stack,Mtx,barys_stack]
+        if isinstance(y, type(None)):
+            y = np.zeros(self.obs_data.shape)
+        self._current_rec_MtX = ot.Theano_wdl_MtX(self.A,self.spectrums,self.flux,self.sig,self.ker,self.D_stack,self.w_stack,self.C,self.gamma,self.n_iter_sink,y)
+        
 
         return self._current_rec_MtX[0]
 
 
     def MX(self,x):
+
+
 
         self._current_rec_MX = ot.Theano_wdl_MX(self.A,self.spectrums,self.flux,self.sig,self.ker,x,self.w_stack,self.C,self.gamma,self.n_iter_sink)
 
@@ -177,8 +181,10 @@ class polychrom_eigen_psf(GradParent, PowerMethod):
 
     def get_grad(self,x):
 
+
+
         self.D_stack = x 
-        self.grad = self.MtX(x)
+        self.grad = self.MtX(x,y=self.obs_data)
 
     def get_atoms(self):
         return self.D_stack
@@ -345,7 +351,7 @@ class polychrom_eigen_psf_coeff_graph(GradBasic, PowerMethod):
     """
 
     def __init__(self, data, supp, neighbors_graph, weights_neighbors, spectrums, \
-                P, flux, sig, ker, ker_rot, D, basis,D_stack,w_stack,C,gamma,n_iter_sink,polychrom_grad, data_type=float):
+                P, flux, sig, ker, ker_rot, D, basis,D_stack,w_stack,C,gamma,n_iter_sink,polychrom_grad,A, data_type=float):
 
     #polychrom_grad_coeff
 
@@ -372,36 +378,44 @@ class polychrom_eigen_psf_coeff_graph(GradBasic, PowerMethod):
         self.gamma = gamma
         self.n_iter_sink = n_iter_sink
         self.polychrom_grad = polychrom_grad
+        self.A_ini = A
 
-
-        self._current_rec_wdl = None
-        
-        PowerMethod.__init__(self, self.trans_op_op, (D_stack.shape[-1],self.basis.shape[0]))
 
         self._current_rec = None # stores latest application of self.MX
+        self._current_rec_MX = None
+        self._current_rec_MtX = None
+        self._current_x = self.A_ini.dot(np.transpose(self.basis))
+
+
+
+        self.spec_rad = 5.595602793283493  
+        self.inv_spec_rad = 0.1787117558     
+        # PowerMethod.__init__(self, self.trans_op, (D_stack.shape[-1],self.basis.shape[0]))
+
 
 
 
     def set_D_stack(self,D_stack_new,pwr_en=True):
         self.D_stack = np.copy(D_stack_new)
         if pwr_en:
-            PowerMethod.__init__(self, self.trans_op_op, (self.D_stack.shape[-1],self.basis.shape[0]))
+            PowerMethod.__init__(self, self.trans_op, (self.D_stack.shape[-1],self.basis.shape[0]))
 
     def set_P(self,P_new,pwr_en=True):
         self.P = np.copy(P_new)
         if pwr_en:
-            PowerMethod.__init__(self, self.trans_op_op, (self.P.shape[-1],self.basis.shape[0]))
+            PowerMethod.__init__(self, self.trans_op, (self.P.shape[-1],self.basis.shape[0]))
+
 
     def set_flux(self,flux_new,pwr_en=False):
         self.flux = np.copy(flux_new)
         if pwr_en:
-            PowerMethod.__init__(self, self.trans_op_op, (self.P.shape[-1],self.basis.shape[0]))
+            PowerMethod.__init__(self, self.trans_op, (self.P.shape[-1],self.basis.shape[0]))
 
     def get_flux(self):
         return self.flux
 
 
-    def MX(self, x):
+    def MX_old(self, x):
         """MX
 
         This method calculates the action of the matrix M on the data X
@@ -422,16 +436,15 @@ class polychrom_eigen_psf_coeff_graph(GradBasic, PowerMethod):
         return self._current_rec
 
 
-    def MX_wdl(self, x):
+    def MX(self, x):
         # x: <5,5*100> What is it
         # basis: <5*100, 100>
-        import pdb; pdb.set_trace()  # breakpoint 5d77999b //
 
-        self._current_rec = Theano_coeff_MX(x.dot(self.basis),self.spectrums,self.polychrom_grad._current_rec_wdl[2],self.flux,self.sig,self.ker)
+        self._current_rec_MX = ot.Theano_coeff_MX(x.dot(self.basis),self.spectrums,self.polychrom_grad._current_rec_MtX[2],self.flux,self.sig,self.ker)
         
-        return self._current_rec
+        return self._current_rec_MX
 
-    def MtX(self, x):
+    def MtX_old(self, x):
         """MtX
 
         This method calculates the action of the transpose of the matrix Mt on
@@ -450,12 +463,17 @@ class polychrom_eigen_psf_coeff_graph(GradBasic, PowerMethod):
         return transport_plan_projections_field_coeff_transpose(x,self.supp,self.neighbors_graph,\
                 self.weights_neighbors,self.spectrums,self.P,self.flux,self.sig,self.ker_rot,self.D).dot(np.transpose(self.basis))
 
-    # def MtX_wdl(self, x):
+    def MtX(self, x, y=None): # the x here is not used. MX - observed data is taken as default (the loss function)
 
-    #     return transport_plan_projections_field_coeff_transpose(self.obs_data,self.supp,self.neighbors_graph,\
-    #         self.weights_neighbors,self.spectrums,self.P,self.flux,self.sig,self.ker_rot,self.D).dot(np.transpose(self.basis))
+        if isinstance(y, type(None)):
+            y = np.zeros(self.obs_data.shape)
 
-    #polychrom_grad
+        self._current_rec_MtX = ot.Theano_coeff_MtX(self._current_x.dot(self.basis),self.spectrums,self.polychrom_grad._current_rec_MtX[2],\
+            self.flux,self.sig,self.ker,y) #[MtX_coeff_, MX_coeff]
+
+
+
+        return self._current_rec_MtX[0].dot(np.transpose(self.basis))
 
 
                 
@@ -471,14 +489,14 @@ class polychrom_eigen_psf_coeff_graph(GradBasic, PowerMethod):
             print " > Current cost: {}".format(cost_val)
         return cost_val
                 
-    def get_grad(self, x):
+    def get_grad_old(self, x):
         """Get the gradient step
         This method calculates the gradient step from the input data
         Parameters
         ----------
         x : np.ndarray
             Input data array
-        Returns
+        Ret
         -------
         np.ndarray gradient value
         Notes
@@ -486,4 +504,36 @@ class polychrom_eigen_psf_coeff_graph(GradBasic, PowerMethod):
         Calculates M^T (MX - Y)
         """
 
+        # np.save("/Users/rararipe/Documents/Data/test_coeff_MtX_quickgen_22x22pixels_5lbdas10pos_25_07_2018/barycenters.npy", multi_spec_comp_mat)
+        # np.save("/Users/rararipe/Documents/Data/test_coeff_MtX_quickgen_22x22pixels_5lbdas10pos_25_07_2018/A.npy", x.dot(self.basis))
+
         self.grad = self.MtX(self.MX(x) - self.obs_data)
+
+
+        # temp3 = transport_plan_projections_field_coeff_transpose(temp1,self.supp,self.neighbors_graph,self.weights_neighbors,self.spectrums,self.P,self.flux,self.sig,self.ker_rot,self.D)
+
+        # np.save("/Users/rararipe/Documents/Data/test_coeff_MtX_quickgen_22x22pixels_5lbdas10pos_25_07_2018/gradA.npy", temp3)
+
+    def get_grad(self, x):
+        """Get the gradient step
+        This method calculates the gradient step from the input data
+        Parameters
+        ----------
+        x : np.ndarray
+            Input data array
+        Ret
+        -------
+        np.ndarray gradient value
+        Notes
+        -----
+        Calculates M^T (MX - Y)
+        """
+
+
+        self._current_x  = x
+        self.grad = self.MtX(x, y= self.obs_data)
+
+
+
+
+

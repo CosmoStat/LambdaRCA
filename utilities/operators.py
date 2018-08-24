@@ -165,7 +165,7 @@ class transport_plan_marg_wavelet(object):
         self.gamma = gamma
         self.n_iter_sink = n_iter_sink
 
-    def op(self, data):
+    def op_old(self, data):
         """Operator
 
         This method returns the wavelets coefficients of the first marginals of the coupling matrices given as entry. What does he mean by the first marginals??
@@ -187,6 +187,10 @@ class transport_plan_marg_wavelet(object):
 
 
     def op_wdl(self,data):
+
+    
+        temp = transport_plan_projections_field_marg_wdl(data,self.shape,self.w_stack,self.gamma,self.C,self.n_iter_sink)#go step
+
 
         
         return filter_convolve_stack(transport_plan_projections_field_marg_wdl(data,self.shape,self.w_stack,self.gamma,self.C,self.n_iter_sink),\
@@ -244,5 +248,5 @@ class transport_plan_lin_comb_wavelet(object):
         return self.lin_comb.adj_op(data[0])+self.marg_wvl.adj_op(data[1])
 
     def adj_op(self, data):
-        
+
         return self.lin_comb.adj_op_wdl(data[0])+self.marg_wvl.adj_op_wdl(data[1])
