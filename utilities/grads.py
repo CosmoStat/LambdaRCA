@@ -5,7 +5,8 @@ from modopt.opt.gradient import GradParent, GradBasic
 from modopt.math.matrix import PowerMethod
 import sys
 sys.path.append('../baryOT')
-import OT_bary as ot
+import logOT_bary as ot
+import time
         
         
 class polychrom_eigen_psf(GradParent, PowerMethod):
@@ -92,8 +93,12 @@ class polychrom_eigen_psf(GradParent, PowerMethod):
         """
         if isinstance(y, type(None)):
             y = np.zeros(self.obs_data.shape)
+
+        tic = time.time()
         self._current_rec_MtX = ot.Theano_wdl_MtX(self.A,self.spectrums,self.flux,self.sig,self.ker,self.D_stack,self.w_stack,self.C,self.gamma,self.n_iter_sink,y)
-        
+        toc = time.time()
+
+        print str((toc-tic)/60.0) + " min"
 
         return self._current_rec_MtX[0]
 

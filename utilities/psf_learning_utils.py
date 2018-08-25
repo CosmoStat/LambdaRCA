@@ -13,7 +13,7 @@ sys.path.append('../utilities')
 import isap
 from numpy.random import randn
 sys.path.append('../baryOT')
-import OT_bary as ot
+import logOT_bary as ot
 
 
 def stack_wavelets_transform(stack,opt=['-t2','-n2'],kmad=5):

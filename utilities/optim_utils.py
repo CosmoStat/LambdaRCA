@@ -25,7 +25,7 @@ import proxs as lambdaprox
 import modopt.opt.algorithms as optimalg
 from modopt.opt.linear import Identity
 sys.path.append('../baryOT')
-import OT_bary as ot
+import logOT_bary as ot
 
 try:
     import pyct
@@ -11180,10 +11180,6 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
 
         noise_map_wdl = get_noise_arr(lin_com.op(polychrom_grad.MtX(im_stack))[1]) 
 
-
-        import pdb; pdb.set_trace()  # breakpoint d784a3e4 //
-
-        
         # noise_map = get_noise_arr(lin_com.op(polychrom_grad.MtX(im_stack))[1]) 
 
         ## lin_com.op(.)[1] computes the "image"(only the gradient of transport plan is used) projection to the first wvl
@@ -11390,6 +11386,7 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
 
     # psf_est = psf_learning_utils.field_reconstruction(P_stack,shap,supp,neighbors_graph,weights_neighbors,A)
 
+    import pdb; pdb.set_trace()  # breakpoint 689bc3ea //
 
 
     psf_est = psf_learning_utils.field_reconstruction_wdl(polychrom_grad._current_rec_MtX[2],A,shap)
