@@ -187,14 +187,25 @@ class transport_plan_marg_wavelet(object):
 
 
     def op_wdl(self,data):
+        """
+            Returns the atoms in starlet domain
 
-    
-        temp = transport_plan_projections_field_marg_wdl(data,self.shape,self.w_stack,self.gamma,self.C,self.n_iter_sink)#go step
-
+        """
 
         
-        return filter_convolve_stack(transport_plan_projections_field_marg_wdl(data,self.shape,self.w_stack,self.gamma,self.C,self.n_iter_sink),\
-            self.filters, method=self.method)
+        res = []
+        for d in range(data.shape[1]):
+            res.append(filter_convolve_stack(data[:,d,:].swapaxes(0,1).reshape((data.shape[2],self.shape[0],self.shape[1])),self.filters, method=self.method))
+        
+        res = np.array(res)
+
+        res_final = res.swapaxes(1,2).swapaxes(2,3).swapaxes(3,4).swapaxes(0,1).swapaxes(1,2).swapaxes(2,3) # put in usual format <nb_filters,pixels_x,pixels_y,nb_atoms,nb_comp>
+
+
+        return res_final
+
+        # return filter_convolve_stack(transport_plan_projections_field_marg_wdl(data,self.shape,self.w_stack,self.gamma,self.C,self.n_iter_sink),\
+        #     self.filters, method=self.method)
 
     def adj_op(self, data):
         """Adjoint operator
@@ -217,9 +228,10 @@ class transport_plan_marg_wavelet(object):
                                                         self.shape,self.supp,self.neighbors_graph,self.weights_neighbors)
 
     def adj_op_wdl(self, data):
-        # returns atoms used to compute data
+        # returns atoms used to compute 
 
-        return self.grad.get_atoms()
+        #sum the result of all filters I guess ?
+        return data.sum(axis=0).reshape((self.shape[0]*self.shape[1],data.shape[3],data.shape[4]))
 
 
 class transport_plan_lin_comb_wavelet(object):

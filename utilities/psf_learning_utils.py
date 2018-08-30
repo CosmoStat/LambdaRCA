@@ -14,6 +14,7 @@ import isap
 from numpy.random import randn
 sys.path.append('../baryOT')
 import logOT_bary as ot
+from scipy.ndimage import gaussian_filter
 
 
 def stack_wavelets_transform(stack,opt=['-t2','-n2'],kmad=5):
@@ -2018,6 +2019,19 @@ def transport_plan_projections_field(P_stack,shap,supp,neighbors_graph,weights_n
     return stars_est
 
 
+def blurred_initialization(PSF,sigma,nb_atoms):
+    # Generate a Gaussian PSF.
+    M = np.zeros(PSF.shape)
+    M[zip(np.array(M.shape) / 2)] = 1
+    M = gaussian_filter(M, sigma)
+    conv = sigma*scisig.fftconvolve(PSF, M, mode='same')
+    res = np.zeros((PSF.shape[0]*PSF.shape[1],nb_atoms))
+    for i in range(nb_atoms):
+        res[:,i] = conv.reshape(-1)
+
+    return res
+
+
 # def transport_plan_projections_field_transpose_wdl(data,shap,A, flux, sig, ker,spectrums, D_stack,w_stack,C,gamma,n_iter_sink):
 #     """
 #         data <21,21,100>
@@ -2085,6 +2099,7 @@ def transport_plan_projections_flat_field_transpose(P_mat,supp,A,shap):
 
 
 def transport_plan_projections_flat_field_transpose_wdl(D_mat,A):
+
     return D_mat.dot(transpose(A))
 
 

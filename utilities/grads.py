@@ -62,16 +62,14 @@ class polychrom_eigen_psf(GradParent, PowerMethod):
 
         self._current_rec_MtX = None # stores latest application of self.MX_wdl (that includes MX and MtX)
         self._current_rec_MX = None # stores latest application of self.MX
+        self._current_rec = None
 
-        self.spec_rad = 30.9930631176
-        self.inv_spec_rad = 0.03226528453
-        # PowerMethod.__init__(self, self.trans_op, (np.prod(self.shape),D_stack.shape[1],A.shape[0]))
+        # self.spec_rad = 30.9930631176
+        # self.inv_spec_rad = 0.03226528453
+        PowerMethod.__init__(self, self.trans_op, (np.prod(self.shape),D_stack.shape[1],A.shape[0]))
         print " > SPECTRAL RADIUS:\t{}".format(self.spec_rad)
         
         
-
-        self._current_rec = None
-
     def set_A(self,A_new,pwr_en=True):
         self.A = np.copy(A_new)
         if pwr_en:
@@ -156,8 +154,10 @@ class polychrom_eigen_psf(GradParent, PowerMethod):
         """ Compute data fidelity term. ``y`` is unused (it's just so ``modopt.opt.algorithms.Condat`` can feed
         the dual variable.)
         """
-        if isinstance(self._current_rec, type(None)):
+        if isinstance(self._current_rec_MtX, type(None)):
             self._current_rec = self.MX(x)
+        else:
+            self._current_rec = self._current_rec_MtX[1]
 
         cost_val = 0.5 * np.linalg.norm(self._current_rec - self.obs_data) ** 2
         if verbose:
@@ -187,7 +187,7 @@ class polychrom_eigen_psf(GradParent, PowerMethod):
     def get_grad(self,x):
 
 
-
+        self.D_stack_old = self.D_stack
         self.D_stack = x 
         self.grad = self.MtX(x,y=self.obs_data)
 
@@ -393,9 +393,9 @@ class polychrom_eigen_psf_coeff_graph(GradBasic, PowerMethod):
 
 
 
-        self.spec_rad = 5.595602793283493  
-        self.inv_spec_rad = 0.1787117558     
-        # PowerMethod.__init__(self, self.trans_op, (D_stack.shape[-1],self.basis.shape[0]))
+        # self.spec_rad = 5.595602793283493  
+        # self.inv_spec_rad = 0.1787117558     
+        PowerMethod.__init__(self, self.trans_op, (D_stack.shape[-1],self.basis.shape[0]))
 
 
 
@@ -414,7 +414,7 @@ class polychrom_eigen_psf_coeff_graph(GradBasic, PowerMethod):
     def set_flux(self,flux_new,pwr_en=False):
         self.flux = np.copy(flux_new)
         if pwr_en:
-            PowerMethod.__init__(self, self.trans_op, (self.P.shape[-1],self.basis.shape[0]))
+            PowerMethod.__init__(self, self.trans_op, (self.D_stack.shape[-1],self.basis.shape[0]))
 
     def get_flux(self):
         return self.flux
@@ -442,7 +442,7 @@ class polychrom_eigen_psf_coeff_graph(GradBasic, PowerMethod):
 
 
     def MX(self, x):
-        # x: <5,5*100> What is it
+        # x: <5,5*100> 
         # basis: <5*100, 100>
 
         self._current_rec_MX = ot.Theano_coeff_MX(x.dot(self.basis),self.spectrums,self.polychrom_grad._current_rec_MtX[2],self.flux,self.sig,self.ker)
@@ -486,8 +486,11 @@ class polychrom_eigen_psf_coeff_graph(GradBasic, PowerMethod):
         """ Compute data fidelity term. ``y`` is unused (it's just so ``modopt.opt.algorithms.Condat`` can feed
         the dual variable.
         """
-        if isinstance(self._current_rec, type(None)):
+        if isinstance(self._current_rec_MtX, type(None)): #check if cost is not called outside modopt, e.g. in optim_outils
             self._current_rec = self.MX(x)
+        else:
+            self._current_rec = self._current_rec_MtX[1]
+
         cost_val = 0.5 * np.linalg.norm(self._current_rec - self.obs_data) ** 2
         if verbose:
             print " > MIN(X):\t{}".format(np.min(x))

@@ -99,7 +99,11 @@ class Simplex(object):
         if self.pos_en:
             return positive(data)
         else:#yes
-            return columns_wise_simplex_proj_wdl(data,mass=self.mass)       
+
+            temp = columns_wise_simplex_proj_wdl(data,mass=self.mass) 
+            temp[temp==0] = 1e-10
+
+            return temp       
             
 class simplex_threshold(object):
     """ Simplex Threshold proximity operator

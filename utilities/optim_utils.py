@@ -26,6 +26,7 @@ import modopt.opt.algorithms as optimalg
 from modopt.opt.linear import Identity
 sys.path.append('../baryOT')
 import logOT_bary as ot
+import numpy as np
 
 try:
     import pyct
@@ -11009,7 +11010,7 @@ def polychromatic_psf_field_est(im_stack,spectrums,wvl,D,opt_shift_est,nb_comp,n
 
     return psf_est,P_stack,A
 
-def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_comp,field_pos=None,nb_iter=4,nb_subiter=100,mu=0.3,\
+def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_comp,PSFs_gt,field_pos=None,nb_iter=4,nb_subiter=100,mu=0.3,\
                         tol = 0.1,sig_supp = 3,sig=None,shifts=None,flux=None,nsig_shift_est=4,pos_en = True,simplex_en=False,\
                         wvl_en=True,wvl_opt=None,nsig=3,graph_cons_en=False):
     """ Main LambdaRCA function.
@@ -11060,7 +11061,7 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
     #initialize multi_comp D_stack <42x42,2,5> <p,nb_atoms,nb_comp> and the weights (t,1-t) w_stack <100,2> <nb_wvl,nb_atoms>
     nb_atoms = 2
     p = shap[0]*shap[1] # number of pixels
-    feat_init = "random"
+    feat_init = "zoom"
     D_stack = []
     for i in range(nb_comp):
         if feat_init == "uniform":
@@ -11068,13 +11069,28 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
         elif feat_init == "random":
             Ys = np.random.rand(p,nb_atoms) #<2,42x42>
             Ys = (Ys.T / np.sum(Ys, axis = 1)).T #normalize the total of mass in each line
+
+        elif feat_init == "zoom":
+            in_fact = 2
+            out_fact = 0.5
+            Ys = np.zeros((p,nb_atoms))   
+            guess = utils.gauss_convolve(PSFs_gt[:,:,i,0],sig=0.7) #TO DO: add random shift and noise
+            zIn = utils.clipped_zoom(guess,in_fact).reshape(-1)
+            zOut = utils.clipped_zoom(guess,out_fact).reshape(-1)
+            Ys[:,0] = zIn / np.sum(zIn, axis = 0) #normalize the total of mass in each line
+            Ys[:,1] = zOut/ np.sum(zOut, axis = 0)
+        
         D_stack.append(Ys)
+
     D_stack = np.array(D_stack)
     D_stack = D_stack.swapaxes(0,1).swapaxes(1,2)
     w_stack = np.array([t + 1e-10, 1 - t - 1e-10]).T
+    D_stack_1 = D_stack
+
+
 
     gamma = 0.3
-    n_iter_sink = 200
+    n_iter_sink = 13 #until we're sure atoms values respect the constraint
     C = ot.EuclidCost(shap[0],shap[1])
 
 
@@ -11159,28 +11175,9 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
     # Proximity operators related instances
     id_prox = Identity()
     if wvl_en and pos_en:
-        # testMX = polychrom_grad.MX_wdl(im_stack)
-        # testMtX = polychrom_grad.MtX_wdl(im_stack)
-        # outputs for Mx:
-        # barys_stack: <100,5,100,42x42>, <nb_obj,nb_comp,nb_wvl,42x42>
-        # Mx_stack: <100,21,21> star estimated for each object
-        # Mtx: <42x42,2,5>, <42x42,nb_atoms,nb_comp> gradient of loss function with respect to each atom for each component
-        
-        # temp2 = lin_com.op(polychrom_grad.MtX(im_stack))[1] 
-        # temp3 = lin_com.op_wdl(polychrom_grad.MtX_wdl(im_stack)) #(1, 22, 1, 22, 3) the first 1 is extra
-
-
-        #do step here
-        # temp = polychrom_grad.MtX(im_stack)
-
-
-        # temp2 = lin_com.op(temp)[1]
-
-        # temp3 = get_noise_arr(temp2)
 
         noise_map_wdl = get_noise_arr(lin_com.op(polychrom_grad.MtX(im_stack))[1]) 
 
-        # noise_map = get_noise_arr(lin_com.op(polychrom_grad.MtX(im_stack))[1]) 
 
         ## lin_com.op(.)[1] computes the "image"(only the gradient of transport plan is used) projection to the first wvl
         ## in each component in the starlet domain <42,1,42,5>. The one is due to the fact that only one filter is used.
@@ -11263,7 +11260,7 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
     # obs_est = polychrom_grad.MX(P_stack)
     obs_est = polychrom_grad.MX(D_stack)
     res = im_stack - obs_est
-
+    D_stack_2 = D_stack
 
 
 
@@ -11311,7 +11308,7 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
             A = min_coeff.x_final
             dual_var_coeff = min_coeff.y_final
 
-        # Parameters update
+        print "Parameters update"
         polychrom_grad.set_A(A)
         if not wvl_en:
             lin_com.set_A(A)
@@ -11330,8 +11327,6 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
         rho_P = 1
 
         # Cost function instance
-
-
         condat_min_wdl = optimalg.Condat(D_stack, dual_var_plan_wdl, polychrom_grad, id_prox, dual_prox_plan_wdl, lin_com, cost=cost_op,\
                  rho=rho_P,  sigma=sigma_P, tau=tau_P, rho_update=None, sigma_update=None,
                  tau_update=None, auto_iterate=False)
@@ -11343,7 +11338,7 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
         condat_min_wdl.iterate(max_iter=nb_subiter) # ! actually runs optimisation
         D_stack = condat_min_wdl.x_final
         dual_var_plan_wdl = condat_min_wdl.y_final
-
+        D_stack_3 = D_stack
 
         # Normalization     REVIEW THIS
         for j in range(nb_comp):
@@ -11389,7 +11384,7 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
     import pdb; pdb.set_trace()  # breakpoint 689bc3ea //
 
 
-    psf_est = psf_learning_utils.field_reconstruction_wdl(polychrom_grad._current_rec_MtX[2],A,shap)
+    psf_est = psf_learning_utils.field_reconstruction_wdl(ot.Theano_bary(D_stack,w_stack,gamma,C,n_iter_sink),A,shap)
 
 
     return psf_est,D_stack,A,res
