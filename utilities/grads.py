@@ -64,9 +64,9 @@ class polychrom_eigen_psf(GradParent, PowerMethod):
         self._current_rec_MX = None # stores latest application of self.MX
         self._current_rec = None
 
-        # self.spec_rad = 30.9930631176
-        # self.inv_spec_rad = 0.03226528453
-        PowerMethod.__init__(self, self.trans_op, (np.prod(self.shape),D_stack.shape[1],A.shape[0]))
+        self.spec_rad = 30.9930631176
+        self.inv_spec_rad = 0.03226528453
+        # PowerMethod.__init__(self, self.trans_op, (np.prod(self.shape),D_stack.shape[1],A.shape[0]))
         print " > SPECTRAL RADIUS:\t{}".format(self.spec_rad)
         
         
@@ -84,6 +84,13 @@ class polychrom_eigen_psf(GradParent, PowerMethod):
         return self.flux
 
     
+
+    def MtX_init(self,x):
+        a = self.MtX(x)
+        b = self.MtX(x,y=self.obs_data)
+
+        return a-b 
+
 
     def MtX(self,x,y=None):
         """
@@ -393,9 +400,9 @@ class polychrom_eigen_psf_coeff_graph(GradBasic, PowerMethod):
 
 
 
-        # self.spec_rad = 5.595602793283493  
-        # self.inv_spec_rad = 0.1787117558     
-        PowerMethod.__init__(self, self.trans_op, (D_stack.shape[-1],self.basis.shape[0]))
+        self.spec_rad = 5.595602793283493  
+        self.inv_spec_rad = 0.1787117558     
+        # PowerMethod.__init__(self, self.trans_op, (D_stack.shape[-1],self.basis.shape[0]))
 
 
 

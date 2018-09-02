@@ -11176,7 +11176,7 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
     id_prox = Identity()
     if wvl_en and pos_en:
 
-        noise_map_wdl = get_noise_arr(lin_com.op(polychrom_grad.MtX(im_stack))[1]) 
+        noise_map_wdl = get_noise_arr(lin_com.op(polychrom_grad.MtX_init(im_stack))[1]) 
 
 
         ## lin_com.op(.)[1] computes the "image"(only the gradient of transport plan is used) projection to the first wvl
@@ -11217,6 +11217,11 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
     sigma_P = w*(np.sqrt(delta)-polychrom_grad.inv_spec_rad**(-1)/2)/(2*lin_com.mat_norm**2)
     tau_P = sigma_P
     rho_P = 1
+
+
+
+    import pdb; pdb.set_trace()  # breakpoint 45d17dd6 //
+    
 
     # Cost function instance
     cost_op = costObj([polychrom_grad])
