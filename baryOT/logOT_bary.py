@@ -122,8 +122,10 @@ def log_sinkhorn_algoritm(v,i,logD_stack,lbda_stack,Cost,Tau,Epsilon,n_iter):
                               non_sequences=[logD_stack,lbda_stack,Gamma,Cost,Tau,Epsilon,i,v], n_steps=n_iter)
     
     log_bary = T.exp(res[2][-1])
+    alpha = res[0]
+    beta = res[1]
     
-    return log_bary
+    return log_bary,alpha,beta
 
 
 
@@ -134,9 +136,11 @@ def log_compute_bary(i,logD_stack,lbda_stack,Cost,Tau,Epsilon,n_iter):
                              sequences = T.arange(lbda_stack.shape[0]),
                              non_sequences = [i,logD_stack,lbda_stack,Cost,Tau,Epsilon,n_iter])
   
-    res_flip = res[::-1]
+    barys = res[0][::-1]
+    alphas = res[1][::-1]
+    betas = res[2][::-1]
 
-    return res_flip
+    return barys,alphas,betas
         
 
 log_result_bary,log_updates_bary = theano.scan(log_compute_bary,
@@ -144,7 +148,11 @@ log_result_bary,log_updates_bary = theano.scan(log_compute_bary,
                                       sequences=T.arange(logD_stack.shape[2]),
                                       non_sequences = [logD_stack,lbda_stack,Cost,Tau,Epsilon,n_iter]) #<nb_comp, nb_wvl, pixels>
 
-log_result_bary_rshp = T.swapaxes(T.swapaxes(log_result_bary,0,1),0,2) #<pixels,nb_comp, nb_wvl>
+log_result_bary_rshp = T.swapaxes(T.swapaxes(log_result_bary[0],0,1),0,2) #<pixels,nb_comp, nb_wvl>
+log_alphas_rshp = T.swapaxes(T.swapaxes(log_result_bary[1],0,3),1,4) #<pixels,nb_atoms, nb_comp, nb_wvl>
+log_betas_rshp = T.swapaxes(T.swapaxes(log_result_bary[2],0,3),1,4) #<pixels,nb_atoms, nb_comp,nb_wvl>
+
+
 
 Theano_bary = theano.function([D_stack,lbda_stack,Gamma,Cost,n_iter,theano.In(Tau,value=-0.3),theano.In(Epsilon,value=1e-200)],log_result_bary_rshp)
 
@@ -193,7 +201,7 @@ Theano_wdl_MtX = theano.function([A_mat,beta_mat,Flux_all,Sigma_all,K_all,D_stac
 
 
 Theano_wdl_MX = theano.function([A_mat,beta_mat,Flux_all,Sigma_all,K_all,D_stack,lbda_stack,Cost,Gamma,n_iter,\
-	theano.In(Tau,value=-0.3),theano.In(Epsilon,value=1e-200)],res_B_rshp)
+	theano.In(Tau,value=-0.3),theano.In(Epsilon,value=1e-200)],[res_B_rshp,barycenters,log_alphas_rshp,log_betas_rshp])
 
 MtX_coeff = T.grad(Loss,A_mat)
 

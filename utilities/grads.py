@@ -112,7 +112,8 @@ class polychrom_eigen_psf(GradParent, PowerMethod):
 
 
 
-        self._current_rec_MX = ot.Theano_wdl_MX(self.A,self.spectrums,self.flux,self.sig,self.ker,x,self.w_stack,self.C,self.gamma,self.n_iter_sink)
+        temp = ot.Theano_wdl_MX(self.A,self.spectrums,self.flux,self.sig,self.ker,x,self.w_stack,self.C,self.gamma,self.n_iter_sink)
+        self._current_rec_MX = temp[0]
 
         return self._current_rec_MX
 

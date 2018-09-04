@@ -11084,6 +11084,10 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
 
     D_stack = np.array(D_stack)
     D_stack = D_stack.swapaxes(0,1).swapaxes(1,2)
+
+
+    # np.save('/Users/rararipe/Documents/Data/Results_quickestGenerator/22x22pixels_5lbdas10pos_25_07_2018/ini_guess.npy', D_stack)
+
     w_stack = np.array([t + 1e-10, 1 - t - 1e-10]).T
     D_stack_1 = D_stack
 
@@ -11126,6 +11130,17 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
     A,comp,cube_est = utils.cube_svd(im_stack,nb_comp=nb_comp)
 
 
+    # np.save('/Users/rararipe/Documents/Data/debug_WDL_gradi/A.npy',A)
+    # np.save('/Users/rararipe/Documents/Data/debug_WDL_gradi/spectrums.npy',spectrums)
+    # np.save('/Users/rararipe/Documents/Data/debug_WDL_gradi/flux.npy',flux)
+    # np.save('/Users/rararipe/Documents/Data/debug_WDL_gradi/sig.npy',sig)
+    # np.save('/Users/rararipe/Documents/Data/debug_WDL_gradi/ker.npy',ker)
+    # np.save('/Users/rararipe/Documents/Data/debug_WDL_gradi/ker_rot.npy',ker_rot)
+    # np.save('/Users/rararipe/Documents/Data/debug_WDL_gradi/D_stack.npy',D_stack)
+    # np.save('/Users/rararipe/Documents/Data/debug_WDL_gradi/w_stack.npy',w_stack)
+    # np.save('/Users/rararipe/Documents/Data/debug_WDL_gradi/C.npy',C)
+    # np.save('/Users/rararipe/Documents/Data/debug_WDL_gradi/gamma.npy',gamma)
+    # np.save('/Users/rararipe/Documents/Data/debug_WDL_gradi/datapoint.npy',im_stack)
 
 
 
@@ -11220,8 +11235,7 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
 
 
 
-    import pdb; pdb.set_trace()  # breakpoint 45d17dd6 //
-    
+
 
     # Cost function instance
     cost_op = costObj([polychrom_grad])
@@ -11386,7 +11400,6 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
 
     # psf_est = psf_learning_utils.field_reconstruction(P_stack,shap,supp,neighbors_graph,weights_neighbors,A)
 
-    import pdb; pdb.set_trace()  # breakpoint 689bc3ea //
 
 
     psf_est = psf_learning_utils.field_reconstruction_wdl(ot.Theano_bary(D_stack,w_stack,gamma,C,n_iter_sink),A,shap)
