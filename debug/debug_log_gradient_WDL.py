@@ -6,7 +6,9 @@ import logOT_bary as ot
 import time
 from scipy.ndimage import gaussian_filter
 import scipy.signal as scisig
-
+from tqdm import tqdm
+import psf_toolkit as tk
+import pickle
 
 
 def EuclidCost_split(Nr, Nc, divmed=False, timeit=False, trunc=False, maxtol=745.13, truncval=745.13):
@@ -85,7 +87,7 @@ def LogSeparableKer(v,Cr,Cc,gamma):
 
 
 #one object, one component. Do big loop later to have the barycenters for every
-def logSinkornLoop(Cr,Cc,D,lbda,n_iter):
+def logSinkornLoop(Cr,Cc,D,lbda,gamma,n_iter):
     """
         PARAMETERS
         ----------
@@ -97,8 +99,8 @@ def logSinkornLoop(Cr,Cc,D,lbda,n_iter):
     N,S = D.shape
     sqrtN = int(np.sqrt(N))
 
-    v = np.zeros(n_iter,N,S)
-    phi = np.zeros(n_iter+1,N,S)
+    v = np.zeros((n_iter+1,N,S))
+    phi = np.zeros((n_iter+1,N,S))
     for it in range(1,n_iter+1):
         logp = np.zeros(N)
         for s in range(S):
@@ -106,29 +108,91 @@ def logSinkornLoop(Cr,Cc,D,lbda,n_iter):
             logp += lbda[s]* phi[it,:,s]
             v[it,:,s] = logp - phi[it,:,s]
 
+
+    import pdb; pdb.set_trace()  # breakpoint dfe1e0f8 //
+    
+
     p = np.exp(logp)
 
     return p,phi,v
 
 
-def computeBarycenters(Cc,Cr,D_stack,w_stack,n_iter):
+def computeBarycenters(Cc,Cr,D_stack,w_stack,gamma,n_iter): # DEBUGGED BY test_barycenter_WDL.ipynb
 
+    N = D_stack.shape[0]
+    nb_atoms = D_stack.shape[1]
     nb_comp = D_stack.shape[2]
     nb_wvl = w_stack.shape[0]
 
-    for i in range(nb_comp):
-        for v in range(nb_wvl):
+
+
+    barycenters = np.zeros((N,nb_comp,nb_wvl))
+    phi = np.zeros((n_iter+1,N,nb_atoms,nb_comp,nb_wvl))
+    v = np.zeros((n_iter+1,N,nb_atoms,nb_comp,nb_wvl))
+    for i in tqdm(range(nb_comp)):
+        for w in tqdm(range(nb_wvl)):
+            temp = logSinkornLoop(Cr,Cc,D_stack[:,:,i],w_stack[w,:],gamma,n_iter)
+            x,y,z = temp
+            barycenters[:,i,w],phi[:,:,:,i,w],v[:,:,:,i,w]  =  temp
 
 
 
+    return barycenters
 
 
+#======================== TEST BARYCENTER =================================
+
+Lambda_RCA_path = '/Users/rararipe/Documents/Data/LambdaRCA/sim_starsx100_10dB.sav'
+[out_stack,dec_stack,sig,flux,spectrums,field_pos] = pickle.load(open( Lambda_RCA_path, "rb" ) )
+nb_comp = 1
+
+print out_stack.shape # (21, 21, 100)        LR pixel x LR pixel x nobj number of objects -   inputs?
+print dec_stack.shape    # (42, 42, 100, 100)   HR pixel x HR pixel x wavelength for each object? x nobj      -   ground truth?
+print sig.shape          # (100, 1)             Noise estimation
+print flux.shape         # (100,)               ... flux. 
+print spectrums.shape    # (100, 100)           100 lambdas each, SED 100 objects
+print field_pos.shape    # (100, 2)             FOV positions of the 100 objects
+
+#Use estimated flux and sigma
+[sig2,flux2] = pickle.load(open( "/Users/rararipe/Documents/Data/LambdaRCA_OTbaryv2/sigma_flux_estimated_full_original_data.pickle", "rb" ) )
+sig = sig2
+flux = flux2
+
+pos = 57
+PSFs = np.expand_dims(dec_stack[:,:,15:86,pos],axis=3)
+SEDs = np.expand_dims(spectrums[15:86,pos],axis=1)
+flux = np.expand_dims(flux2[pos],axis=1)
+sigma = np.expand_dims(sig2[pos],axis=1)
+stars = np.expand_dims(out_stack[:,:,pos],axis=2)
+
+# Dictionary atoms and weights
+shap = (42,42)
+range_ab = np.arange(550.0,950.0,50.0)#min step = 5, remember to put 1 step forward in right limit of arange
+PSFs_chosen = PSFs[:,:,::10,:] #step/5
 
 
+SEDs_chosen = SEDs[::10,:]
+range_01 = (range_ab-range_ab[0])/(range_ab[-1] - range_ab[0])
+w_stack_ = np.array([range_01 + 1e-10, 1-range_01 - 1e-10]).T 
 
 
+PSF_550 = PSFs_chosen[:,:,0,0] 
+PSF_900 = PSFs_chosen[:,:,-1,0]
+
+atoms = np.array([PSF_550.reshape(-1),PSF_900.reshape(-1)])
+atoms = atoms.T
+D_stack_ = atoms.reshape(shap[0]*shap[1], 2,1)
+
+#%% Wasserstein params and ground metric
+gamma = 0.3
+n_iter_sink = 13
+Cr,Cc = EuclidCost_split(shap[0],shap[1])
 
 
+barycenters = computeBarycenters(Cc,Cr,D_stack_,w_stack_,gamma,n_iter_sink)
+
+np.save('/Users/rararipe/Documents/Data/debug_log_wdl_bary/barycenters.npy',barycenters)
+np.save('/Users/rararipe/Documents/Data/debug_log_wdl_bary/PSFs_chosen.npy',PSFs_chosen)
 
 
 

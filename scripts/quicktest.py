@@ -9,7 +9,7 @@ stars = np.load('/Users/rararipe/Documents/Data/QuickestGenerator/22x22pixels_5l
 SEDs = np.load('/Users/rararipe/Documents/Data/QuickestGenerator/22x22pixels_5lbdas10pos_25_07_2018/SEDs.npy')
 lbdas = np.load('/Users/rararipe/Documents/Data/QuickestGenerator/22x22pixels_5lbdas10pos_25_07_2018/lbdas.npy')
 fov = np.load('/Users/rararipe/Documents/Data/QuickestGenerator/22x22pixels_5lbdas10pos_25_07_2018/fov.npy')
-PSFs_gt = np.load("/Users/rararipe/Documents/Data/QuickestGenerator/22x22pixels_5lbdas10pos_25_07_2018/PSFs_2euclidrec.npy")
+stars_first_guess = np.load("/Users/rararipe/Documents/Data/QuickestGenerator/22x22pixels_5lbdas10pos_25_07_2018/stars_2euclidrec.npy")
 
 # stars (21,21,10)
 #SEDs (5,10)
@@ -22,7 +22,7 @@ D = 2
 opt_shift = ['-t2','-n2']
 wvl_opt = ['-t2','-n2']
 
-psf_est,D,A,res =  polychromatic_psf_field_est_2(stars,SEDs,lbdas,D,opt_shift,nb_comp,PSFs_gt,nb_iter=1,nb_subiter=3,mu=0.3,\
+psf_est,D,A,res =  polychromatic_psf_field_est_2(stars,SEDs,lbdas,D,opt_shift,nb_comp,stars_first_guess,nb_iter=1,nb_subiter=3,mu=0.3,\
                         tol = 0.1,sig_supp = 6,sig=None,shifts=None,flux=None,nsig_shift_est=4,simplex_en=True,wvl_en=True,wvl_opt =wvl_opt,field_pos=fov,nsig=5,graph_cons_en=True)
                         
 np.save('/Users/rararipe/Documents/Data/Results_quickestGenerator/22x22pixels_5lbdas10pos_25_07_2018/wdl_psf_est_quicktest.npy', psf_est)

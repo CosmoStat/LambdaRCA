@@ -11010,7 +11010,7 @@ def polychromatic_psf_field_est(im_stack,spectrums,wvl,D,opt_shift_est,nb_comp,n
 
     return psf_est,P_stack,A
 
-def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_comp,PSFs_gt,field_pos=None,nb_iter=4,nb_subiter=100,mu=0.3,\
+def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_comp,stars_first_guess,field_pos=None,nb_iter=4,nb_subiter=100,mu=0.3,\
                         tol = 0.1,sig_supp = 3,sig=None,shifts=None,flux=None,nsig_shift_est=4,pos_en = True,simplex_en=False,\
                         wvl_en=True,wvl_opt=None,nsig=3,graph_cons_en=False):
     """ Main LambdaRCA function.
@@ -11074,9 +11074,11 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
             in_fact = 2
             out_fact = 0.5
             Ys = np.zeros((p,nb_atoms))   
-            guess = utils.gauss_convolve(PSFs_gt[:,:,i,0],sig=0.7) #TO DO: add random shift and noise
+            # guess = utils.gauss_convolve(stars_first_guess[:,:,i],sig=0.7) #TO DO: add random shift and noise
+            guess = stars_first_guess[:,:,i]
             zIn = utils.clipped_zoom(guess,in_fact).reshape(-1)
             zOut = utils.clipped_zoom(guess,out_fact).reshape(-1)
+
             Ys[:,0] = zIn / np.sum(zIn, axis = 0) #normalize the total of mass in each line
             Ys[:,1] = zOut/ np.sum(zOut, axis = 0)
         
@@ -11088,12 +11090,16 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
 
     # np.save('/Users/rararipe/Documents/Data/Results_quickestGenerator/22x22pixels_5lbdas10pos_25_07_2018/ini_guess.npy', D_stack)
 
+
+
+
+
     w_stack = np.array([t + 1e-10, 1 - t - 1e-10]).T
     D_stack_1 = D_stack
 
 
 
-    gamma = 0.3
+    gamma = 4 # .3
     n_iter_sink = 13 #until we're sure atoms values respect the constraint
     C = ot.EuclidCost(shap[0],shap[1])
 
@@ -11404,6 +11410,8 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
 
     psf_est = psf_learning_utils.field_reconstruction_wdl(ot.Theano_bary(D_stack,w_stack,gamma,C,n_iter_sink),A,shap)
 
+    import pdb; pdb.set_trace()  # breakpoint e0c65c42 //
+    
 
     return psf_est,D_stack,A,res
 
