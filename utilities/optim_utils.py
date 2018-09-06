@@ -26,6 +26,7 @@ import modopt.opt.algorithms as optimalg
 from modopt.opt.linear import Identity
 sys.path.append('../baryOT')
 import logOT_bary as ot
+import logOT_bary_Identity as otI
 import numpy as np
 
 try:
@@ -11410,10 +11411,12 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
 
     psf_est = psf_learning_utils.field_reconstruction_wdl(ot.Theano_bary(D_stack,w_stack,gamma,C,n_iter_sink),A,shap)
 
-    import pdb; pdb.set_trace()  # breakpoint e0c65c42 //
-    
+    integrated_psfs = otI.Theano_wdl_MX(A,spectrums,flux,sig,ker,D_stack,w_stack,C,gamma,n_iter_sink) # TO DO: make ot.Theano_wdl_MX also return the non decimated stars  
 
-    return psf_est,D_stack,A,res
+    import pdb; pdb.set_trace()  # breakpoint e0c65c42 //
+
+
+    return psf_est,D_stack,A,res,obs_est
 
 
 def test_lsq(Y,A,nb_iter=1000):
