@@ -1,22 +1,10 @@
-import gc
-import numpy.linalg as LA
 from numpy import *
 import numpy as np
-import scipy.sparse.linalg as SLA
-from multiprocessing import Process, Queue, Pool
-import numpy.random as random
-import scipy.signal as scisig
-import isap
 import sys
 sys.path.append('../utilities')
 import utils
-import os
-import scipy.stats as scistats
-import copy as cp
 from pyflann import *
 import psf_learning_utils
-import scipy
-from scipy.optimize import minimize#,linear_sum_assignment
 from modopt.opt.cost import costObj
 import grads as grad
 import operators as lambdaops
