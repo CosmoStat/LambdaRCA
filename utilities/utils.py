@@ -1,34 +1,11 @@
-import subprocess
-import os
-import random
-import cv2
 from numpy import zeros,size,where,ones,copy,around,double,sinc,random,pi,arange,cos,sin,arccos,transpose,diag,sqrt,arange,floor,exp,array,mean,roots,float64,int,pi,median,rot90,argsort,tile,repeat,squeeze
 from numpy.linalg import svd,norm,inv,eigh
 import numpy.ma as npma
-from numpy.random import randn,choice
-import scipy.ndimage
-import scipy
 import scipy.signal as scisig
-import scipy.ndimage.interpolation as ndii
-import scipy.fftpack as scipy_fft
 from pyflann import *
-from multiprocessing import Process, Queue
-from astropy.io import fits
 import sys
 sys.path.append('../utilities')
 import gaussfitter
-#import great3_util
-#import optim_utils
-#import isap
-from scipy.spatial import ConvexHull
-import scipy.fftpack as fftp
-#from astropy.modeling import models#, fitting
-import warnings
-from scipy.ndimage.interpolation import zoom
-import scipy.stats as scistats
-import pywt
-import copy as cp
-from matplotlib import pyplot as plt,animation
 import datetime,time
 
 from scipy import interpolate
@@ -271,7 +248,6 @@ def kernel_ext(mat,tol = 0.01):
     
     #TODO: this is basically just the SVD, all lines between that and the ``return`` are useless.
     """
-    from numpy.linalg import svd
     U, s, Vt = svd(mat,full_matrices=True)
     e = (s**2).sum()
     eker = 0
