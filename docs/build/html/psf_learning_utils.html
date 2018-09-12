@@ -62,45 +62,6 @@
 </dd></dl>
 
 <dl class="function">
-<dt id="psf_learning_utils.randn">
-<code class="descclassname">psf_learning_utils.</code><code class="descname">randn</code><span class="sig-paren">(</span><em>d0</em>, <em>d1</em>, <em>...</em>, <em>dn</em><span class="sig-paren">)</span><a class="headerlink" href="#psf_learning_utils.randn" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return a sample (or samples) from the “standard normal” distribution.</p>
-<p>If positive, int_like or int-convertible arguments are provided,
-<cite>randn</cite> generates an array of shape <code class="docutils literal notranslate"><span class="pre">(d0,</span> <span class="pre">d1,</span> <span class="pre">...,</span> <span class="pre">dn)</span></code>, filled
-with random floats sampled from a univariate “normal” (Gaussian)
-distribution of mean 0 and variance 1 (if any of the <span class="math notranslate nohighlight">\(d_i\)</span> are
-floats, they are first converted to integers by truncation). A single
-float randomly sampled from the distribution is returned if no
-argument is provided.</p>
-<p>This is a convenience function.  If you want an interface that takes a
-tuple as the first argument, use <cite>numpy.random.standard_normal</cite> instead.</p>
-<dl class="docutils">
-<dt>d0, d1, …, dn <span class="classifier-delimiter">:</span> <span class="classifier">int, optional</span></dt>
-<dd>The dimensions of the returned array, should be all positive.
-If no argument is given a single Python float is returned.</dd>
-</dl>
-<dl class="docutils">
-<dt>Z <span class="classifier-delimiter">:</span> <span class="classifier">ndarray or float</span></dt>
-<dd>A <code class="docutils literal notranslate"><span class="pre">(d0,</span> <span class="pre">d1,</span> <span class="pre">...,</span> <span class="pre">dn)</span></code>-shaped array of floating-point samples from
-the standard normal distribution, or a single such float if
-no parameters were supplied.</dd>
-</dl>
-<p>standard_normal : Similar, but takes a tuple as its argument.</p>
-<p>For random samples from <span class="math notranslate nohighlight">\(N(\mu, \sigma^2)\)</span>, use:</p>
-<p><code class="docutils literal notranslate"><span class="pre">sigma</span> <span class="pre">*</span> <span class="pre">np.random.randn(...)</span> <span class="pre">+</span> <span class="pre">mu</span></code></p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">()</span>
-<span class="go">2.1923875335537315 #random</span>
-</pre></div>
-</div>
-<p>Two-by-four array of samples from N(3, 6.25):</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="mf">2.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="mi">3</span>
-<span class="go">array([[-4.49401501,  4.00950034, -1.81814867,  7.29718677],  #random</span>
-<span class="go">       [ 0.39924804,  4.68456316,  4.99394529,  4.84057254]]) #random</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="function">
 <dt id="psf_learning_utils.transport_plan_projections">
 <code class="descclassname">psf_learning_utils.</code><code class="descname">transport_plan_projections</code><span class="sig-paren">(</span><em>P</em>, <em>shap</em>, <em>supp</em>, <em>neighbors_graph</em>, <em>weights_neighbors</em>, <em>spectrum=None</em>, <em>indices=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/psf_learning_utils.html#transport_plan_projections"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#psf_learning_utils.transport_plan_projections" title="Permalink to this definition">¶</a></dt>
 <dd><p>Computes monochromatic components (displacement interpolation steps) from transport plan.</p>
@@ -171,7 +132,7 @@ on the support, following the mixing matrix A</p>
 <dl class="function">
 <dt id="psf_learning_utils.transport_plan_projections_flat_field_transpose">
 <code class="descclassname">psf_learning_utils.</code><code class="descname">transport_plan_projections_flat_field_transpose</code><span class="sig-paren">(</span><em>P_mat</em>, <em>supp</em>, <em>A</em>, <em>shap</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/psf_learning_utils.html#transport_plan_projections_flat_field_transpose"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#psf_learning_utils.transport_plan_projections_flat_field_transpose" title="Permalink to this definition">¶</a></dt>
-<dd><p>Adjoint operator to :func:<a href="#id1"><span class="problematic" id="id2">`</span></a>transport_plan_projections_flat_field`(with
+<dd><p>Adjoint operator to <a class="reference internal" href="#psf_learning_utils.transport_plan_projections_flat_field" title="psf_learning_utils.transport_plan_projections_flat_field"><code class="xref py py-func docutils literal notranslate"><span class="pre">transport_plan_projections_flat_field()</span></code></a> (with
 regards to transport plans).</p>
 </dd></dl>
 

@@ -456,7 +456,7 @@ def mat_to_cube(mat,n1,n2):
 def knn_interf(data,nb_neigh,return_index=False):
     """ Computes closest neighbors. 
     
-    #TODO: Probably some costly redundancy with :func:`full_displacement` here.
+    #TODO: Probably some costly redundancy with :func:`psf_learning_utils.full_displacement` here.
     """
     from numpy import array,float64
     flann = FLANN()

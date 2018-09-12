@@ -191,7 +191,7 @@ def transport_plan_projections_flat_field(P_stack,supp,A):
     return P_stack[supp[:,0],supp[:,1],:].dot(A)
 
 def transport_plan_projections_flat_field_transpose(P_mat,supp,A,shap):
-    """ Adjoint operator to :func:`transport_plan_projections_flat_field`(with
+    """ Adjoint operator to :func:`transport_plan_projections_flat_field` (with
     regards to transport plans).
     """
     temp_mat = P_mat.dot(transpose(A))
