@@ -38,77 +38,6 @@
 </dd></dl>
 
 <dl class="function">
-<dt id="utils.choice">
-<code class="descclassname">utils.</code><code class="descname">choice</code><span class="sig-paren">(</span><em>a</em>, <em>size=None</em>, <em>replace=True</em>, <em>p=None</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.choice" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generates a random sample from a given 1-D array</p>
-<blockquote>
-<div><div class="versionadded">
-<p><span class="versionmodified">New in version 1.7.0.</span></p>
-</div>
-</div></blockquote>
-<dl class="docutils">
-<dt>a <span class="classifier-delimiter">:</span> <span class="classifier">1-D array-like or int</span></dt>
-<dd>If an ndarray, a random sample is generated from its elements.
-If an int, the random sample is generated as if a were np.arange(a)</dd>
-<dt>size <span class="classifier-delimiter">:</span> <span class="classifier">int or tuple of ints, optional</span></dt>
-<dd>Output shape.  If the given shape is, e.g., <code class="docutils literal notranslate"><span class="pre">(m,</span> <span class="pre">n,</span> <span class="pre">k)</span></code>, then
-<code class="docutils literal notranslate"><span class="pre">m</span> <span class="pre">*</span> <span class="pre">n</span> <span class="pre">*</span> <span class="pre">k</span></code> samples are drawn.  Default is None, in which case a
-single value is returned.</dd>
-<dt>replace <span class="classifier-delimiter">:</span> <span class="classifier">boolean, optional</span></dt>
-<dd>Whether the sample is with or without replacement</dd>
-<dt>p <span class="classifier-delimiter">:</span> <span class="classifier">1-D array-like, optional</span></dt>
-<dd>The probabilities associated with each entry in a.
-If not given the sample assumes a uniform distribution over all
-entries in a.</dd>
-</dl>
-<dl class="docutils">
-<dt>samples <span class="classifier-delimiter">:</span> <span class="classifier">single item or ndarray</span></dt>
-<dd>The generated random samples</dd>
-</dl>
-<dl class="docutils">
-<dt>ValueError</dt>
-<dd>If a is an int and less than zero, if a or p are not 1-dimensional,
-if a is an array-like of size 0, if p is not a vector of
-probabilities, if a and p have different lengths, or if
-replace=False and the sample size is greater than the population
-size</dd>
-</dl>
-<p>randint, shuffle, permutation</p>
-<p>Generate a uniform random sample from np.arange(5) of size 3:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
-<span class="go">array([0, 3, 4])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1">#This is equivalent to np.random.randint(0,5,3)</span>
-</pre></div>
-</div>
-<p>Generate a non-uniform random sample from np.arange(5) of size 3:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="p">[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
-<span class="go">array([3, 3, 0])</span>
-</pre></div>
-</div>
-<p>Generate a uniform random sample from np.arange(5) of size 3 without
-replacement:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="go">array([3,1,0])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1">#This is equivalent to np.random.permutation(np.arange(5))[:3]</span>
-</pre></div>
-</div>
-<p>Generate a non-uniform random sample from np.arange(5) of size
-3 without replacement:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="p">[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
-<span class="go">array([2, 3, 0])</span>
-</pre></div>
-</div>
-<p>Any of the above can be repeated with an arbitrary array-like
-instead of just integers. For instance:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">aa_milne_arr</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;pooh&#39;</span><span class="p">,</span> <span class="s1">&#39;rabbit&#39;</span><span class="p">,</span> <span class="s1">&#39;piglet&#39;</span><span class="p">,</span> <span class="s1">&#39;Christopher&#39;</span><span class="p">]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">aa_milne_arr</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">])</span>
-<span class="go">array([&#39;pooh&#39;, &#39;pooh&#39;, &#39;pooh&#39;, &#39;Christopher&#39;, &#39;piglet&#39;],</span>
-<span class="go">      dtype=&#39;|S11&#39;)</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="function">
 <dt id="utils.compute_centroid">
 <code class="descclassname">utils.</code><code class="descname">compute_centroid</code><span class="sig-paren">(</span><em>im</em>, <em>sigw=None</em>, <em>nb_iter=4</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/utils.html#compute_centroid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#utils.compute_centroid" title="Permalink to this definition">¶</a></dt>
 <dd><p>Computes centroid.</p>
@@ -254,7 +183,7 @@ for a set of matrices.</p>
 <dt id="utils.knn_interf">
 <code class="descclassname">utils.</code><code class="descname">knn_interf</code><span class="sig-paren">(</span><em>data</em>, <em>nb_neigh</em>, <em>return_index=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/utils.html#knn_interf"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#utils.knn_interf" title="Permalink to this definition">¶</a></dt>
 <dd><p>Computes closest neighbors.</p>
-<p>#TODO: Probably some costly redundancy with <code class="xref py py-func docutils literal notranslate"><span class="pre">full_displacement()</span></code> here. Also is it me or is <code class="docutils literal notranslate"><span class="pre">params</span></code> not used?</p>
+<p>#TODO: Probably some costly redundancy with <a class="reference internal" href="psf_learning_utils.html#psf_learning_utils.full_displacement" title="psf_learning_utils.full_displacement"><code class="xref py py-func docutils literal notranslate"><span class="pre">psf_learning_utils.full_displacement()</span></code></a> here.</p>
 </dd></dl>
 
 <dl class="function">
@@ -316,42 +245,10 @@ for a set of matrices.</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="utils.randn">
-<code class="descclassname">utils.</code><code class="descname">randn</code><span class="sig-paren">(</span><em>d0</em>, <em>d1</em>, <em>...</em>, <em>dn</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.randn" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return a sample (or samples) from the “standard normal” distribution.</p>
-<p>If positive, int_like or int-convertible arguments are provided,
-<cite>randn</cite> generates an array of shape <code class="docutils literal notranslate"><span class="pre">(d0,</span> <span class="pre">d1,</span> <span class="pre">...,</span> <span class="pre">dn)</span></code>, filled
-with random floats sampled from a univariate “normal” (Gaussian)
-distribution of mean 0 and variance 1 (if any of the <span class="math notranslate nohighlight">\(d_i\)</span> are
-floats, they are first converted to integers by truncation). A single
-float randomly sampled from the distribution is returned if no
-argument is provided.</p>
-<p>This is a convenience function.  If you want an interface that takes a
-tuple as the first argument, use <cite>numpy.random.standard_normal</cite> instead.</p>
-<dl class="docutils">
-<dt>d0, d1, …, dn <span class="classifier-delimiter">:</span> <span class="classifier">int, optional</span></dt>
-<dd>The dimensions of the returned array, should be all positive.
-If no argument is given a single Python float is returned.</dd>
-</dl>
-<dl class="docutils">
-<dt>Z <span class="classifier-delimiter">:</span> <span class="classifier">ndarray or float</span></dt>
-<dd>A <code class="docutils literal notranslate"><span class="pre">(d0,</span> <span class="pre">d1,</span> <span class="pre">...,</span> <span class="pre">dn)</span></code>-shaped array of floating-point samples from
-the standard normal distribution, or a single such float if
-no parameters were supplied.</dd>
-</dl>
-<p>standard_normal : Similar, but takes a tuple as its argument.</p>
-<p>For random samples from <span class="math notranslate nohighlight">\(N(\mu, \sigma^2)\)</span>, use:</p>
-<p><code class="docutils literal notranslate"><span class="pre">sigma</span> <span class="pre">*</span> <span class="pre">np.random.randn(...)</span> <span class="pre">+</span> <span class="pre">mu</span></code></p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">()</span>
-<span class="go">2.1923875335537315 #random</span>
-</pre></div>
-</div>
-<p>Two-by-four array of samples from N(3, 6.25):</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="mf">2.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="mi">3</span>
-<span class="go">array([[-4.49401501,  4.00950034, -1.81814867,  7.29718677],  #random</span>
-<span class="go">       [ 0.39924804,  4.68456316,  4.99394529,  4.84057254]]) #random</span>
-</pre></div>
-</div>
+<dt id="utils.rand_file_name">
+<code class="descclassname">utils.</code><code class="descname">rand_file_name</code><span class="sig-paren">(</span><em>ext</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/utils.html#rand_file_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#utils.rand_file_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates random file name. Called by <cite>isap</cite>. Super unsafe!
+#TODO: get rid of it.</p>
 </dd></dl>
 
 <dl class="function">
