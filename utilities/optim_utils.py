@@ -11078,7 +11078,8 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
             # guess = utils.gauss_convolve(stars_first_guess[:,:,i],sig=0.7) #TO DO: add random shift and noise
             guess = stars_first_guess[:,:,i]
             zIn = utils.clipped_zoom(guess,in_fact).reshape(-1)
-            zOut = utils.clipped_zoom(guess,out_fact).reshape(-1)
+            zOut = guess.reshape(-1)
+            # zOut = utils.clipped_zoom(guess,out_fact).reshape(-1)
 
             Ys[:,0] = zIn / np.sum(zIn, axis = 0) #normalize the total of mass in each line
             Ys[:,1] = zOut/ np.sum(zOut, axis = 0)
@@ -11089,7 +11090,11 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
     D_stack = D_stack.swapaxes(0,1).swapaxes(1,2)
 
 
-    # np.save('/Users/rararipe/Documents/Data/Results_quickestGenerator/22x22pixels_5lbdas10pos_25_07_2018/ini_guess.npy', D_stack)
+    np.save('/Users/rararipe/Documents/Data/debug_WDL_gradi/ini_guess.npy', D_stack)
+
+
+
+    
 
 
 
@@ -11100,7 +11105,7 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
 
 
 
-    gamma = 4 # .3
+    gamma = 0.2 # .3
     n_iter_sink = 13 #until we're sure atoms values respect the constraint
     C = ot.EuclidCost(shap[0],shap[1])
 
@@ -11413,7 +11418,6 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
 
     integrated_psfs = otI.Theano_wdl_MX(A,spectrums,flux,sig,ker,D_stack,w_stack,C,gamma,n_iter_sink) # TO DO: make ot.Theano_wdl_MX also return the non decimated stars  
 
-    import pdb; pdb.set_trace()  # breakpoint e0c65c42 //
 
 
     return psf_est,D_stack,A,res,obs_est

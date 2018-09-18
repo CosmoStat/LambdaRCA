@@ -6619,7 +6619,7 @@ def clipped_zoom(img, zoom_factor, **kwargs):
     else:
         out = img
 
-    out[out==0] = 1e-10
+    out[out==0.0] = 1e-8
 
     return out
 

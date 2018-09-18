@@ -1,7 +1,6 @@
 
 
 import numpy as np
-import operator as operator
 
 
 
@@ -57,26 +56,9 @@ def safeadd(*args): # addition for signed variables
         res += arg['sign']*arg['mod']
     return signed(res)
 
-def safemax(l_signed_x): # max for outputs of safelog
-    """
-        PARAMETERS
-        ----------
-        l_signed_x: dictionary of kind {val: , sign:}
-
-        OUTPUT
-        ------
-        max of log values , keeping track of the signal of the previous log argument
-    """
-    import pdb; pdb.set_trace()  # breakpoint ffbd453d //
-
-    key = operator.max(l_signed_x.iteritems(),key=operator.itemgetter(1))[0]
 
 
-
-
-
-
-def LogSeparableKer(v,Cr,Cc,gamma):
+def safeLogSeparableKer(v,Cr,Cc,gamma):
     """
         PARAMETERS
         ----------
@@ -123,22 +105,68 @@ def LogSeparableKer(v,Cr,Cc,gamma):
     # R = {}
     for i in range(I):
         for j in range(J):
-            values = {}
+            max_y = {'val':np.NINF, 'sign': 1}
             for key,v in Y.items():
                 if key[1] == i and key[2] == j:
-                    print "FOUND"
-                    import pdb; pdb.set_trace()  # breakpoint 50181719 //
-                    values.update(v)
-
-            safemax(values)
-            # max_y = np.max(values)
-            # soma = signed(0.0)
-            # for k in range(K):
-            #     res = safeexp(Y[(i,j,k)],   )
-            #     soma = safeadd(soma,res)
-            # R[i,j] = np.log(soma['mod']) + max_y
+                    if v['val'] > max_y['val']:
+                        max_y = v
+            max_y['val'] = -max_y['val']
+            soma = signed(0.0)
+            for k in range(K):
+                res = safeexp(Y[(k,i,j)], max_y)
+                soma = safeadd(soma,res)
+            R[i,j] = np.log(soma['mod']) + max_y['val'] # should I also worry about the sign here?
+            print R[i,j]
+            import pdb; pdb.set_trace()  # breakpoint 8a35d16d //
 
     return R
+
+
+    # max(stats, key=lambda key: stats[key])
+
+
+def LogSeparableKer(v,Cr,Cc,gamma):
+    """
+        PARAMETERS
+        ----------
+        Cc: cost of transporting mass in the x axis
+        Cr: cost of transporting mass in the y axis
+        y: image in log domain LxL
+    """
+    I = K = Cr.shape[0]
+    J = L = Cc.shape[0]
+
+    X = []
+    for l in range(L):
+        x = np.zeros((K,J))
+        for k in range(K):
+            for j in range(J):
+                x[k,j] = Cr[j,l]/gamma + v[k,l]
+        X.append(x)
+    X = np.array(X)
+
+
+    A = np.zeros((K,J))
+    for k in range(K):
+        for j in range(J):
+            max_x = np.max(X[:,k,j])
+            A[k,j] = np.log(np.sum(np.exp(X[:,k,j] - max_x))) + max_x
+
+    Y = np.zeros((K,I,J))
+    for k in range(K):
+        for i in range(I):
+            for j in range(J): 
+                Y[k,i,j] = Cc[i,k]/gamma + A[k,j]
+
+
+    R = np.zeros((I,J))
+    for i in range(I):
+        for j in range(J):
+            max_y = np.max(Y[:,i,j])
+            R[i,j] = np.log(np.sum(np.exp(Y[:,i,j] - max_y))) + max_y
+
+    return R
+
 
 
 
@@ -148,6 +176,9 @@ Cr,Cc = EuclidCost_split(shap[0],shap[1])
 gamma = 2
 im = np.random.rand(shap[0],shap[1]) 
 R = LogSeparableKer(np.log(im),Cr,Cc,gamma)
+
+import pdb; pdb.set_trace()  # breakpoint 506ac0b2 //
+
 
 
 

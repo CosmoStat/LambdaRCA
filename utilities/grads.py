@@ -7,6 +7,7 @@ import sys
 sys.path.append('../baryOT')
 import logOT_bary as ot
 import time
+import C_wrapper as C
         
         
 class polychrom_eigen_psf(GradParent, PowerMethod):
@@ -99,12 +100,15 @@ class polychrom_eigen_psf(GradParent, PowerMethod):
         if isinstance(y, type(None)):
             y = np.zeros(self.obs_data.shape)
 
-        tic = time.time()
-        self._current_rec_MtX = ot.Theano_wdl_MtX(self.A,self.spectrums,self.flux,self.sig,self.ker,self.D_stack,self.w_stack,self.C,self.gamma,self.n_iter_sink,y)
-        toc = time.time()
+        # tic = time.time()
+        # self._current_rec_MtX = ot.Theano_wdl_MtX(self.A,self.spectrums,self.flux,self.sig,self.ker,self.D_stack,self.w_stack,self.C,self.gamma,self.n_iter_sink,y)
+        # toc = time.time()
 
-        print str((toc-tic)/60.0) + " min"
+        # print str((toc-tic)/60.0) + " min"
 
+        self._current_rec_MtX = C.call_MtX(self.A,self.spectrums,self.flux,self.sig,self.ker,self.ker_rot,self.D_stack,self.w_stack,self.C,self.gamma,self.n_iter_sink,y)
+
+        
         return self._current_rec_MtX[0]
 
 

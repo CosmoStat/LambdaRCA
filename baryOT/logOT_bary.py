@@ -105,13 +105,15 @@ def StabKer(Cost, alpha, beta, Gamma):
 def log_sinkhorn_step(alpha, beta, logp, logD_stack, lbda_stack, Gamma, Cost, Tau, Epsilon,i,v):
     M = StabKer(Cost,alpha,beta,Gamma)
     newalpha = Gamma * (logD_stack[:,:,i] - T.log(T.sum(M,axis=1) + Epsilon)) + alpha # new u
+    # alpha = newalpha
     alpha = Tau*alpha + (1.-Tau)*newalpha # sinkhorn heavyball
     M = StabKer(Cost,alpha,beta,Gamma)
     lKta = T.log(T.sum(M, axis=0) + Epsilon) - beta/Gamma
     logp = T.sum(lbda_stack[v,:]*lKta, axis=1)
     newbeta = Gamma * (logp.dimshuffle(0,'x') - lKta) # new v
+    # beta = newbeta
     beta = Tau*beta + (1.-Tau)*newbeta
-    return alpha, beta, logp
+    return lKta, beta, logp
 
 
 
@@ -122,10 +124,10 @@ def log_sinkhorn_algoritm(v,i,logD_stack,lbda_stack,Cost,Tau,Epsilon,n_iter):
                               non_sequences=[logD_stack,lbda_stack,Gamma,Cost,Tau,Epsilon,i,v], n_steps=n_iter)
     
     log_bary = T.exp(res[2][-1])
-    alpha = res[0]
+    lKta = res[0]
     beta = res[1]
     
-    return log_bary,alpha,beta
+    return log_bary,lKta,beta
 
 
 
@@ -136,11 +138,11 @@ def log_compute_bary(i,logD_stack,lbda_stack,Cost,Tau,Epsilon,n_iter):
                              sequences = T.arange(lbda_stack.shape[0]),
                              non_sequences = [i,logD_stack,lbda_stack,Cost,Tau,Epsilon,n_iter])
   
-    barys = res[0][::-1]
-    alphas = res[1][::-1]
-    betas = res[2][::-1]
+    barys = res[0]
+    lKtas = res[1]
+    betas = res[2]
 
-    return barys,alphas,betas
+    return barys,lKtas,betas
         
 
 log_result_bary,log_updates_bary = theano.scan(log_compute_bary,
@@ -149,7 +151,7 @@ log_result_bary,log_updates_bary = theano.scan(log_compute_bary,
                                       non_sequences = [logD_stack,lbda_stack,Cost,Tau,Epsilon,n_iter]) #<nb_comp, nb_wvl, pixels>
 
 log_result_bary_rshp = T.swapaxes(T.swapaxes(log_result_bary[0],0,1),0,2) #<pixels,nb_comp, nb_wvl>
-log_alphas_rshp = T.swapaxes(T.swapaxes(log_result_bary[1],0,3),1,4) #<pixels,nb_atoms, nb_comp, nb_wvl>
+log_lKtas_rshp = T.swapaxes(T.swapaxes(log_result_bary[1],0,3),1,4) #<pixels,nb_atoms, nb_comp, nb_wvl>
 log_betas_rshp = T.swapaxes(T.swapaxes(log_result_bary[2],0,3),1,4) #<pixels,nb_atoms, nb_comp,nb_wvl>
 
 
@@ -197,11 +199,11 @@ Loss = 1./2*(Datapoint-res_B_rshp).norm(2)**2
 MtX_wdl = T.grad(Loss, D_stack)
 
 Theano_wdl_MtX = theano.function([A_mat,beta_mat,Flux_all,Sigma_all,K_all,D_stack,lbda_stack,Cost,Gamma,n_iter,Datapoint,\
-	theano.In(Tau,value=-0.3),theano.In(Epsilon,value=1e-200)],[MtX_wdl,res_B_rshp,barycenters],on_unused_input='ignore')
+	theano.In(Tau,value=-0.0),theano.In(Epsilon,value=1e-200)],[MtX_wdl,res_B_rshp,barycenters],on_unused_input='ignore')
 
 
 Theano_wdl_MX = theano.function([A_mat,beta_mat,Flux_all,Sigma_all,K_all,D_stack,lbda_stack,Cost,Gamma,n_iter,\
-	theano.In(Tau,value=-0.3),theano.In(Epsilon,value=1e-200)],[res_B_rshp,barycenters,log_alphas_rshp,log_betas_rshp])
+	theano.In(Tau,value=-0.0),theano.In(Epsilon,value=1e-200)],[res_B_rshp,barycenters,log_lKtas_rshp,log_betas_rshp])
 
 MtX_coeff = T.grad(Loss,A_mat)
 

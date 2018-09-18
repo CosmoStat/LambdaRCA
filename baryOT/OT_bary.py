@@ -151,9 +151,9 @@ Loss = 1./2*(Datapoint-res_B_rshp).norm(2)**2
 
 MtX_wdl = T.grad(Loss, D_stack)
 
-Theano_wdl_MX = theano.function([A_mat,beta_mat,Flux_all,Sigma_all,K_all,D_stack,lbda_stack,Cost,Gamma,n_iter,theano.In(Tau,value=-0.3)],res_B_rshp)
+Theano_wdl_MX = theano.function([A_mat,beta_mat,Flux_all,Sigma_all,K_all,D_stack,lbda_stack,Cost,Gamma,n_iter,theano.In(Tau,value=-0.0)],res_B_rshp)
 
-Theano_wdl_MtX = theano.function([A_mat,beta_mat,Flux_all,Sigma_all,K_all,D_stack,lbda_stack,Cost,Gamma,n_iter,Datapoint,theano.In(Tau,value=-0.3)],[MtX_wdl,res_B_rshp,barycenters])
+Theano_wdl_MtX = theano.function([A_mat,beta_mat,Flux_all,Sigma_all,K_all,D_stack,lbda_stack,Cost,Gamma,n_iter,Datapoint,theano.In(Tau,value=-0.0)],[MtX_wdl,res_B_rshp,barycenters])
 
 MtX_coeff = T.grad(Loss,A_mat)
 
