@@ -11289,7 +11289,9 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
 
 
     # obs_est = polychrom_grad.MX(P_stack)
+    
     obs_est = polychrom_grad.MX(D_stack)
+
     res = im_stack - obs_est
     D_stack_2 = D_stack
 
