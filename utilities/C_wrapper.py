@@ -50,6 +50,7 @@ def call_WDL(A=None,spectrums=None,flux=None,sig=None,ker=None,rot_ker=None, D_s
     if D_stack is not None:
         nb_comp = D_stack.shape[2]
         nb_atoms = D_stack.shape[1]
+        nb_wvl = w_stack.shape[0]
         for i in range(nb_comp):
             np.savetxt(dictDir+"/D_"+str(i)+ ".csv", D_stack[:,:,i], delimiter=",")
         np.savetxt(varDir+"/w_stack.csv", w_stack, delimiter=",")
@@ -75,21 +76,49 @@ def call_WDL(A=None,spectrums=None,flux=None,sig=None,ker=None,rot_ker=None, D_s
         if func == "--MtX_wdl":
             check_call([executable] + ["-i",inDir,"-iv",varDir,"-id",dictDir,"-iw", "w_stack.csv","-iA", 
                 "A.csv","-ik",kerDir,"-irk",rkerDir,"-isp", "spectrums.csv", "-if", "flux.csv", "-isi", "sig.csv","-g",str(gamma),
-                "-n",str(n_iter_sink),"-o",output_path,"-W", str(W), "-H",str(H),"-nb_comp",str(nb_comp),"-nb_atoms",str(nb_atoms),"nb_wvl",
+                "-n",str(n_iter_sink),"-o",output_path,"-W", str(W), "-H",str(H),"-nb_comp",str(nb_comp),"-nb_atoms",str(nb_atoms),"-nb_wvl",
                 str(nb_wvl),"ker_dim", str(ker_dim), "--MtX_wdl"])
 
         if func == "--MX_wdl":
             check_call([executable] + ["-iv",varDir,"-id",dictDir,"-iw", "w_stack.csv","-iA", 
                 "A.csv","-ik",kerDir,"-irk",rkerDir,"-isp", "spectrums.csv", "-if", "flux.csv", "-isi", "sig.csv","-g",str(gamma),
-                "-n",str(n_iter_sink),"-o",output_path,"-W", str(W), "-H",str(H),"-nb_comp",str(nb_comp),"-nb_atoms",str(nb_atoms),"nb_wvl",
+                "-n",str(n_iter_sink),"-o",output_path,"-W", str(W), "-H",str(H),"-nb_comp",str(nb_comp),"-nb_atoms",str(nb_atoms),"-nb_wvl",
                 str(nb_wvl),"ker_dim", str(ker_dim), "--MX_wdl"])
+
+        if func == "--bary":
+
+            check_call([executable] + ["-iv",varDir,"-id",dictDir,"-iw", "w_stack.csv","-g",str(gamma),
+                "-n",str(n_iter_sink),"-o",output_path,"-W", str(W), "-H",str(H),"-nb_comp",str(nb_comp),"-nb_atoms",str(nb_atoms),"-nb_wvl",
+                str(nb_wvl), "--bary"])
 
 
 
     except Exception:
 
         warn('{} failed to run with the options provided.'.format(executable))
+
+        if func == "--MtX_wdl" or func == "--MX_wdl" or func == "--MX_coeff" or func == "--MtX_coeff": 
+            remove(varDir+"/A.csv")
+            remove(varDir+"/spectrums.csv")
+            remove(varDir+"/flux.csv")
+            remove(varDir+"/sig.csv")
+            for obj in range(nb_obj):
+                remove(kerDir+"/ker_"+str(obj)+".csv")
+                remove(rkerDir+"/rker_"+str(obj)+".csv")
         
+        if func == "--MtX_wdl" or func == "--MX_wdl" or func == "--bary":
+           for i in range(nb_comp): 
+                remove(dictDir+"/D_"+str(i)+ ".csv")
+                remove(varDir+"/w_stack.csv")
+
+        if func=="--MtX_wdl" or func=="--MtX_coeff":
+            for obj in range(nb_obj):
+                remove(inDir+"/star_"+str(obj)+".csv")
+
+        if func=="MC_coeff" or func=="MtX_coeff":
+            for comp in range(nb_comp):
+                remove(baryDir+"/bary_"+str(i)+ ".csv")
+
 
     else:
 
@@ -120,12 +149,46 @@ def call_WDL(A=None,spectrums=None,flux=None,sig=None,ker=None,rot_ker=None, D_s
                     for a in range(nb_atoms):
                         C_grads[:,a,i] = C_grads_all[(i*nb_atoms+a)*N:(i*nb_atoms+a+1)*N]
 
-            # Return the C results.
+
+
+        # Remove temporary files
+
+        if remove_files:
+            if func == "--MtX_wdl" or func == "--MX_wdl" or func == "--MX_coeff" or func == "--MtX_coeff": 
+                remove(varDir+"/A.csv")
+                remove(varDir+"/spectrums.csv")
+                remove(varDir+"/flux.csv")
+                remove(varDir+"/sig.csv")
+                for obj in range(nb_obj):
+                    remove(kerDir+"/ker_"+str(obj)+".csv")
+                    remove(rkerDir+"/rker_"+str(obj)+".csv")
+            
+            if func == "--MtX_wdl" or func == "--MX_wdl" or func == "--bary":
+                for i in range(nb_comp): 
+                    remove(dictDir+"/D_"+str(i)+ ".csv")
+                remove(varDir+"/w_stack.csv")
+
+            if func=="--MtX_wdl" or func=="--MtX_coeff":
+                for obj in range(nb_obj):
+                    remove(inDir+"/star_"+str(obj)+".csv")
+
+            if func=="MC_coeff" or func=="MtX_coeff":
+                for comp in range(nb_comp):
+                    remove(baryDir+"/bary_"+str(i)+ ".csv")
+
+
+
+        # Return C results
+        if func == "--MtX_wdl":
             return C_grads,C_MX,C_barys
 
 
         if func == "--MX_wdl":
             return C_MX,C_barys
+
+        if func == "--bary":
+
+            return C_barys
 
         
 

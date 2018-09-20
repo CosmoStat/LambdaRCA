@@ -7,7 +7,7 @@ import sys
 sys.path.append('../baryOT')
 import logOT_bary as ot
 import time
-import C_wrapper as C
+import C_wrapper as Cw
         
         
 class polychrom_eigen_psf(GradParent, PowerMethod):
@@ -107,7 +107,7 @@ class polychrom_eigen_psf(GradParent, PowerMethod):
         # print str((toc-tic)/60.0) + " min"
 
         # self._current_rec_MtX = C.call_MtX(self.A,self.spectrums,self.flux,self.sig,self.ker,self.ker_rot,self.D_stack,self.w_stack,self.C,self.gamma,self.n_iter_sink,y)
-        self._current_rec_MtX = C.call_WDL(A=self.A,spectrums=self.spectrums,flux=self.flux,sig=self.sig,ker=self.ker,rot_ker=self.ker_rot, D_stack=self.D_stack,
+        self._current_rec_MtX = Cw.call_WDL(A=self.A,spectrums=self.spectrums,flux=self.flux,sig=self.sig,ker=self.ker,rot_ker=self.ker_rot, D_stack=self.D_stack,
             w_stack=self.w_stack,gamma=self.gamma,n_iter_sink=self.n_iter_sink,y=y,N=self.D_stack.shape[0],func="--MtX_wdl")
 
 
@@ -119,9 +119,8 @@ class polychrom_eigen_psf(GradParent, PowerMethod):
     def MX(self,x):
 
         # temp = ot.Theano_wdl_MX(self.A,self.spectrums,self.flux,self.sig,self.ker,x,self.w_stack,self.C,self.gamma,self.n_iter_sink)
-        # self._current_rec_MX = temp[0]
 
-        temp = C.call_WDL(A=self.A, spectrums=self.spectrums,flux=self.flux,sig=self.sig,ker=self.ker,rot_ker=self.ker_rot,D_stack=x,w_stack=self.w_stack,
+        temp = Cw.call_WDL(A=self.A, spectrums=self.spectrums,flux=self.flux,sig=self.sig,ker=self.ker,rot_ker=self.ker_rot,D_stack=x,w_stack=self.w_stack,
             gamma=self.gamma,n_iter_sink=self.n_iter_sink,N=x.shape[0], func="--MX_wdl")
 
         self._current_rec_MX = temp[0]
@@ -464,7 +463,7 @@ class polychrom_eigen_psf_coeff_graph(GradBasic, PowerMethod):
         # x: <5,5*100> 
         # basis: <5*100, 100>
 
-        # self._current_rec_MX = ot.Theano_coeff_MX(x.dot(self.basis),self.spectrums,self.polychrom_grad._current_rec_MtX[2],self.flux,self.sig,self.ker)
+        self._current_rec_MX = ot.Theano_coeff_MX(x.dot(self.basis),self.spectrums,self.polychrom_grad._current_rec_MtX[2],self.flux,self.sig,self.ker)
         
         return self._current_rec_MX
 

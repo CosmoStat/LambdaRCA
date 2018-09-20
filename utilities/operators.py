@@ -168,7 +168,7 @@ class transport_plan_marg_wavelet(object):
     def op_old(self, data):
         """Operator
 
-        This method returns the wavelets coefficients of the first marginals of the coupling matrices given as entry. What does he mean by the first marginals??
+        This method returns the wavelets coefficients of the first marginals of the coupling matrices given as entry. 
 
         Parameters
         ----------

@@ -95,6 +95,7 @@ Epsilon = T.scalar('Epsilon')
 # Stabilized kernel computation
 def StabKer(Cost, alpha, beta, Gamma):
     M = -Cost.dimshuffle(0,1,'x') + alpha.dimshuffle(0,'x',1) + beta.dimshuffle('x',0,1)
+    M1_s = M
     # alpha.dimshuffle(0,'x',1) is u1t and beta.dimshuffle('x',0,1) is 1vt
     M = T.exp(M / Gamma)
     return M
@@ -112,18 +113,18 @@ def log_sinkhorn_step(alpha, beta, logp, logD_stack, lbda_stack, Gamma, Cost, Ta
     newbeta = Gamma * (logp.dimshuffle(0,'x') - lKta) # new v
     # beta = newbeta
     beta = Tau*beta + (1.-Tau)*newbeta
-    return alpha, beta, logp,lKta
+    return lKta, beta, logp
 
 
 
 def log_sinkhorn_algoritm(v,i,logD_stack,lbda_stack,Cost,Tau,Epsilon,n_iter):
     
     res, updates = theano.scan(log_sinkhorn_step, outputs_info=[T.zeros_like(logD_stack[:,:,0]),
-                              T.zeros_like(logD_stack[:,:,0]), T.zeros_like(logD_stack[:,0,0]),None], 
+                              T.zeros_like(logD_stack[:,:,0]), T.zeros_like(logD_stack[:,0,0])], 
                               non_sequences=[logD_stack,lbda_stack,Gamma,Cost,Tau,Epsilon,i,v], n_steps=n_iter)
     
     log_bary = T.exp(res[2][-1])
-    lKta = res[3]
+    lKta = res[0]
     beta = res[1]
     
     return log_bary,lKta,beta

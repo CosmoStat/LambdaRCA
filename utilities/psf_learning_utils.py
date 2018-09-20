@@ -1857,7 +1857,10 @@ def transport_plan_projections_wdl(Mtx,shap,w_stack,gamma,C,n_iter_sink,spectrum
     chosen_lbdas = np.array(chosen_lbdas)
 
     D_stack = np.expand_dims(Mtx, axis=2) #Theano_bary takes a cubic as input
-    barys = ot.Theano_bary(D_stack,chosen_lbdas,gamma,C,n_iter_sink) # <pixels,nb_comp, nb_wvl>
+    # barys = ot.Theano_bary(D_stack,chosen_lbdas,gamma,C,n_iter_sink) # <pixels,nb_comp, nb_wvl>
+    import pdb; pdb.set_trace()  # breakpoint 701d0e7e //
+    
+    barys = Cw.call_WDL(D_stack=D_stack,w_stack=chosen_lbdas,gamma=gamma,n_iter_sink=n_iter_sink,N=D_stack.shape[0],func='--bary')
     barys = barys[:,0,:] # because transport_plan_projections_wdl is called for every component
 
     # print np.argwhere(np.isnan(barys))

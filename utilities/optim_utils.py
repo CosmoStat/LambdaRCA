@@ -27,6 +27,7 @@ from modopt.opt.linear import Identity
 sys.path.append('../baryOT')
 import logOT_bary as ot
 import logOT_bary_Identity as otI
+import C_wrapper as Cw
 import numpy as np
 
 try:
@@ -11013,7 +11014,7 @@ def polychromatic_psf_field_est(im_stack,spectrums,wvl,D,opt_shift_est,nb_comp,n
 
 def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_comp,stars_first_guess,field_pos=None,nb_iter=4,nb_subiter=100,mu=0.3,\
                         tol = 0.1,sig_supp = 3,sig=None,shifts=None,flux=None,nsig_shift_est=4,pos_en = True,simplex_en=False,\
-                        wvl_en=True,wvl_opt=None,nsig=3,graph_cons_en=False):
+                        wvl_en=True,wvl_opt=None,nsig=3,graph_cons_en=False,feat_init="zoom"):
     """ Main LambdaRCA function.
     
     Calls:
@@ -11062,7 +11063,6 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
     #initialize multi_comp D_stack <42x42,2,5> <p,nb_atoms,nb_comp> and the weights (t,1-t) w_stack <100,2> <nb_wvl,nb_atoms>
     nb_atoms = 2
     p = shap[0]*shap[1] # number of pixels
-    feat_init = "zoom"
     D_stack = []
     for i in range(nb_comp):
         if feat_init == "uniform":
@@ -11078,19 +11078,28 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
             # guess = utils.gauss_convolve(stars_first_guess[:,:,i],sig=0.7) #TO DO: add random shift and noise
             guess = stars_first_guess[:,:,i]
             zIn = utils.clipped_zoom(guess,in_fact).reshape(-1)
-            zOut = guess.reshape(-1)
-            # zOut = utils.clipped_zoom(guess,out_fact).reshape(-1)
+            # zOut = guess.reshape(-1)
+            zOut = utils.clipped_zoom(guess,out_fact).reshape(-1)
 
             Ys[:,0] = zIn / np.sum(zIn, axis = 0) #normalize the total of mass in each line
             Ys[:,1] = zOut/ np.sum(zOut, axis = 0)
-        
+
+        elif feat_init == "ground_truth":
+            Ys = np.zeros((p,nb_atoms)) 
+            guess = stars_first_guess[:,:,:,i]
+            low = guess[:,:,0].reshape(-1)
+            high = guess[:,:,-1].reshape(-1)
+            Ys[:,0] = low/np.sum(low)
+            Ys[:,1] = high/np.sum(high)
+
         D_stack.append(Ys)
 
     D_stack = np.array(D_stack)
     D_stack = D_stack.swapaxes(0,1).swapaxes(1,2)
 
 
-    np.save('/Users/rararipe/Documents/Data/debug_WDL_gradi/ini_guess.npy', D_stack)
+    
+
 
 
 
@@ -11142,17 +11151,19 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
     A,comp,cube_est = utils.cube_svd(im_stack,nb_comp=nb_comp)
 
 
-    # np.save('/Users/rararipe/Documents/Data/debug_WDL_gradi/A.npy',A)
-    # np.save('/Users/rararipe/Documents/Data/debug_WDL_gradi/spectrums.npy',spectrums)
-    # np.save('/Users/rararipe/Documents/Data/debug_WDL_gradi/flux.npy',flux)
-    # np.save('/Users/rararipe/Documents/Data/debug_WDL_gradi/sig.npy',sig)
-    # np.save('/Users/rararipe/Documents/Data/debug_WDL_gradi/ker.npy',ker)
-    # np.save('/Users/rararipe/Documents/Data/debug_WDL_gradi/ker_rot.npy',ker_rot)
-    # np.save('/Users/rararipe/Documents/Data/debug_WDL_gradi/D_stack.npy',D_stack)
-    # np.save('/Users/rararipe/Documents/Data/debug_WDL_gradi/w_stack.npy',w_stack)
-    # np.save('/Users/rararipe/Documents/Data/debug_WDL_gradi/C.npy',C)
-    # np.save('/Users/rararipe/Documents/Data/debug_WDL_gradi/gamma.npy',gamma)
-    # np.save('/Users/rararipe/Documents/Data/debug_WDL_gradi/datapoint.npy',im_stack)
+    # np.save('/Users/rararipe/Documents/Data/debug_WDL_gradi/euclid/A.npy',A)
+    # np.save('/Users/rararipe/Documents/Data/debug_WDL_gradi/euclid/spectrums.npy',spectrums)
+    # np.save('/Users/rararipe/Documents/Data/debug_WDL_gradi/euclid/flux.npy',flux)
+    # np.save('/Users/rararipe/Documents/Data/debug_WDL_gradi/euclid/sig.npy',sig)
+    # np.save('/Users/rararipe/Documents/Data/debug_WDL_gradi/euclid/ker.npy',ker)
+    # np.save('/Users/rararipe/Documents/Data/debug_WDL_gradi/euclid/ker_rot.npy',ker_rot)
+    # np.save('/Users/rararipe/Documents/Data/debug_WDL_gradi/euclid/D_stack.npy',D_stack)
+    # np.save('/Users/rararipe/Documents/Data/debug_WDL_gradi/euclid/w_stack.npy',w_stack)
+    # np.save('/Users/rararipe/Documents/Data/debug_WDL_gradi/euclid/C.npy',C)
+    # np.save('/Users/rararipe/Documents/Data/debug_WDL_gradi/euclid/gamma.npy',gamma)
+    # np.save('/Users/rararipe/Documents/Data/debug_WDL_gradi/euclid/datapoint.npy',im_stack)
+    # np.save('/Users/rararipe/Documents/Data/debug_WDL_gradi/euclid/ini_guess.npy', D_stack)
+
 
 
 
@@ -11289,7 +11300,7 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
 
 
     # obs_est = polychrom_grad.MX(P_stack)
-    
+
     obs_est = polychrom_grad.MX(D_stack)
 
     res = im_stack - obs_est
@@ -11415,10 +11426,16 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
     # psf_est = psf_learning_utils.field_reconstruction(P_stack,shap,supp,neighbors_graph,weights_neighbors,A)
 
 
+    
+    temp_barys = Cw.call_WDL(D_stack=D_stack,w_stack=w_stack,gamma=gamma,n_iter_sink=n_iter_sink,
+        N=shap[0]*shap[1],func='--bary')
 
-    psf_est = psf_learning_utils.field_reconstruction_wdl(ot.Theano_bary(D_stack,w_stack,gamma,C,n_iter_sink),A,shap)
+    psf_est = psf_learning_utils.field_reconstruction_wdl(temp_barys,A,shap)
+    
 
-    integrated_psfs = otI.Theano_wdl_MX(A,spectrums,flux,sig,ker,D_stack,w_stack,C,gamma,n_iter_sink) # TO DO: make ot.Theano_wdl_MX also return the non decimated stars  
+    # psf_est = psf_learning_utils.field_reconstruction_wdl(ot.Theano_bary(D_stack,w_stack,gamma,C,n_iter_sink),A,shap)
+
+    integrated_psfs = ot.Theano_wdl_MX(A,spectrums,flux,sig,ker,D_stack,w_stack,C,gamma,n_iter_sink) # TO DO: make ot.Theano_wdl_MX also return the non decimated stars  
 
 
 
