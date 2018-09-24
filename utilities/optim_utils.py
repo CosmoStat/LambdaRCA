@@ -10,6 +10,7 @@ import isap
 import sys
 sys.path.append('../utilities')
 import utils
+import psf_learning_utils #DEBUG
 import os
 import scipy.stats as scistats
 import copy as cp
@@ -11078,8 +11079,8 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
             # guess = utils.gauss_convolve(stars_first_guess[:,:,i],sig=0.7) #TO DO: add random shift and noise
             guess = stars_first_guess[:,:,i]
             zIn = utils.clipped_zoom(guess,in_fact).reshape(-1)
-            # zOut = guess.reshape(-1)
-            zOut = utils.clipped_zoom(guess,out_fact).reshape(-1)
+            zOut = guess.reshape(-1)
+            # zOut = utils.clipped_zoom(guess,out_fact).reshape(-1)
 
             Ys[:,0] = zIn / np.sum(zIn, axis = 0) #normalize the total of mass in each line
             Ys[:,1] = zOut/ np.sum(zOut, axis = 0)
@@ -11117,6 +11118,35 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
     gamma = 0.2 # .3
     n_iter_sink = 13 #until we're sure atoms values respect the constraint
     C = ot.EuclidCost(shap[0],shap[1])
+
+
+
+
+    #DEBUG
+
+    # barycenters = np.load('/Users/rararipe/Documents/Data/debug_WDL_gradi/barycenters.npy')
+    # A = np.load('/Users/rararipe/Documents/Data/debug_WDL_gradi/A.npy')
+    # spectrums = np.load('/Users/rararipe/Documents/Data/debug_WDL_gradi/spectrums.npy')
+    # flux = np.load('/Users/rararipe/Documents/Data/debug_WDL_gradi/flux.npy')
+    # sig = np.load('/Users/rararipe/Documents/Data/debug_WDL_gradi/sig.npy')
+    # ker = np.load('/Users/rararipe/Documents/Data/debug_WDL_gradi/ker.npy')
+    # ker_rot = np.load('/Users/rararipe/Documents/Data/debug_WDL_gradi/ker_rot.npy')
+    # D = 2
+
+
+    # # MtXcoeff = psf_learning_utils.transport_plan_projections_field_coeff_transpose_wdl(im_stack, barycenters, spectrums,flux,sig,ker_rot,D)
+
+    
+
+    # curMX = psf_learning_utils.MX_coeff(A,barycenters,spectrums,flux,sig,ker,D)
+    # MtXcoeff=psf_learning_utils.MtX_coeff_full(im_stack,barycenters, spectrums,flux,sig,ker_rot,D, curMX)
+
+    # np.save('/Users/rararipe/Documents/Data/debug_WDL_gradi/euclid/MX_coeff_python.npy',curMX)
+    # np.save('/Users/rararipe/Documents/Data/debug_WDL_gradi/euclid/MtX_coeff_python.npy',MtXcoeff)
+
+
+
+
 
 
 
@@ -11163,6 +11193,7 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
     # np.save('/Users/rararipe/Documents/Data/debug_WDL_gradi/euclid/gamma.npy',gamma)
     # np.save('/Users/rararipe/Documents/Data/debug_WDL_gradi/euclid/datapoint.npy',im_stack)
     # np.save('/Users/rararipe/Documents/Data/debug_WDL_gradi/euclid/ini_guess.npy', D_stack)
+
 
 
 
@@ -11437,7 +11468,8 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
 
     integrated_psfs = ot.Theano_wdl_MX(A,spectrums,flux,sig,ker,D_stack,w_stack,C,gamma,n_iter_sink) # TO DO: make ot.Theano_wdl_MX also return the non decimated stars  
 
-
+    import pdb; pdb.set_trace()  # breakpoint 347b307f //
+    
 
     return psf_est,D_stack,A,res,obs_est
 

@@ -1,6 +1,6 @@
 import numpy as np
 from psf_learning_utils import transport_plan_projections_field,\
-transport_plan_projections_field_coeff_transpose
+transport_plan_projections_field_coeff_transpose,MtX_coeff_full,MX_coeff
 from modopt.opt.gradient import GradParent, GradBasic
 from modopt.math.matrix import PowerMethod
 import sys
@@ -463,7 +463,8 @@ class polychrom_eigen_psf_coeff_graph(GradBasic, PowerMethod):
         # x: <5,5*100> 
         # basis: <5*100, 100>
 
-        self._current_rec_MX = ot.Theano_coeff_MX(x.dot(self.basis),self.spectrums,self.polychrom_grad._current_rec_MtX[2],self.flux,self.sig,self.ker)
+        # self._current_rec_MX = ot.Theano_coeff_MX(x.dot(self.basis),self.spectrums,self.polychrom_grad._current_rec_MtX[2],self.flux,self.sig,self.ker)
+        self._current_rec_MX = MX_coeff(x.dot(self.basis),self.polychrom_grad._current_rec_MtX[2], self.spectrums,self.flux,self.sig,self.ker,self.D)
         
         return self._current_rec_MX
 
@@ -490,6 +491,12 @@ class polychrom_eigen_psf_coeff_graph(GradBasic, PowerMethod):
 
         if isinstance(y, type(None)):
             y = np.zeros(self.obs_data.shape)
+
+
+        # curMX = self.MX(self._current_x)
+        # curMtX = MtX_coeff_full(y,self.polychrom_grad._current_rec_MtX[2], self.spectrums,self.flux,self.sig,self.ker_rot,self.D, curMX)
+
+        # self._current_rec_MtX = [curMtX,curMX]
 
         self._current_rec_MtX = ot.Theano_coeff_MtX(self._current_x.dot(self.basis),self.spectrums,self.polychrom_grad._current_rec_MtX[2],\
             self.flux,self.sig,self.ker,y) #[MtX_coeff_, MX_coeff]

@@ -9,10 +9,10 @@ import time
 from scipy.ndimage import gaussian_filter
 
 #TO DO import this constants from optim_utils 
-Shap = (22,22) # Image full dimensions
+Shap = (42,42) # Image full dimensions
 Fshap = (9,9) # Filter dimensions
 nb_atoms = 2
-nb_wvl =5
+nb_wvl =6
 
 
 
@@ -79,6 +79,7 @@ kera = T.ones_like(D_stack[:,:,0])
 
 #new A
 Datapoint = T.tensor3('Datapoint')
+nb_wvl =5
 K_all = T.tensor3() #<9,9,100>
 Sigma_all = T.vector('Sigma_all')
 Flux_all = T.vector('Flux_all')
@@ -154,7 +155,7 @@ log_betas_rshp = T.swapaxes(T.swapaxes(log_result_bary[2],0,3),1,4) #<pixels,nb_
 
 
 
-Theano_bary = theano.function([D_stack,lbda_stack,Gamma,Cost,n_iter,theano.In(Tau,value=-0.3),theano.In(Epsilon,value=1e-200)],[log_result_bary_rshp,log_lKtas_rshp,log_betas_rshp])
+Theano_bary = theano.function([D_stack,lbda_stack,Gamma,Cost,n_iter,theano.In(Tau,value=-0.3),theano.In(Epsilon,value=1e-200)],log_result_bary_rshp)
 
 barycenters = log_result_bary_rshp
 
@@ -184,7 +185,7 @@ res_A,updates_A = theano.scan(lin_comb_A,
 
 res_A_rshp = T.swapaxes(T.swapaxes(res_A,0,1),1,2) #<484,2obj,5wvl>
 
-res_B,updates_B = theano.scan(lin_comb_B,#for each object
+res_B,updates_B = theano.scan(lin_comb_B,
                              outputs_info = None,
                              sequences = T.arange(beta_mat.shape[1]),
                              non_sequences = [barycenters,A_mat,res_A_rshp,K_all,Flux_all,Sigma_all]) #<2objs,22,22>
