@@ -1858,7 +1858,8 @@ def transport_plan_projections_wdl(Mtx,shap,w_stack,gamma,C,n_iter_sink,spectrum
 
     D_stack = np.expand_dims(Mtx, axis=2) #Theano_bary takes a cubic as input
     # barys = ot.Theano_bary(D_stack,chosen_lbdas,gamma,C,n_iter_sink) # <pixels,nb_comp, nb_wvl>
-
+    import pdb; pdb.set_trace()  # breakpoint 701d0e7e //
+    
     barys = Cw.call_WDL(D_stack=D_stack,w_stack=chosen_lbdas,gamma=gamma,n_iter_sink=n_iter_sink,N=D_stack.shape[0],func='--bary')
     barys = barys[:,0,:] # because transport_plan_projections_wdl is called for every component
 
@@ -2018,33 +2019,10 @@ def transport_plan_projections_field(P_stack,shap,supp,neighbors_graph,weights_n
         stars_est[:,:,i] = (flux[i]/sig[i])*utils.decim(scisig.fftconvolve(stars_temp,ker[:,:,i],mode='same'),D,av_en=0)
     gc.collect()
 
-    return stars_est
-
-
-
-def MX_coeff(A,barycenters, spectrums,flux,sig,ker,D):
-    from numpy import zeros,ones,prod,median
-
-    nb_comp = barycenters.shape[1]
-    nb_bands = barycenters.shape[2]
-    nb_im = size(flux)
-    W = int(np.sqrt(barycenters.shape[0]))
-    shap = (W,W)
-    mono_chromatic_psf = zeros((shap[0]*shap[1],nb_im,nb_bands))
+    import pdb; pdb.set_trace()  # breakpoint 55b4a4ae //
     
 
-    for i in range(0,nb_bands):
-        mono_chromatic_psf[:,:,i] = barycenters[:,:,i].dot(A)
-
-    stars_est = zeros((shap[0]/D,shap[1]/D,nb_im))
-
-    for i in range(0,nb_im):
-        stars_temp = (mono_chromatic_psf[:,i,:].dot(spectrums[:,i].reshape((nb_bands,1)))).reshape(shap)
-        stars_est[:,:,i] = (flux[i]/sig[i])*utils.decim(scisig.fftconvolve(stars_temp,ker[:,:,i],mode='same'),D,av_en=0)
-    gc.collect()
-
     return stars_est
-
 
 
 def blurred_initialization(PSF,sigma,nb_atoms):
@@ -2311,34 +2289,6 @@ def transport_plan_projections_field_coeff_transpose(im_stack,supp,neighbors_gra
     gc.collect()
 
     return A
-
-
-
-def MtX_coeff_full(im_stack, barycenters, spectrums,flux,sig,ker_rot,D,MX):
-    from numpy import zeros,ones,prod,median,diag
-
-    nb_comp = barycenters.shape[1]
-    nb_bands = barycenters.shape[2]
-    nb_im = size(flux)
-    shap_lr = im_stack.shape
-    shap = (shap_lr[0]*D,shap_lr[1]*D)
-    psf_est = zeros((shap[0]*shap[1],nb_im))
-
-    for i in range(0,nb_im):
-        psf_temp = (flux[i]/sig[i])*scisig.convolve(utils.transpose_decim(MX[:,:,i] - im_stack[:,:,i],D),ker_rot[:,:,i],mode='same')
-        psf_est[:,i] = psf_temp.reshape((prod(shap),))
-
-
-    A = zeros((nb_comp,nb_im))
-    for i in range(nb_im):
-        Si = zeros((shap[0]*shap[1],nb_comp))
-        for k in range(nb_comp):
-            Si[:,k] = (barycenters[:,k,:].dot(spectrums[:,i].reshape((nb_bands,1)))).reshape((prod(shap),))
-        A[:,i] = (transpose(Si).dot(psf_est[:,i].reshape((prod(shap),1)))).reshape((nb_comp,))
-    gc.collect()
-
-    return A
-
 
 
 def transport_plan_projections_transpose_2(im_stack,supp,neighbors_graph,weights_neighbors,spectrum):

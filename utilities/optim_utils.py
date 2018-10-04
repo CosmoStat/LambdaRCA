@@ -10,7 +10,6 @@ import isap
 import sys
 sys.path.append('../utilities')
 import utils
-import psf_learning_utils #DEBUG
 import os
 import scipy.stats as scistats
 import copy as cp
@@ -30,7 +29,7 @@ import logOT_bary as ot
 import logOT_bary_Identity as otI
 import C_wrapper as Cw
 import numpy as np
-
+import time as time
 try:
     import pyct
 except ImportError, e:
@@ -11013,7 +11012,7 @@ def polychromatic_psf_field_est(im_stack,spectrums,wvl,D,opt_shift_est,nb_comp,n
 
     return psf_est,P_stack,A
 
-def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_comp,stars_first_guess,field_pos=None,nb_iter=4,nb_subiter=100,mu=0.3,\
+def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_comp,stars_first_guess=None,D_first=None,field_pos=None,nb_iter=4,nb_subiter=100,mu=0.3,\
                         tol = 0.1,sig_supp = 3,sig=None,shifts=None,flux=None,nsig_shift_est=4,pos_en = True,simplex_en=False,\
                         wvl_en=True,wvl_opt=None,nsig=3,graph_cons_en=False,feat_init="zoom"):
     """ Main LambdaRCA function.
@@ -11042,6 +11041,7 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
     * :func:`proxs.Simplex`
     * :func:`proxs.KThreshold`
     """
+    seed = 11
 
     im_stack = copy(im_stack_in)
     if wvl_en:
@@ -11060,95 +11060,7 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
     pol_en=True,cent=None,theta_param=1,pol_mod=True,coord_map=None,knn=None)
 
 
-    print "------------------ WASS parameters initialization ------------------"
-    #initialize multi_comp D_stack <42x42,2,5> <p,nb_atoms,nb_comp> and the weights (t,1-t) w_stack <100,2> <nb_wvl,nb_atoms>
-    nb_atoms = 2
-    p = shap[0]*shap[1] # number of pixels
-    D_stack = []
-    for i in range(nb_comp):
-        if feat_init == "uniform":
-            Ys = np.ones((p,nb_atoms)) / p
-        elif feat_init == "random":
-            Ys = np.random.rand(p,nb_atoms) #<2,42x42>
-            Ys = (Ys.T / np.sum(Ys, axis = 1)).T #normalize the total of mass in each line
-
-        elif feat_init == "zoom":
-            in_fact = 2
-            out_fact = 0.5
-            Ys = np.zeros((p,nb_atoms))   
-            # guess = utils.gauss_convolve(stars_first_guess[:,:,i],sig=0.7) #TO DO: add random shift and noise
-            guess = stars_first_guess[:,:,i]
-            zIn = utils.clipped_zoom(guess,in_fact).reshape(-1)
-            zOut = guess.reshape(-1)
-            # zOut = utils.clipped_zoom(guess,out_fact).reshape(-1)
-
-            Ys[:,0] = zIn / np.sum(zIn, axis = 0) #normalize the total of mass in each line
-            Ys[:,1] = zOut/ np.sum(zOut, axis = 0)
-
-        elif feat_init == "ground_truth":
-            Ys = np.zeros((p,nb_atoms)) 
-            guess = stars_first_guess[:,:,:,i]
-            low = guess[:,:,0].reshape(-1)
-            high = guess[:,:,-1].reshape(-1)
-            Ys[:,0] = low/np.sum(low)
-            Ys[:,1] = high/np.sum(high)
-
-        D_stack.append(Ys)
-
-    D_stack = np.array(D_stack)
-    D_stack = D_stack.swapaxes(0,1).swapaxes(1,2)
-
-
     
-
-
-
-
-    
-
-
-
-
-
-    w_stack = np.array([t + 1e-10, 1 - t - 1e-10]).T
-    D_stack_1 = D_stack
-
-
-
-    gamma = 0.2 # .3
-    n_iter_sink = 13 #until we're sure atoms values respect the constraint
-    C = ot.EuclidCost(shap[0],shap[1])
-
-
-
-
-    #DEBUG
-
-    # barycenters = np.load('/Users/rararipe/Documents/Data/debug_WDL_gradi/barycenters.npy')
-    # A = np.load('/Users/rararipe/Documents/Data/debug_WDL_gradi/A.npy')
-    # spectrums = np.load('/Users/rararipe/Documents/Data/debug_WDL_gradi/spectrums.npy')
-    # flux = np.load('/Users/rararipe/Documents/Data/debug_WDL_gradi/flux.npy')
-    # sig = np.load('/Users/rararipe/Documents/Data/debug_WDL_gradi/sig.npy')
-    # ker = np.load('/Users/rararipe/Documents/Data/debug_WDL_gradi/ker.npy')
-    # ker_rot = np.load('/Users/rararipe/Documents/Data/debug_WDL_gradi/ker_rot.npy')
-    # D = 2
-
-
-    # # MtXcoeff = psf_learning_utils.transport_plan_projections_field_coeff_transpose_wdl(im_stack, barycenters, spectrums,flux,sig,ker_rot,D)
-
-    
-
-    # curMX = psf_learning_utils.MX_coeff(A,barycenters,spectrums,flux,sig,ker,D)
-    # MtXcoeff=psf_learning_utils.MtX_coeff_full(im_stack,barycenters, spectrums,flux,sig,ker_rot,D, curMX)
-
-    # np.save('/Users/rararipe/Documents/Data/debug_WDL_gradi/euclid/MX_coeff_python.npy',curMX)
-    # np.save('/Users/rararipe/Documents/Data/debug_WDL_gradi/euclid/MtX_coeff_python.npy',MtXcoeff)
-
-
-
-
-
-
 
     print "------------------- Forward operator parameters estimation ------------------------"
     centroids = None
@@ -11169,16 +11081,162 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
     sig /=sig.min()
     for k in range(0,shap_obs[2]):
         im_stack[:,:,k] = im_stack[:,:,k]/sig[k]
+
+
     print " ------ ref energy: ",(im_stack**2).sum()," ------- "
     if flux is None:
         flux = utils.flux_estimate_stack(copy(im_stack),rad=4)
 
+    
     if graph_cons_en:
         print "-------------------- Spatial constraint setting -----------------------"
         e_opt,p_opt,weights,comp_temp,data,basis,alph  = analysis(im_stack,0.1*prod(shap_obs)*sig.min()**2,field_pos,nb_max=nb_comp)
 
     print "------------- Coeff init ------------"
     A,comp,cube_est = utils.cube_svd(im_stack,nb_comp=nb_comp)
+
+
+    # np.save('/Users/rararipe/Documents/Data/QuickestGenerator/22x22pixels_5lbdas10pos/est_sig.npy',sig)
+    # np.save('/Users/rararipe/Documents/Data/QuickestGenerator/22x22pixels_5lbdas10pos/est_ker.npy',ker)
+    # np.save('/Users/rararipe/Documents/Data/QuickestGenerator/22x22pixels_5lbdas10pos/est_ker_rot.npy',ker_rot)
+
+
+
+
+   
+
+    print "------------------ WASS parameters initialization ------------------"
+    #initialize multi_comp D_stack <42x42,2,5> <p,nb_atoms,nb_comp> and the weights (t,1-t) w_stack <100,2> <nb_wvl,nb_atoms>
+    nb_atoms = 2
+    p = shap[0]*shap[1] # number of pixels
+    D_stack = []
+    nb_pop = int(nb_im/nb_comp)
+    sr_star_all = []
+    for i in range(nb_comp):
+        if feat_init == "uniform":
+            Ys = np.ones((p,nb_atoms)) / p
+        elif feat_init == "random":
+            Ys = np.random.rand(p,nb_atoms) #<2,42x42>
+            Ys = (Ys.T / np.sum(Ys, axis = 1)).T #normalize the total of mass in each line
+
+        elif feat_init == "zoom":
+
+            in_fact = 1.3
+            out_fact = 0.5
+            Ys = np.zeros((p,nb_atoms))   
+            # guess = utils.gauss_convolve(stars_first_guess[:,:,i],sig=0.7) #TO DO: add random shift and noise
+            guess = stars_first_guess[:,:,i]
+            zIn = utils.clipped_zoom(guess,in_fact).reshape(-1)
+            zOut = guess.reshape(-1)
+            # zOut = utils.clipped_zoom(guess,out_fact).reshape(-1)
+
+            Ys[:,0] = zIn / np.sum(zIn, axis = 0) #normalize the total of mass in each line
+            Ys[:,1] = zOut/ np.sum(zOut, axis = 0)
+
+        elif feat_init == "ground_truth":
+
+            Ys = np.zeros((p,nb_atoms)) 
+            guess = stars_first_guess[:,:,:,i]
+            low = guess[:,:,0].reshape(-1)
+            high = guess[:,:,-1].reshape(-1)
+            Ys[:,0] = low/np.sum(low)
+            Ys[:,1] = high/np.sum(high)
+
+        elif feat_init == "zoom_2":
+            in_fact = 1.3
+            out_fact = 0.5
+
+            # Denoise
+
+            guess = (flux[i]/sig[i])*scisig.convolve(utils.transpose_decim(im_stack[:,:,i],2),ker_rot[:,:,i],mode='same')
+
+            Ys = np.zeros((p,nb_atoms))   
+            
+            zIn = utils.clipped_zoom(guess,in_fact).reshape(-1)
+            zOut = guess.reshape(-1)
+            # zOut = utils.clipped_zoom(guess,out_fact).reshape(-1)
+
+            Ys[:,0] = zIn / np.sum(zIn, axis = 0) #normalize the total of mass in each line
+            Ys[:,1] = zOut/ np.sum(zOut, axis = 0)
+
+
+        elif feat_init == "super_res":
+            # Change stars to Louis format
+            Y = im_stack[:,:,i*nb_pop:(i+1)*nb_pop].swapaxes(2,1).swapaxes(0,1)
+            deci_matrix = utils.D2(D,shap_obs[0])
+
+            rel_shifs = [shifts[i*nb_pop]-shifts[i*nb_pop+n] for n in range(nb_pop)]
+            res = utils.first_guess_integer(Y,nb_pop,shap[0],deci_matrix,shifts[i*nb_pop:(i+1)*nb_pop])
+            sr_star_shifted = res[1]
+            # Denoise
+            # image_rec = call_mr_filter(image_noisy, opt=['-t', '1', '-s', str(n_sigma)])
+
+            # Centralize
+            sr_star = scisig.convolve(sr_star_shifted,ker_rot[:,:,i*nb_pop],mode='same')
+
+
+            
+            sr_star_all.append(sr_star)
+
+
+            # Zoom
+            in_fact = 1.3
+            out_fact = 0.5
+            Ys = np.zeros((p,nb_atoms)) 
+            guess = sr_star
+            zIn = utils.clipped_zoom(guess,in_fact).reshape(-1)
+            zOut = guess.reshape(-1)
+            # zOut = utils.clipped_zoom(guess,out_fact).reshape(-1)
+
+            Ys[:,0] = zIn / np.sum(zIn, axis = 0) #normalize the total of mass in each line
+            Ys[:,1] = zOut/ np.sum(zOut, axis = 0)
+
+        elif feat_init == "guess_bkup":
+            Ys = D_first[:,:,i]
+
+
+        elif feat_init == "gt_semi_free":
+            if i == 0:
+                Ys = np.zeros((p,nb_atoms)) 
+                guess = stars_first_guess[:,:,:,i]
+                low = guess[:,:,0].reshape(-1)
+                high = guess[:,:,-1].reshape(-1)
+                Ys[:,0] = low/np.sum(low)
+                Ys[:,1] = high/np.sum(high)
+            else:
+                one = np.random.rand(shap[0]*shap[1])
+                two = np.random.rand(shap[0]*shap[1])
+                Ys[:,0] = one/np.sum(one)
+                Ys[:,1] = two/np.sum(two)
+
+
+        D_stack.append(Ys)
+
+    D_stack = np.array(D_stack)
+    D_stack = D_stack.swapaxes(0,1).swapaxes(1,2)
+
+
+
+    
+
+    w_stack = np.array([t + 1e-10, 1 - t - 1e-10]).T
+    D_stack_1 = D_stack
+
+
+    sr_star_all = np.array(sr_star_all)
+    # np.save('/Users/rararipe/Documents/Data/lbdaRCA_wdl/Fake_SEDs/super_res_first_guess/est_shifts.npy',shifts)
+    # np.save('/Users/rararipe/Documents/Data/lbdaRCA_wdl/Fake_SEDs/super_res_first_guess/sr_stars.npy',sr_star_all)
+    # np.save('/Users/rararipe/Documents/Data/lbdaRCA_wdl/Fake_SEDs/super_res_first_guess/D_stack_ini_guess.npy',D_stack)
+
+
+
+
+
+    gamma = 0.1 # .3
+    n_iter_sink = 13 #until we're sure atoms values respect the constraint
+    C = ot.EuclidCost(shap[0],shap[1])
+
+
 
 
     # np.save('/Users/rararipe/Documents/Data/debug_WDL_gradi/euclid/A.npy',A)
@@ -11198,22 +11256,22 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
 
 
 
-
     i=0
     print " --------- Optimization instances setting ---------- "
 
 
     print "=======initializing polychrom_grad..."
-
+    tic = time.time()
     # Data fidelity related instances
     polychrom_grad = grad.polychrom_eigen_psf(im_stack, supp, neighbors_graph,weights_neighbors, spectrums, A, flux, sig, ker, ker_rot,D_stack,w_stack,C,gamma,n_iter_sink,D)
+    toc = time.time()
 
-    print "=======polychrom_grad initialized"
+    print "=======polychrom_grad initialized: "+ str((toc-tic)/60.0) + " min"
 
 
 
     print "=======initializing polychrom_grad_coeff..."
-
+    tic = time.time()
     if graph_cons_en:
         polychrom_grad_coeff = grad.polychrom_eigen_psf_coeff_graph(im_stack, supp, neighbors_graph, \
                 weights_neighbors, spectrums, P_stack, flux, sig, ker, ker_rot, D, basis,D_stack,w_stack,C,gamma,n_iter_sink,polychrom_grad,A)
@@ -11221,7 +11279,8 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
         polychrom_grad_coeff = grad.polychrom_eigen_psf_coeff(im_stack, supp, neighbors_graph, \
                 weights_neighbors, spectrums, P_stack, flux, sig, ker, ker_rot, D)
     
-    print "=======polychrom_grad_coeff initialized"
+    toc = time.time()
+    print "=======polychrom_grad_coeff initialized: "+ str((toc-tic)/60.0) + " min"
 
 
 
@@ -11247,8 +11306,8 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
 
         noise_map_wdl = get_noise_arr(lin_com.op(polychrom_grad.MtX_init(im_stack))[1]) 
 
-
-        ## lin_com.op(.)[1] computes the "image"(only the gradient of transport plan is used) projection to the first wvl
+        # noise_map_wdl = get_noise_arr(lin_com.op(D_stack)[1]) 
+        ## lin_com.op(.)[1] computes the "image"(only the gradient of transport plan is used and I don't know why) in starlet domain
         ## in each component in the starlet domain <42,1,42,5>. The one is due to the fact that only one filter is used.
 
         # dual_var_plan = np.array([zeros((supp.shape[0],nb_im)),zeros(noise_map.shape)]) # dual_var_plan[0] = linear.op[0] dual_var_plan[1] = get_nois_array(linear.op[1])
@@ -11284,6 +11343,9 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
     delta  = (polychrom_grad.inv_spec_rad**(-1)/2)**2 + 4*lin_com.mat_norm**2
     w = 0.9
     sigma_P = w*(np.sqrt(delta)-polychrom_grad.inv_spec_rad**(-1)/2)/(2*lin_com.mat_norm**2)
+    print "---------- sigma_P " + str(sigma_P)
+    ## DEBUG
+    sigma_P = 0.7
     tau_P = sigma_P
     rho_P = 1
 
@@ -11314,8 +11376,10 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
     # print np.argwhere(np.isnan(noise_map_wdl))
     
     print "------------------- Transport plans estimation ------------------"
-
+    tic = time.time()
     condat_min_wdl.iterate(max_iter=nb_subiter) # ! actually runs optimisation
+    toc = time.time()
+    print "Done. " + str((toc-tic)/60.0) + " min"
     D_stack = condat_min_wdl.x_final
     dual_var_plan_wdl = condat_min_wdl.y_final
 
@@ -11339,8 +11403,9 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
 
 
 
-
+    
     for i in range(0,nb_iter):
+        tic_algo = time.time()
         print "----------------Iter ",i+1,"/",nb_iter,"-------------------"
 
         # Parameters update
@@ -11373,31 +11438,39 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
 
         print "------------------- Coefficients estimation ----------------------"
 
-
-        min_coeff.iterate(max_iter=nb_subiter) # ! actually runs optimisation
+        tic = time.time()
+        min_coeff.iterate(max_iter=nb_subiter+3) # ! actually runs optimisation
+        toc = time.time()
+        print "Done. " + str((toc-tic)/60.0) + " min"
         if graph_cons_en:
             prox_coeff.reset_iter()
             alph = min_coeff.x_final
             A = alph.dot(basis)
+            A = abs(A)
         else:
             A = min_coeff.x_final
             dual_var_coeff = min_coeff.y_final
 
         print "Parameters update"
+        tic = time.time()
         polychrom_grad.set_A(A)
         if not wvl_en:
             lin_com.set_A(A)
         if wvl_en:#yes
             # Noise estimate update
             # noise_map = get_noise_arr(lin_com.op(polychrom_grad.MtX(im_stack))[1])
-            noise_map_wdl = get_noise_arr(lin_com.op(polychrom_grad.MtX(im_stack))[1]) 
+            noise_map_wdl = get_noise_arr(lin_com.op(polychrom_grad.MtX_init(im_stack))[1]) 
             # dual_prox_plan.update_weights(noise_map)
             dual_prox_plan_wdl.update_weights(noise_map_wdl)
-
+        toc = time.time()
+        print "Done. " + str((toc-tic)/60.0) + " min"
         # ---- (Re)Setting hyperparameters
         delta  = (polychrom_grad.inv_spec_rad**(-1)/2)**2 + 4*lin_com.mat_norm**2
         w = 0.9
         sigma_P = w*(np.sqrt(delta)-polychrom_grad.inv_spec_rad**(-1)/2)/(2*lin_com.mat_norm**2)
+        print "---------- sigma_P " + str(sigma_P)
+        ## DEBUG
+        sigma_P = 0.7
         tau_P = sigma_P
         rho_P = 1
 
@@ -11409,39 +11482,51 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
 
         print "------------------- Transport plans estimation ------------------"
 
-
+        tic  = time.time()
         condat_min_wdl.iterate(max_iter=nb_subiter) # ! actually runs optimisation
+        toc = time.time()
+        print "Done. " + str((toc-tic)/60.0) + " min"
         D_stack = condat_min_wdl.x_final
         dual_var_plan_wdl = condat_min_wdl.y_final
         D_stack_3 = D_stack
 
+
+
+
+
+        # A_or = copy(A)
+        # D_stack_or = copy(D_stack)
+
+
+        # barycenters = ot.Theano_bary(D_stack,w_stack,gamma,C,n_iter_sink)
         # Normalization     REVIEW THIS
-        for j in range(nb_comp):
-            for at in range(nb_atoms):
-                l1_D = sum(abs(D_stack[:,at,j])) 
-                D_stack[:,at,j] /= l1_D
-            const = sum(polychrom_grad._current_rec_MtX[2][:,j,:]) #maybe taking the mean instead of adding up?
-            A[j,:] *= const
-            if graph_cons_en:
-                alph[j,:] *= const
-        polychrom_grad.set_A(A)
-
-        # # Normalization
-        # for j in range(0,nb_comp):
-        #     l1_P = sum(abs(P_stack[:,:,j]))
-        #     P_stack[:,:,j]/= l1_P
-        #     A[j,:] *= l1_P
+        # for j in range(nb_comp):
+        #     for at in range(nb_atoms):
+        #         l1_D = sum(abs(D_stack[:,at,j])) 
+        #         D_stack[:,at,j] /= l1_D
+        #     const = sum(abs(barycenters[:,j,:]))#maybe taking the mean instead of adding up?
+        #     print const
+        #     A[j,:] *= const
         #     if graph_cons_en:
-        #         alph[j,:] *= l1_P
-        # polychrom_grad.set_A(A)
+        #         alph[j,:] *= const
 
+        # # Make sure that each col of A also sums to 1(the sum of energy given to each component).
+        # for j in range(nb_im):
+        #     A[:,j] = A[:,j]/sum((A[:,j])) 
+
+        # raise ValueError('A very specific bad thing happened.')
+
+
+
+        polychrom_grad.set_A(A)
+       
 
 
         # Flux update
         obs_est = polychrom_grad.MX(D_stack)
         err_ref = 0.5*sum((obs_est-im_stack)**2)
         flux_new = (obs_est*im_stack).sum(axis=(0,1))/(obs_est**2).sum(axis=(0,1))
-        print "Flux correction: ",flux_new
+        print "Flux correction: ",flux_new #Obs: if it is only one iteration we dont really need to run power method again
         polychrom_grad.set_flux(polychrom_grad.get_flux()*flux_new)
         polychrom_grad_coeff.set_flux(polychrom_grad_coeff.get_flux()*flux_new)
 
@@ -11454,24 +11539,27 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
         # Computing residual
 
 
+        toc_algo = time.time()
+        print "Alternate minimization iteration "+str(i)+" done in " + str((toc_algo-tic_algo)/60.0) + " min"
     # psf_est = psf_learning_utils.field_reconstruction(P_stack,shap,supp,neighbors_graph,weights_neighbors,A)
 
 
     
-    temp_barys = Cw.call_WDL(D_stack=D_stack,w_stack=w_stack,gamma=gamma,n_iter_sink=n_iter_sink,
-        N=shap[0]*shap[1],func='--bary')
+    # temp_barys = Cw.call_WDL(D_stack=D_stack,w_stack=w_stack,gamma=gamma,n_iter_sink=n_iter_sink,
+    #     N=shap[0]*shap[1],func='--bary')
 
-    psf_est = psf_learning_utils.field_reconstruction_wdl(temp_barys,A,shap)
+    # psf_est = psf_learning_utils.field_reconstruction_wdl(temp_barys,A,shap)
+
+
     
-
-    # psf_est = psf_learning_utils.field_reconstruction_wdl(ot.Theano_bary(D_stack,w_stack,gamma,C,n_iter_sink),A,shap)
+    barycenters = ot.Theano_bary(D_stack,w_stack,gamma,C,n_iter_sink)
+    psf_est = psf_learning_utils.field_reconstruction_wdl(barycenters,A,shap)
 
     integrated_psfs = ot.Theano_wdl_MX(A,spectrums,flux,sig,ker,D_stack,w_stack,C,gamma,n_iter_sink) # TO DO: make ot.Theano_wdl_MX also return the non decimated stars  
 
-    import pdb; pdb.set_trace()  # breakpoint 347b307f //
-    
 
-    return psf_est,D_stack,A,res,obs_est
+
+    return psf_est,D_stack,A,res,obs_est,barycenters
 
 
 def test_lsq(Y,A,nb_iter=1000):

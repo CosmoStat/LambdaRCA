@@ -6607,7 +6607,7 @@ def clipped_zoom(img, zoom_factor, **kwargs):
         top = (h - zh) // 2
         left = (w - zw) // 2
 
-        out = zoom(img[top:top+zh, left:left+zw], zoom_tuple, **kwargs)
+        out = zoom(img[top:top+zh, left+1:left+zw+1], zoom_tuple, **kwargs)
 
         # `out` might still be slightly larger than `img` due to rounding, so
         # trim off any extra pixels at the edges
@@ -6622,4 +6622,101 @@ def clipped_zoom(img, zoom_factor, **kwargs):
     out[out==0.0] = 1e-8
 
     return out
+
+def first_guess_integer(Y,n,dp,D,reference=0):  # classic first guess but wth integer translation 
+    ground = np.zeros([dp,dp])  # averaging grid
+    HR_centro = []  # list of the centroids shifts
+    DT = np.transpose(D)  # upsampling matrix
+    R = np.zeros([dp**2,dp**2])   #R matrix initilization
+    M = []
+    for k in range(n):
+        UP_pick = np.matmul(DT,Y[k].flatten())
+        UP_pick.resize(dp,dp)
+#        if type(reference) != int:
+#            centro = 2*Ellipticity(reference[k]).centroid #centroid calculation
+#        else:
+#            centro = Ellipticity(UP_pick).centroid #centroid calculation
+#        if k == 0:
+#            tru_cen=np.copy(centro)  # first galaxy's centroid is used as reference
+#        cenk=tru_cen-centro 
+        cenk = reference[k]
+        HR_centro.append(cenk)
+        cenk = np.array([ round(cenk[0]), round(cenk[1]) ])  #rouding to integer
+        Mk = Mtranslate(cenk,dp)   #matrix of shifting
+        M.append(Mk)  
+        SHIFT_pic = np.matmul(Mk,UP_pick.flatten())   #shifting os the upsampled pic
+        SHIFT_pic.resize(dp,dp)
+        Rk = np.matmul(Mk,np.matmul(DT,np.matmul(D,np.transpose(Mk))))  # calculation of matrix R
+        R += Rk 
+        ground += SHIFT_pic  #summing on the final grid
+    R.resize(dp**2,dp**2)
+    HR_pic = regularizarion_progressive_first_guess(ground,R,dp)
+    return HR_pic.flatten(),HR_pic,np.array(HR_centro),M
+    
+
+def regularizarion_progressive_first_guess(G,R,dp):# computes X = R^-1 * P. The interpolation improves over the course of execution
+    HR_pic = np.zeros([dp,dp])
+    broken_index = []   # list of the R diagonal void coefficients
+    for i in range(dp):   
+        for j in range(dp):
+            if R[i*dp+j,i*dp+j]!=0: # case where the R diagonal is not void
+                HR_pic[i,j] = G[i,j]/R[i*dp+j,i*dp+j]  # regularization by division by said coefficient
+            else:  # case where the R diagonal is void
+                broken_index.append([i,j])   # stocking of the coef
+    for coor in broken_index:   
+        ik, jk = coor[0],coor[1]
+        used_pixels = 0  # number of neighboring pixels used for interpolation. Begins at -1 for the pixel of interest will be counted
+        interpolation = 0    # sum of the used neighbors
+        for i in range(ik-1,ik+2):  # scanning of the 8 neighboring pixels
+            for j in range(jk-1,jk+2):
+                if 0 <= i <= dp-1 and  0 <= j <= dp-1:   # we exclude pixels out of the border of the image
+                    if R[i*dp+j,i*dp+j] !=0:   # we exclude pixels of unknown values
+                        used_pixels += 1
+                        interpolation += HR_pic[i,j]
+
+        HR_pic[ik,jk] = interpolation/used_pixels  # averaging 
+
+    return HR_pic
+
+
+def Mtranslate(cen,dp):
+    Mk = np.zeros((dp**2,dp**2))
+    delta = int(cen[0]*dp+cen[1])
+    if cen[0] > 0:
+        budi = 1
+        signi = 1
+    else:
+        budi = 0
+        signi = -1
+    if cen[1] > 0:
+        budj = 1
+        signj = 1
+    else:
+        budj = 0
+        signj = -1
+    for i in range(dp):
+        for j in range(dp):
+            if signi*i <= signi*(budi*(dp-1)-cen[0]): 
+                if signj*j <= signj*(budj*(dp-1)-cen[1]):
+                    Mk[i*dp+j+delta,i*dp+j] = 1
+    return Mk
+
+
+
+def D2(d,p): # matrix of hard decmation, 1 line and column out of d are kept only
+    dp=d*p
+    D=np.zeros([p**2,dp**2])  # the dimension is p**2xdp**2 since there are less pixels at the end
+    pointer=0  # allows to know when to delete a line. Acts as an index of the pixels we're keeping 
+    for i in range(p**2):  
+        if pointer%dp==0:  # if we've come back to a new line
+            if (pointer//dp)%d!=0: # and this line isn't even 
+                pointer+=dp # it cannot be kept
+        D[i,pointer]=1 
+        pointer+=d # in normal times, we delete a pixel by jumping from one useful to another by leaps of d
+    
+    return D
+
+
+
+
 

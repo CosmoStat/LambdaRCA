@@ -9,10 +9,10 @@ import time
 from scipy.ndimage import gaussian_filter
 
 #TO DO import this constants from optim_utils 
-Shap = (22,22) # Image full dimensions
+Shap = (42,42) # Image full dimensions
 Fshap = (9,9) # Filter dimensions
 nb_atoms = 2
-nb_wvl =5
+nb_wvl =8
 
 
 
@@ -154,7 +154,7 @@ log_betas_rshp = T.swapaxes(T.swapaxes(log_result_bary[2],0,3),1,4) #<pixels,nb_
 
 
 
-Theano_bary = theano.function([D_stack,lbda_stack,Gamma,Cost,n_iter,theano.In(Tau,value=-0.3),theano.In(Epsilon,value=1e-200)],[log_result_bary_rshp,log_lKtas_rshp,log_betas_rshp])
+Theano_bary = theano.function([D_stack,lbda_stack,Gamma,Cost,n_iter,theano.In(Tau,value=-0.3),theano.In(Epsilon,value=1e-200)],log_result_bary_rshp)
 
 barycenters = log_result_bary_rshp
 
