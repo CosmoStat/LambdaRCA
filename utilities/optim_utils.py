@@ -11012,7 +11012,7 @@ def polychromatic_psf_field_est(im_stack,spectrums,wvl,D,opt_shift_est,nb_comp,n
 
     return psf_est,P_stack,A
 
-def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_comp,stars_first_guess=None,D_first=None,field_pos=None,nb_iter=4,nb_subiter=100,mu=0.3,\
+def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_comp,stars_first_guess=None,sr_first_guesses=None,D_first=None,field_pos=None,nb_iter=4,nb_subiter=100,mu=0.3,\
                         tol = 0.1,sig_supp = 3,sig=None,shifts=None,flux=None,nsig_shift_est=4,pos_en = True,simplex_en=False,\
                         wvl_en=True,wvl_opt=None,nsig=3,graph_cons_en=False,feat_init="zoom"):
     """ Main LambdaRCA function.
@@ -11066,6 +11066,7 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
     centroids = None
     if sig is None:
         sig,filters = utils.im_gauss_nois_est_cube(copy(im_stack),opt=opt_shift_est)
+
 
     if shifts is None:
         map = ones(im_stack.shape)
@@ -11191,6 +11192,26 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
             Ys[:,0] = zIn / np.sum(zIn, axis = 0) #normalize the total of mass in each line
             Ys[:,1] = zOut/ np.sum(zOut, axis = 0)
 
+        # 
+
+        elif feat_init == "super_res_2":
+            # Zoom
+            in_fact = 1.2
+            out_fact = 0.5
+            Ys = np.zeros((p,nb_atoms)) 
+            guess = sr_first_guesses[i]
+
+            zIn = utils.clipped_zoom(guess,in_fact).reshape(-1)
+            # zOut = utils.clipped_zoom(guess,out_fact).reshape(-1)
+            zOut = guess.reshape(-1)
+
+            Ys[:,0] = zIn / np.sum(zIn, axis = 0) #normalize the total of mass in each line
+            Ys[:,1] = zOut/ np.sum(zOut, axis = 0)
+
+
+
+
+
         elif feat_init == "guess_bkup":
             Ys = D_first[:,:,i]
 
@@ -11221,7 +11242,6 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
 
     w_stack = np.array([t + 1e-10, 1 - t - 1e-10]).T
     D_stack_1 = D_stack
-
 
     sr_star_all = np.array(sr_star_all)
     # np.save('/Users/rararipe/Documents/Data/lbdaRCA_wdl/Fake_SEDs/super_res_first_guess/est_shifts.npy',shifts)
@@ -11263,6 +11283,7 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
     print "=======initializing polychrom_grad..."
     tic = time.time()
     # Data fidelity related instances
+    
     polychrom_grad = grad.polychrom_eigen_psf(im_stack, supp, neighbors_graph,weights_neighbors, spectrums, A, flux, sig, ker, ker_rot,D_stack,w_stack,C,gamma,n_iter_sink,D)
     toc = time.time()
 
@@ -11345,7 +11366,7 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
     sigma_P = w*(np.sqrt(delta)-polychrom_grad.inv_spec_rad**(-1)/2)/(2*lin_com.mat_norm**2)
     print "---------- sigma_P " + str(sigma_P)
     ## DEBUG
-    sigma_P = 0.7
+    # sigma_P = 0.4
     tau_P = sigma_P
     rho_P = 1
 
@@ -11470,7 +11491,7 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
         sigma_P = w*(np.sqrt(delta)-polychrom_grad.inv_spec_rad**(-1)/2)/(2*lin_com.mat_norm**2)
         print "---------- sigma_P " + str(sigma_P)
         ## DEBUG
-        sigma_P = 0.7
+        # sigma_P = 0.4
         tau_P = sigma_P
         rho_P = 1
 
@@ -11559,7 +11580,7 @@ def polychromatic_psf_field_est_2(im_stack_in,spectrums,wvl,D,opt_shift_est,nb_c
 
 
 
-    return psf_est,D_stack,A,res,obs_est,barycenters
+    return psf_est,D_stack,A,res,obs_est,barycenters,D_stack_1
 
 
 def test_lsq(Y,A,nb_iter=1000):

@@ -65,23 +65,23 @@ class polychrom_eigen_psf(GradParent, PowerMethod):
         self._current_rec_MX = None # stores latest application of self.MX
         self._current_rec = None
 
-        # self.spec_rad = 30.9930631176
-        # self.inv_spec_rad = 0.03226528453
-        self.spec_rad = 20.0
-        self.inv_spec_rad = 0.05
-        # PowerMethod.__init__(self, self.trans_op, (np.prod(self.shape),D_stack.shape[1],A.shape[0]))
+        self.spec_rad = 30.9930631176
+        self.inv_spec_rad = 0.03226528453
+        # self.spec_rad = 20.0
+        # self.inv_spec_rad = 0.05
+        PowerMethod.__init__(self, self.trans_op, (np.prod(self.shape),D_stack.shape[1],A.shape[0]))
         print " > SPECTRAL RADIUS:\t{}".format(self.spec_rad)
         
         
     def set_A(self,A_new,pwr_en=True):
         self.A = np.copy(A_new)
-        # if pwr_en:
-        #     PowerMethod.__init__(self, self.trans_op, (np.prod(self.shape),self.D_stack.shape[1],self.A.shape[0]))
+        if pwr_en:
+            PowerMethod.__init__(self, self.trans_op, (np.prod(self.shape),self.D_stack.shape[1],self.A.shape[0]))
 
     def set_flux(self,flux_new,pwr_en=False):
         self.flux = np.copy(flux_new)
-        # if pwr_en:
-        #     PowerMethod.__init__(self, self.trans_op, (np.prod(self.shape),self.D_stack.shape[1],self.A.shape[0]))
+        if pwr_en:
+            PowerMethod.__init__(self, self.trans_op, (np.prod(self.shape),self.D_stack.shape[1],self.A.shape[0]))
 
     def get_flux(self):
         return self.flux
@@ -99,14 +99,19 @@ class polychrom_eigen_psf(GradParent, PowerMethod):
         """
             x: input data array, a cube of 2D images, residuous MX-Y. x not used.
         """
+
+        dictionary = self.D_stack
         if isinstance(y, type(None)):
             y = np.zeros(self.obs_data.shape)
+            dictionary = x
 
         tic = time.time()
-        self._current_rec_MtX = ot.Theano_wdl_MtX(self.A,self.spectrums,self.flux,self.sig,self.ker,self.D_stack,self.w_stack,self.C,self.gamma,self.n_iter_sink,y)
+        self._current_rec_MtX = ot.Theano_wdl_MtX(self.A,self.spectrums,self.flux,self.sig,self.ker,dictionary,self.w_stack,self.C,self.gamma,self.n_iter_sink,y)
         toc = time.time()
 
         print str((toc-tic)/60.0) + " min"
+
+
 
         # self._current_rec_MtX = Cw.call_WDL(A=self.A,spectrums=self.spectrums,flux=self.flux,sig=self.sig,ker=self.ker,rot_ker=self.ker_rot, D_stack=self.D_stack,
         #     w_stack=self.w_stack,gamma=self.gamma,n_iter_sink=self.n_iter_sink,y=y,N=self.D_stack.shape[0],func="--MtX_wdl")
@@ -414,26 +419,26 @@ class polychrom_eigen_psf_coeff_graph(GradBasic, PowerMethod):
 
         self.spec_rad = 5.595602793283493  
         self.inv_spec_rad = 0.1787117558     
-        # PowerMethod.__init__(self, self.trans_op, (D_stack.shape[-1],self.basis.shape[0]))
+        PowerMethod.__init__(self, self.trans_op, (D_stack.shape[-1],self.basis.shape[0]))
 
 
 
 
     def set_D_stack(self,D_stack_new,pwr_en=True):
         self.D_stack = np.copy(D_stack_new)
-        # if pwr_en:
-        #     PowerMethod.__init__(self, self.trans_op, (self.D_stack.shape[-1],self.basis.shape[0]))
+        if pwr_en:
+            PowerMethod.__init__(self, self.trans_op, (self.D_stack.shape[-1],self.basis.shape[0]))
 
     def set_P(self,P_new,pwr_en=True):
         self.P = np.copy(P_new)
-        # if pwr_en:
-        #     PowerMethod.__init__(self, self.trans_op, (self.P.shape[-1],self.basis.shape[0]))
+        if pwr_en:
+            PowerMethod.__init__(self, self.trans_op, (self.P.shape[-1],self.basis.shape[0]))
 
 
     def set_flux(self,flux_new,pwr_en=False):
         self.flux = np.copy(flux_new)
-        # if pwr_en:
-        #     PowerMethod.__init__(self, self.trans_op, (self.D_stack.shape[-1],self.basis.shape[0]))
+        if pwr_en:
+            PowerMethod.__init__(self, self.trans_op, (self.D_stack.shape[-1],self.basis.shape[0]))
 
     def get_flux(self):
         return self.flux
@@ -489,12 +494,15 @@ class polychrom_eigen_psf_coeff_graph(GradBasic, PowerMethod):
 
     def MtX(self, x, y=None): # the x here is not used. MX - observed data is taken as default (the loss function)
 
+        variable = self._current_x 
         if isinstance(y, type(None)):
             y = np.zeros(self.obs_data.shape)
+            variable  = x
 
        
-        self._current_rec_MtX = ot.Theano_coeff_MtX(self._current_x.dot(self.basis),self.spectrums,self.polychrom_grad._current_rec_MtX[2],\
-            self.flux,self.sig,self.ker,y) #[MtX_coeff_, MX_coeff]
+        self._current_rec_MtX = ot.Theano_coeff_MtX(variable.dot(self.basis),self.spectrums,self.polychrom_grad._current_rec_MtX[2],self.flux,self.sig,self.ker,y) #[MtX_coeff_, MX_coeff]
+
+
         
 
         return self._current_rec_MtX[0].dot(np.transpose(self.basis))
