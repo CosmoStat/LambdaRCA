@@ -1,5 +1,0 @@
-proxs
-=====
-
-.. automodule:: proxs
-    :members:
