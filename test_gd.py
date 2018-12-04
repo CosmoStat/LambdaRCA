@@ -246,12 +246,15 @@ fb_lambda_param_coef = 1.0 # must be in ]0,1[
 # Logit
 #save_path = '/Users/rararipe/Documents/Data/GradientDescent_output/trueSEDs/42x42pixels_8lbdas80pos_3chrom0RCA_sr_zout1zin1p2_coef_dict_sigmaEqualsLinTrace_alpha321p5beta0p1_absA_3it753dict303030coef_weight4dict1p5coef_noFluxUpdate_logitCondatSparsity_sink15'
 # ClassicCondat
-save_path = '/Users/rararipe/Documents/Data/GradientDescent_output/trueSEDs/42x42pixels_8lbdas80pos_3chrom0RCA_sr_zout0p6zin1p2_dict_coef_sigmaEqualsLinTrace_alpha1pBeta0p1_binAradialSR_3it743dict30coef_weight4dict1p5coef_FluxUpdate_genFB_sink10_unicornio_lbdaEquals1p0_LowPass_W0p20p40p4'
+save_path = '/Users/rararipe/Documents/Data/GradientDescent_output/trueSEDs/42x42pixels_8lbdas80pos_3chrom0RCA_sr_zout0p6zin1p2_dict_coef_sigmaEqualsLinTrace_alpha1pBeta0p1_binAradialSR_3it743dict30coef_weight4dict1p5coef_FluxUpdate_genFB_sink10_unicornio_lbdaEquals1p0_LowPass_W0p20p40p4_newData'
 
 #save_path = '/Users/rararipe/Documents/Data/GradientDescent_output/trueSEDs/42x42pixels_8lbdas80pos_3chrom0RCA_sr_zout0p6zin1p2_coef_dict_sigmaEqualsLinTrace_alpha1beta0p5_absA_3it10dict5030coef_weight4dict1p5coef_FluxUpdate_Condat_sink10_THEANO_low_pass'
 if not os.path.exists(save_path):
         os.makedirs(save_path)
 
+result_path = save_path +"/result"
+if not os.path.exists(result_path):
+        os.makedirs(result_path)
 
 
 
@@ -1341,17 +1344,36 @@ MSE_rel_nor_stars_2euclidres = np.array(MSE_rel_nor_stars_2euclidres)
 MSE_rel_nor_stars_2euclidres_alternates = np.array(MSE_rel_nor_stars_2euclidres_alternates)
 D_stack_energy = np.array(D_stack_energy)
 
-np.save(save_path+'/D_stack_energy.npy', D_stack_energy)
-np.save(save_path+'/steps_inners.npy', steps_inners)
-np.save(save_path+'/MSE_rel_nor.npy', MSE_rel_nor)
-np.save(save_path+'/MSE_rel_nor_alternates.npy', MSE_rel_nor_alternates)
-np.save(save_path+'/loss_inners.npy', loss_inners_save) # descomentar depois de ter transformado em numpy array
-np.save(save_path+'/loss_iters.npy', loss_iters)
-np.save(save_path+'/loss_alternates.npy', loss_alternates)
-np.save(save_path+'/MSE_rel_nor_integrated_alternates.npy', MSE_rel_nor_integrated_alternates)
-np.save(save_path+'/MSE_rel_nor_integrated.npy', MSE_rel_nor_integrated)
-np.save(save_path+'/MSE_rel_nor_stars_2euclidres.npy', MSE_rel_nor_stars_2euclidres)
-np.save(save_path+'/MSE_rel_nor_stars_2euclidres_alternates.npy', MSE_rel_nor_stars_2euclidres_alternates)
+np.save(result_path+'/D_stack_energy.npy', D_stack_energy)
+np.save(result_path+'/steps_inners.npy', steps_inners)
+np.save(result_path+'/MSE_rel_nor.npy', MSE_rel_nor)
+np.save(result_path+'/MSE_rel_nor_alternates.npy', MSE_rel_nor_alternates)
+np.save(result_path+'/loss_inners.npy', loss_inners_save) # descomentar depois de ter transformado em numpy array
+np.save(result_path+'/loss_iters.npy', loss_iters)
+np.save(result_path+'/loss_alternates.npy', loss_alternates)
+np.save(result_path+'/MSE_rel_nor_integrated_alternates.npy', MSE_rel_nor_integrated_alternates)
+np.save(result_path+'/MSE_rel_nor_integrated.npy', MSE_rel_nor_integrated)
+np.save(result_path+'/MSE_rel_nor_stars_2euclidres.npy', MSE_rel_nor_stars_2euclidres)
+np.save(result_path+'/MSE_rel_nor_stars_2euclidres_alternates.npy', MSE_rel_nor_stars_2euclidres_alternates)
+
+
+np.save(result_path+'/D_stack.npy',D_stack)
+np.save(result_path+'/barycenters.npy',barycenters)
+np.save(result_path+'/A.npy',A)
+np.save(result_path+'/psf_est.npy',psf_est)
+np.save(result_path+'/obs_est.npy',obs_est)
+np.save(result_path+'/stars_est_2euclidres_nor.npy',stars_est_2euclidres_nor)
+np.save(result_path+'/psf_est_shift_nor.npy',psf_est_shift_nor)
+np.save(result_path+'/shifts.npy',shifts)
+np.save(result_path+'/flux.npy',flux)
+
+np.save(result_path+'/SEDs.npy',spectrums)
+np.save(result_path+'/fov.npy',fov)
+np.save(result_path+'/lambdas.npy',lbdas)
+np.save(result_path+'/gt_PSFs.npy',gt_PSFs)
+
+
+
 
 raise ValueError('Check gradient of mix_stack[1] with small data. Pq nao ta mudando quase nada???????')
 
@@ -1425,6 +1447,8 @@ if problem_type in ['mix','lbdaRCA']:
             tk.plot_func(D_stack[:,at,i])
 #            print "res"
 #            tk.plot_func(D_stack[:,at,i] - D_stack_0[:,at,i])
+            
+tk.plot_func(A)
 
 
 #%% D_stack energy
