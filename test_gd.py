@@ -229,7 +229,7 @@ list_iterations_coef = [30,30,30]
 n_iter = len(list_iterations_coef)
 Fred = False
 alg = "genFB" #genFB
-logit = False
+logit = True
 
 
 
@@ -246,7 +246,7 @@ fb_lambda_param_coef = 1.0 # must be in ]0,1[
 # Logit
 #save_path = '/Users/rararipe/Documents/Data/GradientDescent_output/trueSEDs/42x42pixels_8lbdas80pos_3chrom0RCA_sr_zout1zin1p2_coef_dict_sigmaEqualsLinTrace_alpha321p5beta0p1_absA_3it753dict303030coef_weight4dict1p5coef_noFluxUpdate_logitCondatSparsity_sink15'
 # ClassicCondat
-save_path = '/Users/rararipe/Documents/Data/GradientDescent_output/trueSEDs/42x42pixels_8lbdas80pos_3chrom0RCA_sr_zout0p6zin1p2_dict_coef_sigmaEqualsLinTrace_alpha1pBeta0p1_binAradialSR_3it743dict30coef_weight4dict1p5coef_FluxUpdate_genFB_sink10_unicornio_lbdaEquals1p0_LowPass_W0p20p40p4_newData'
+save_path = '/Users/rararipe/Documents/Data/GradientDescent_output/trueSEDs/42x42pixels_8lbdas80pos_3chrom0RCA_sr_zout0p6zin1p2_dict_coef_sigmaEqualsLinTrace_alpha1pBeta0p1_binAradialSR_3it743dict30coef_weight4dict1p5coef_FluxUpdate_genFB_sink10_unicornio_lbdaEquals1p0_LowPass_W0p20p40p4_newData_LOGIT'
 
 #save_path = '/Users/rararipe/Documents/Data/GradientDescent_output/trueSEDs/42x42pixels_8lbdas80pos_3chrom0RCA_sr_zout0p6zin1p2_coef_dict_sigmaEqualsLinTrace_alpha1beta0p5_absA_3it10dict5030coef_weight4dict1p5coef_FluxUpdate_Condat_sink10_THEANO_low_pass'
 if not os.path.exists(save_path):

@@ -32,7 +32,8 @@ plt.rcParams['font.family'] = 'serif'
 plt.rcParams['font.serif'] = 'cm'
 
 
-def interp_SEDs(lbdas,sed_path,plot_path,angs_unit=True):
+def interp_SEDs(lbdas,sed_path,plot_path,angs_unit=True,interpolate_ponctual=False):
+    nlbdas = len(lbdas)
     SED_names = [f for f in listdir(sed_path) if isfile(join(sed_path, f))]
     SED_names.remove('.DS_Store')
     
@@ -43,7 +44,7 @@ def interp_SEDs(lbdas,sed_path,plot_path,angs_unit=True):
     lmin, lmax = 550, 900 # VIS
     
     
-    sed_interp = None
+    SEDs = []
     for galtype,col in zip(SED_names,colors):
     
         # Read SED 
@@ -53,29 +54,45 @@ def interp_SEDs(lbdas,sed_path,plot_path,angs_unit=True):
         
         # Linearly interpolate
         interp = interp1d(sed[:,0], sed[:,1])
-        this_sed = np.array([interp(lbda) for lbda in lbdas])
-        if sed_interp is None:
-            sed_interp = np.vstack((lbdas,this_sed))
+        
+        if interpolate_ponctual:
+            this_sed = np.array([interp(lbda) for lbda in lbdas])
+
+            # Keep only Euclid VIS band
+            sed = sed[(lmin<=sed[:,0]) & (sed[:,0]<=lmax)]
+        
         else:
-            sed_interp = np.vstack((sed_interp,this_sed))
-    
-        # Keep only Euclid VIS band
-        sed = sed[(lmin<=sed[:,0]) & (sed[:,0]<=lmax)]
+            
+            # Keep only Euclid VIS band
+            sed = sed[(lmin<=sed[:,0]) & (sed[:,0]<=lmax)] 
+            
+            #  Take the mean of spectrum chunk in front
+            this_sed = []
+            for v in range(nlbdas-1):
+                if v == 0:
+                    lbdamin = lbdas[0]
+                else:
+                    lbdamin = lbdas[v-1]
+                lbdamax = lbdas[v+1]
+                sed_chunk = sed[(lbdamin<=sed[:,0]) & (sed[:,0]<lbdamax)]
+                this_sed.append(np.mean(sed_chunk[:,1]))
+            this_sed.append(interp(lbdas[-1]))
+            
+        SEDs.append(this_sed)   
     
         # Plot it
-#        plt.plot(lbdas, this_sed, label=galtype[:-5], c=col)
-#        plt.plot(sed[:,0], sed[:,1], '.', c=col)
+        plt.plot(lbdas, this_sed, c=col)
+        plt.plot(sed[:,0], sed[:,1], '.', c=col)
         
         
-#    plt.xlabel('Wavelength (nm)')
-#    plt.ylabel('Flux')
-#    plt.legend(loc=5, bbox_to_anchor=(1.26,.5))
-#    plt.savefig(plot_path+'SEDs.pdf', bbox_inches='tight')
+    plt.xlabel('Wavelength (nm)')
+    plt.ylabel('Flux')
+    plt.legend(loc=5, bbox_to_anchor=(1.26,.5))
+    plt.savefig(plot_path+'SEDs.pdf', bbox_inches='tight')
     
     #Pass to lambdaRCA format
-    real_SED = sed_interp.swapaxes(0,1)
-    print real_SED.shape# <wvl, obj>
-    SEDs = real_SED
+    SEDs = np.array(SEDs)
+    SEDs = SEDs.swapaxes(0,1)
     # Normalize..
     SEDs /= np.sum(abs(SEDs),axis=0)
     
