@@ -485,23 +485,36 @@ def SR_first_guesses_kmeans(stars,fov,shifts,nb_comp):
     return sr_stars,A  
 
 
+def SR_first_guesses_rnd(stars,shifts,nb_comp):
+    nb_obj = stars.shape[-1]
+    groups = []
+    for i in range(nb_comp):
+        groups.append(np.random.permutation(np.arange(nb_obj))[:50])
+    
+    sr_stars = []
+    for i in range(nb_comp):
+        sr_stars.append(SnA(stars[:,:,groups[i]],shifts[groups[i]]))
+    sr_stars = np.array(sr_stars)
+    return sr_stars
 
-def SR_first_guesses_radial(stars,fov,shifts,nb_comp): 
+def SR_first_guesses_radial_old(stars,fov,shifts,nb_comp): 
     nb_obj = stars.shape[-1]
     
-    min_el_per_grp = 15
+    min_el_per_grp = 40
     W = 0.3 # inches?
     H = 0.25
     center = [0.0,0.775]
     r_last = min(W,H)/2 
+    nb_chunks = 2
     
-    segment = r_last/(nb_comp-1)
+    
+    segment = r_last/(nb_chunks-1)
     r_list = []
-    for i in range(nb_comp-1):
+    for i in range(nb_chunks-1):
         r_list.append(segment*(i+1))
 
     groups = []
-    for i in range(nb_comp):
+    for i in range(nb_chunks):
         groups.append([])
     for obj in range(nb_obj):
         sector = 0
@@ -530,7 +543,7 @@ def SR_first_guesses_radial(stars,fov,shifts,nb_comp):
         groups[sector].append(obj)   
     
     # Check if all groups have minimum stars requirement (NOT OPTIMAL)
-    for i in range(nb_comp):
+    for i in range(nb_chunks):
         if len(groups[i]) < min_el_per_grp:
             deficit = min_el_per_grp - len(groups[i])
             # go through neighbor groups to find a donator
@@ -548,9 +561,14 @@ def SR_first_guesses_radial(stars,fov,shifts,nb_comp):
 
     
     sr_stars = []
-    for i in range(nb_comp):
+    for i in range(nb_chunks):
         print len(groups[i])," stars"
         sr_stars.append(SnA(stars[:,:,groups[i]],shifts[groups[i]]))
+        
+    # Make super resolved components with all stars
+    sr_star_with_all = SnA(stars,shifts)
+    for i in range(nb_comp - nb_chunks):
+       sr_stars.append(sr_star_with_all) 
     
     sr_stars = np.array(sr_stars)
     
@@ -561,20 +579,129 @@ def SR_first_guesses_radial(stars,fov,shifts,nb_comp):
     plt.figure()
     plt.plot(fov[groups[0],0], fov[groups[0],1], '.',color='red')
     plt.plot(fov[groups[1],0], fov[groups[1],1], '.',color='blue') 
-    plt.plot(fov[groups[2],0], fov[groups[2],1], '.',color='green')  
+#    plt.plot(fov[groups[2],0], fov[groups[2],1], '.',color='green')  
     
-    
+    fill_principal = 0.7
+    cum = fill_principal
     A = np.zeros((nb_comp,nb_obj))
-    for i in range(nb_comp):
-        A[i,groups[i]] = 1.0
-    
+    for i in range(nb_chunks):
+        A[i,groups[i]] = 0.7
+    for i in range(nb_chunks,nb_comp):
+        if i == nb_comp-1:
+            fill_aux = 1.0 - cum
+        else:
+            fill_aux = np.random.randint(1.0-cum)
+        A[i,:] = fill_aux
+        cum += fill_aux
     tk.plot_func(A)   
           
-    
+    import pdb; pdb.set_trace()  # breakpoint 3d87ba10 //
     
     return sr_stars,A  
 
+def SR_first_guesses_radial(stars,fov,shifts,nb_comp): 
+    nb_obj = stars.shape[-1]
+    
+    min_el_per_grp = 40
+    W = 0.3 # inches?
+    H = 0.25
+    center = [0.0,0.775]
+    r_last = min(W,H)/2 
+    nb_chunks = 2
+    
+    
+    segment = r_last/(nb_chunks-1)
+    r_list = []
+    for i in range(nb_chunks-1):
+        r_list.append(segment*(i+1))
 
+    groups = []
+    for i in range(nb_chunks):
+        groups.append([])
+    for obj in range(nb_obj):
+        sector = 0
+        r_obj = np.sqrt((fov[obj,0] - center[0])**2 + (fov[obj,1] - center[1])**2)
+    #    if r_obj > 0.125:
+    #        print "LAST SECTOR"
+        
+        # Find sector
+        not_found = True
+        j = int((len(r_list)-1)/2) # middle of the list
+        while not_found:
+            if r_obj < r_list[j]:
+                j -= 1
+                if j < 0:
+                    not_found = False
+            elif r_obj >= r_list[j]:
+                if j+1 == len(r_list)-1:
+                   j +=1
+                   not_found = False
+                elif j+1 > len(r_list)-1:
+                    not_found = False
+                elif r_obj < r_list[j+1]:
+                    not_found = False
+                
+        sector = j+1
+    
+        # Put at the sector
+        groups[sector].append(obj)   
+    
+    # Check if all groups have minimum stars requirement (NOT OPTIMAL)
+    for i in range(nb_chunks):
+        if len(groups[i]) < min_el_per_grp:
+            deficit = min_el_per_grp - len(groups[i])
+            # go through neighbor groups to find a donator
+            neighbors = [i-1,i+1]
+            for j in neighbors:
+                if j < 0:
+                    continue
+                sobra = len(groups[j]) - min_el_per_grp
+                if sobra > 0:
+                    gain = min(sobra,deficit)
+                    groups[i].extend([groups[j].pop(el) for el in range(gain)])
+                    deficit -= gain
+                    if deficit == 0:
+                        break  
+
+    
+    sr_stars = []
+    for i in range(nb_chunks):
+        print len(groups[i])," stars"
+        sr_stars.append(SnA(stars[:,:,groups[i]],shifts[groups[i]]))
+        
+    # Make super resolved components with all stars
+    sr_star_with_all = SnA(stars,shifts)
+    for i in range(nb_comp - nb_chunks):
+       sr_stars.append(sr_star_with_all) 
+    
+    sr_stars = np.array(sr_stars)
+    
+    for sr in sr_stars:
+        tk.plot_func(sr)
+        
+        
+    plt.figure()
+    plt.plot(fov[groups[0],0], fov[groups[0],1], '.',color='red')
+    plt.plot(fov[groups[1],0], fov[groups[1],1], '.',color='blue') 
+#    plt.plot(fov[groups[2],0], fov[groups[2],1], '.',color='green')  
+    
+    fill_principal = 0.7
+    cum = fill_principal
+    A = np.zeros((nb_comp,nb_obj))
+    for i in range(nb_chunks):
+        A[i,groups[i]] = 0.7
+    for i in range(nb_chunks,nb_comp):
+        if i == nb_comp-1:
+            fill_aux = 1.0 - cum
+        else:
+            fill_aux = np.random.randint(1.0-cum)
+        A[i,:] = fill_aux
+        cum += fill_aux
+    tk.plot_func(A)   
+          
+    import pdb; pdb.set_trace()  # breakpoint 3d87ba10 //
+    
+    return sr_stars,A  
 #def SR_first_guess_FOV_splitRadial():
     
     

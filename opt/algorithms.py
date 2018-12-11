@@ -461,7 +461,7 @@ class GenForwardBackward(SetUp):
     def __init__(self, x, grad, prox_list, cost='auto', gamma_param=1.0,
                  lambda_param=1.0, gamma_update=None, lambda_update=None,
                  weights=None, auto_iterate=True, metric_call_period=5,
-                 metrics={}, linear=None,extra_factor_LP=1.0):
+                 metrics={}, linear=None,extra_factor_LP=1.0,logit=False):
 
         # Set default algorithm properties
         super(GenForwardBackward, self).__init__(
@@ -596,7 +596,8 @@ class GenForwardBackward(SetUp):
         self.lambda_list = [self._lambda_param,self._lambda_param,lambda_LP]
         print("lambda list")
         print(self.lambda_list)
-
+        print("extra_factor LP")
+        print(self.extra_factor_LP)
         self._grad.get_grad(self._x_old)
         
         tk.plot_func(self._grad.grad[:,0,0], title="grad 0", cmap="bwr")
@@ -631,7 +632,7 @@ class GenForwardBackward(SetUp):
                       self._grad.grad)
             z_prox = self._prox_list[i].op(z_temp, extra_factor=1.0, extra_factor_LP=self.extra_factor_LP)
             
-            
+            print("=================== PROX ",str(i))
             tk.plot_func(- self._gamma *self._grad.grad[:,0,0], title="step grad 0")
             tk.plot_func(np.log(abs(- self._gamma *self._grad.grad[:,0,0])), title="step grad 0 LOG")
             tk.plot_func(- self._gamma *self._grad.grad[:,1,0], title="step grad 1")

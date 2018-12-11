@@ -73,24 +73,26 @@ if not os.path.exists(rca_interp_path):
 #%% Get galaxies SEDs
 
 # Load lbdas used in lbdaRCA
-lbdas = np.load(data_path+'lbdas.npy') 
+all_lbdas = np.load(data_path+'all_lbdas.npy') 
       
-galSEDs = utils.interp_SEDs(lbdas,sed_path,plot_path) # <nb_wvl, nb_gal>
+galSEDs = utils.interp_SEDs(all_lbdas,sed_path,plot_path) # <nb_wvl, nb_gal>
 
       
 #%% Load all PSFs, barycenters, components and weights
         
 # full res PSFs
 
-PSFs_fr = np.load(data_path+'PSFs_full_res.npy')
-PSFs_fr /= np.sum(abs(PSFs_fr), axis=(0,1))
-PSFs_fr_W, _ ,nb_wvl , nb_obj  = PSFs_fr.shape
+#PSFs_fr = np.load(data_path+'PSFs_full_res.npy')
+#PSFs_fr /= np.sum(abs(PSFs_fr), axis=(0,1))
+
 
 PSFs_integrated_fr = np.load(data_path+'stars_fullres_gt.npy')
 PSFs_integrated_fr /= np.sum(abs(PSFs_integrated_fr), axis=(1,2)).reshape((PSFs_integrated_fr.shape[0],1,1))
 
 PSFs_full_res_test_gt = np.load(data_path+'PSFs_full_res_test.npy')
 PSFs_full_res_test_gt /= np.sum(abs(PSFs_full_res_test_gt),axis=(0,1))
+PSFs_fr_W, _ ,nb_wvl , nb_obj  = PSFs_full_res_test_gt.shape
+
 PSFs_full_res_test_gt =  PSFs_full_res_test_gt.swapaxes(3,2).swapaxes(2,1).swapaxes(1,0) 
 
 
@@ -112,7 +114,7 @@ lbdaPSFs = np.load(lbdaRCA_path+'psf_est.npy')
 lbdaPSFs /= np.sum(abs(lbdaPSFs),axis=(0,1))
 lbdaPSFs_integrated = np.load(lbdaRCA_path+'stars_est_2euclidres.npy')
 lbdaPSFs_integrated /= np.sum(abs(lbdaPSFs_integrated),axis=(0,1))
-barycenters = np.load(lbdaRCA_path+'barycenters.npy')
+barycenters = np.load(lbdaRCA_path+'barycenters_wvlAll.npy')
 A_train_lbdaRCA = np.load(lbdaRCA_path+'A.npy')
 
 
@@ -156,6 +158,11 @@ full_shapes_testgal_list = []
 truInt_shapes_testgal_list = []
 lbdaInt_shapes_testgal_list = []
 
+
+
+paulin_allPositions_rca_testgal_list = []
+paulin_allPositions_lbda_testgal_list = []
+
 #%% Interpolations that don't depend on SED
 
 # RCA: test positions
@@ -166,15 +173,29 @@ rcaPSFs_test /= np.sum(abs(rcaPSFs_test),axis=(1,2)).reshape(rcaPSFs_test.shape[
 # lbdaRCA: A for test positions
 A_test_lbdaRCA = utils.rbf_components(A_train_lbdaRCA, fov_train, fov_test) # get A coefficients at galaxy positions
 
+
+# Save interpolations
+np.save(rca_interp_path+'rcaPSFs_test.npy',rcaPSFs_test)
+np.save(lbda_interp_path+'A_test_lbdaRCA.npy',A_test_lbdaRCA)
 #%% Shapes that don't depend on SED
 
 full_shapes = utils.computeHSMshapes(PSFs_integrated_fr,pixel_scale) # obs: format of PSFs has to be <nb_obj, pixel, pixel>
 truInt_shapes = utils.computeHSMshapes(truPSFs_integrated.swapaxes(2,1).swapaxes(1,0),pixel_scale)
 rca_shapes = utils.computeHSMshapes(rcaPSFs.swapaxes(2,1).swapaxes(1,0),pixel_scale)
 rca_shapes_test = utils.computeHSMshapes(rcaPSFs_test,pixel_scale)
+lbdaInt_shapes = utils.computeHSMshapes(lbdaPSFs_integrated.swapaxes(2,1).swapaxes(1,0),pixel_scale)
+
+#%% Delete heavy stuff
+del PSFs_integrated_fr
+del truPSFs_integrated
+del rcaPSFs
+del rcaPSFs_test
+del lbdaPSFs_integrated
+#%%
 
 print "Interpolation done."
-for gal_i in tqdm(range(2)): #galSEDs.shape[-1]
+nb_loops = 2 #galSEDs.shape[-1]
+for gal_i in tqdm(range(nb_loops)): 
     # Ground truth: test positions and galSED
     stars_testGal_fr_gt = PSFs_full_res_test_gt.dot(galSEDs[:,gal_i])
     
@@ -215,14 +236,17 @@ for gal_i in tqdm(range(2)): #galSEDs.shape[-1]
     
     
     full_shapes_testgal = utils.computeHSMshapes(stars_testGal_fr_gt,pixel_scale)
+    del stars_testGal_fr_gt
 #    full_shapes_traingal = utils.computeHSMshapes(stars_trainGal_fr_gt,pixel_scale)
     
     
     truInt_shapes_testgal = utils.computeHSMshapes(stars_2euclidrec_testGal_gt,pixel_scale)
+    del stars_2euclidrec_testGal_gt
 #    truInt_shapes_traingal = utils.computeHSMshapes(stars_2euclidrec_trainGal_gt,pixel_scale)
     
-    lbdaInt_shapes = utils.computeHSMshapes(lbdaPSFs_integrated.swapaxes(2,1).swapaxes(1,0),pixel_scale)
+    
     lbdaInt_shapes_testgal = utils.computeHSMshapes(lbdaPSFs_testGal,pixel_scale)
+    del lbdaPSFs_testGal
 #    lbdaInt_shapes_traingal = utils.computeHSMshapes(lbdaPSFsgal_train,pixel_scale)
     
     
@@ -404,20 +428,22 @@ for gal_i in tqdm(range(2)): #galSEDs.shape[-1]
 #        plt.show()
 #        plt.close()
     
-    #%% Convert all to arcsec^2           
-    
-    full_shapes[:,2] *= pixel_scale**2
+    #%% Convert all to arcsec^2  
+
+    if gal_i == 0:         
+        full_shapes[:,2] *= pixel_scale**2
     full_shapes_testgal[:,2] *= pixel_scale**2
 #    full_shapes_traingal[:,2] *= pixel_scale**2
-    
-    truInt_shapes[:,2] *= twiceEuclid**2
+    if gal_i == 0:
+        truInt_shapes[:,2] *= twiceEuclid**2
     truInt_shapes_testgal[:,2] *= twiceEuclid**2
 #    truInt_shapes_traingal[:,2] *= twiceEuclid**2
-    
-    rca_shapes[:,2] *= twiceEuclid**2
+    if gal_i == 0:
+        rca_shapes[:,2] *= twiceEuclid**2
     rca_shapes_test[:,2] *= twiceEuclid**2
     
-    lbdaInt_shapes[:,2] *= twiceEuclid**2
+    if gal_i == 0:
+        lbdaInt_shapes[:,2] *= twiceEuclid**2
     lbdaInt_shapes_testgal[:,2] *= twiceEuclid**2
 #    lbdaInt_shapes_traingal[:,2] *= twiceEuclid**2
     
@@ -459,23 +485,24 @@ for gal_i in tqdm(range(2)): #galSEDs.shape[-1]
     sizes = np.linspace(sizmin, sizmax, nb_points)
     R2s = sizes**2
     
-    paulin_rca_m_mean, paulin_rca_m_std, paulin_rca_c1_mean, \
-    paulin_rca_c1_std,paulin_rca_c2_mean, paulin_rca_c2_std  = utils.paulin_predict(truInt_shapes, rca_shapes, R2s)
+    if gal_i == 0:
+        paulin_rca_m_mean, paulin_rca_m_std, paulin_rca_c1_mean, \
+        paulin_rca_c1_std,paulin_rca_c2_mean, paulin_rca_c2_std,paulin_allPositions_rca  = utils.paulin_predict(truInt_shapes, rca_shapes, R2s)
     
     paulin_rca_testgal_m_mean ,paulin_rca_testgal_m_std,paulin_rca_testgal_c1_mean,\
-    paulin_rca_testgal_c1_std,paulin_rca_testgal_c2_mean,paulin_rca_testgal_c2_std =  utils.paulin_predict(truInt_shapes_testgal, rca_shapes_test, R2s)
+    paulin_rca_testgal_c1_std,paulin_rca_testgal_c2_mean,paulin_rca_testgal_c2_std,paulin_allPositions_rca_testgal =  utils.paulin_predict(truInt_shapes_testgal, rca_shapes_test, R2s)
     
 #    paulin_rca_traingal_m_mean,paulin_rca_traingal_m_std,paulin_rca_traingal_c1_mean,\
 #    paulin_rca_traingal_c1_std,paulin_rca_traingal_c2_mean,paulin_rca_traingal_c2_std  =  utils.paulin_predict(truInt_shapes_traingal, rca_shapes, R2s)
     
     #===
-    
-    paulin_lbda_m_mean,paulin_lbda_m_std,paulin_lbda_c1_mean,\
-    paulin_lbda_c1_std,paulin_lbda_c2_mean,paulin_lbda_c2_std  =  utils.paulin_predict(truInt_shapes, lbdaInt_shapes, R2s)
+    if gal_i == 0:
+        paulin_lbda_m_mean,paulin_lbda_m_std,paulin_lbda_c1_mean,\
+        paulin_lbda_c1_std,paulin_lbda_c2_mean,paulin_lbda_c2_std,paulin_allPositions_lbda  =  utils.paulin_predict(truInt_shapes, lbdaInt_shapes, R2s)
     
     
     paulin_lbda_testgal_m_mean,paulin_lbda_testgal_m_std,paulin_lbda_testgal_c1_mean,\
-    paulin_lbda_testgal_c1_std,paulin_lbda_testgal_c2_mean,paulin_lbda_testgal_c2_std  =  utils.paulin_predict(truInt_shapes_testgal, lbdaInt_shapes_testgal, R2s)
+    paulin_lbda_testgal_c1_std,paulin_lbda_testgal_c2_mean,paulin_lbda_testgal_c2_std,paulin_allPositions_lbda_testgal  =  utils.paulin_predict(truInt_shapes_testgal, lbdaInt_shapes_testgal, R2s)
     
     
 #    paulin_lbda_traingal_m_mean,paulin_lbda_traingal_m_std,paulin_lbda_traingal_c1_mean,\
@@ -491,6 +518,7 @@ for gal_i in tqdm(range(2)): #galSEDs.shape[-1]
     paulin_rca_testgal_c1_std_list.append(paulin_rca_testgal_c1_std)
     paulin_rca_testgal_c2_mean_list.append(paulin_rca_testgal_c2_mean)
     paulin_rca_testgal_c2_std_list.append(paulin_rca_testgal_c2_std)
+    paulin_allPositions_rca_testgal_list.append(paulin_allPositions_rca_testgal)
     
     paulin_lbda_testgal_m_mean_list.append(paulin_lbda_testgal_m_mean)
     paulin_lbda_testgal_m_std_list.append(paulin_lbda_testgal_m_std)
@@ -498,6 +526,7 @@ for gal_i in tqdm(range(2)): #galSEDs.shape[-1]
     paulin_lbda_testgal_c1_std_list.append(paulin_lbda_testgal_c1_std)
     paulin_lbda_testgal_c2_mean_list.append(paulin_lbda_testgal_c2_mean)
     paulin_lbda_testgal_c2_std_list.append(paulin_lbda_testgal_c2_std)
+    paulin_allPositions_lbda_testgal_list.append(paulin_allPositions_lbda_testgal)
     
     #%% Plot Paulin
     #plt.rcParams['figure.figsize'] = 8,5#12,7.9
@@ -657,6 +686,14 @@ if plot_paulin_testGal_all:
     plt.title('Additive bias (2nd component): with galaxy SEDs at galaxy positions')
     plt.show() 
     
+#%% Delete more heavy stuff
+del PSFs_full_res_test_gt
+
+
+
+
+
+
     
 #%% Save stuff
 if save_stuff:
@@ -674,6 +711,12 @@ if save_stuff:
     np.save(results_path+'paulin_rca_testgal_c2_std_list.npy',np.array(paulin_rca_testgal_c2_std_list)) 
     np.save(results_path+'paulin_lbda_testgal_c2_std_list.npy',np.array(paulin_lbda_testgal_c2_std_list)) 
     
+    paulin_allPositions_rca_testgal_list = np.array(paulin_allPositions_rca_testgal)
+    paulin_allPositions_lbda_testgal_list = np.array(paulin_allPositions_lbda_testgal)
+    np.save(results_path+'paulin_allPositions_rca_testgal_list.npy',paulin_allPositions_rca_testgal_list)
+    np.save(results_path+'paulin_allPositions_lbda_testgal.npy',paulin_allPositions_lbda_testgal)
+    
+    
     # Save ellipticities
     np.save(results_path+'full_shapes.py',full_shapes)
     np.save(results_path+'truInt_shapes.py',truInt_shapes)
@@ -686,9 +729,6 @@ if save_stuff:
     np.save(results_path+'lbdaInt_shapes_testgal_list.npy',np.array(lbdaInt_shapes_testgal_list))
     
     
-    # Save interpolations
-    np.save(rca_interp_path+'rcaPSFs_test.npy',rcaPSFs_test)
-    np.save(lbda_interp_path+'A_test_lbdaRCA.npy',A_test_lbdaRCA)
 
 
 #%% Plot all shape measurements
@@ -798,81 +838,152 @@ if plot_paulin_testGal_all:
 
     
     for gal in range(len(paulin_rca_testgal_m_mean_list)):
-        plt.errorbar(sizes, paulin_rca_testgal_m_mean_list[gal], c=cmap_1(color_indx[gal]), lw=2, capsize=5)
-        plt.errorbar(sizes, paulin_lbda_testgal_m_mean_list[gal], c=cmap_2(color_indx[gal]), alpha=.7, capsize=5)
+        plt.errorbar(sizes, paulin_rca_testgal_m_mean_list[gal],yerr=paulin_rca_testgal_m_std_list[gal], c=cmap_1(color_indx[gal]), lw=2, capsize=5)
+        plt.errorbar(sizes, paulin_lbda_testgal_m_mean_list[gal],yerr=paulin_lbda_testgal_m_std_list[gal], c=cmap_2(color_indx[gal]), alpha=.7, capsize=5)
     plt.xlabel(r'Galaxy size $R$ (arcsec)')
     plt.ylabel(r'Paulin predicted $m$')     
     plt.legend(leg)
-    plt.title('Multiplicative bias: with galaxy SEDs at galaxy positions MEANS')
+    plt.title('Multiplicative bias: with galaxy SEDs at galaxy positions. Curves in SEDs, errors in positions.')
     plt.show()
     
     for gal in range(len(paulin_rca_testgal_m_mean_list)):
-        plt.errorbar(sizes, paulin_rca_testgal_m_std_list[gal], c=cmap_1(color_indx[gal]), lw=2, capsize=5)
-        plt.errorbar(sizes, paulin_lbda_testgal_m_std_list[gal], c=cmap_2(color_indx[gal]), alpha=.7, capsize=5)
-    plt.xlabel(r'Galaxy size $R$ (arcsec)')
-    plt.ylabel(r'Paulin predicted $m$')     
-    plt.legend(leg)
-    plt.title('Multiplicative bias: with galaxy SEDs at galaxy positions STDS')
-    plt.show()
-    
-    
-    for gal in range(len(paulin_rca_testgal_m_mean_list)):
-        plt.errorbar(sizes, paulin_rca_testgal_c1_mean_list[gal], c=cmap_1(color_indx[gal]), lw=2, capsize=5)
-        plt.errorbar(sizes, paulin_lbda_testgal_c1_mean_list[gal], c=cmap_2(color_indx[gal]), alpha=.7, capsize=5)
+        plt.errorbar(sizes, paulin_rca_testgal_c1_mean_list[gal],yerr=paulin_rca_testgal_c1_std_list[gal],  c=cmap_1(color_indx[gal]), lw=2, capsize=5)
+        plt.errorbar(sizes, paulin_lbda_testgal_c1_mean_list[gal],yerr=paulin_lbda_testgal_c1_std_list[gal], c=cmap_2(color_indx[gal]), alpha=.7, capsize=5)
         
     plt.xlabel(r'Galaxy size $R$ (arcsec)')
     plt.ylabel(r'Paulin predicted $c_1$')
     plt.legend(leg)
     plt.xlim(.075,0.525)
     plt.plot([0,0.6], [0,0], 'k--')
-    plt.title('Additive bias (1st component): with galaxy SEDs at galaxy positions MEANS')
+    plt.title('Additive bias (1st component): with galaxy SEDs at galaxy positions. Curves in SEDs, errors in positions.')
     plt.show()
     
+  
+    
     for gal in range(len(paulin_rca_testgal_m_mean_list)):
-        plt.errorbar(sizes, paulin_rca_testgal_c1_std_list[gal], c=cmap_1(color_indx[gal]), lw=2, capsize=5)
-        plt.errorbar(sizes, paulin_lbda_testgal_c1_std_list[gal], c=cmap_2(color_indx[gal]), alpha=.7, capsize=5)
+        plt.errorbar(sizes, paulin_rca_testgal_c2_mean_list[gal],yerr=paulin_rca_testgal_c2_std_list[gal], c=cmap_1(color_indx[gal]), lw=2, capsize=5)
+        plt.errorbar(sizes, paulin_lbda_testgal_c2_mean_list[gal],yerr=paulin_lbda_testgal_c2_std_list[gal], c=cmap_2(color_indx[gal]), alpha=.7, capsize=5)
+        
+    plt.xlabel(r'Galaxy size $R$ (arcsec)')
+    plt.ylabel(r'Paulin predicted $c_2$')
+    plt.legend(leg)
+    plt.xlim(.075,0.525)
+    plt.plot([0,0.6], [0,0], 'k--')
+    plt.title('Additive bias (2nd component): with galaxy SEDs at galaxy positions. Curves in SEDs, errors in positions.')
+    plt.show()     
+    
+
+    
+#%% Reverse: Paulin through galaxies
+
+paulin_rca_testgal_m_mean_throughgals_list = []
+paulin_lbda_testgal_m_mean_throughgals_list = []
+paulin_rca_testgal_m_std_throughgals_list = []
+paulin_lbda_testgal_m_std_throughgals_list = []
+
+paulin_rca_testgal_c1_mean_throughgals_list = []
+paulin_lbda_testgal_c1_mean_throughgals_list = []
+paulin_rca_testgal_c1_std_throughgals_list = []
+paulin_lbda_testgal_c1_std_throughgals_list = []
+
+paulin_rca_testgal_c2_mean_throughgals_list = []
+paulin_lbda_testgal_c2_mean_throughgals_list = []
+paulin_rca_testgal_c2_std_throughgals_list = []
+paulin_lbda_testgal_c2_std_throughgals_list = []
+
+
+
+nb_pos_test = paulin_allPositions_lbda_testgal_list.shape[1] # <gals, pos, the rest>
+
+
+for pos in range(nb_pos_test):
+    paulin_allGalaxies_lbda_testgal = paulin_allPositions_lbda_testgal_list[:,pos,:]
+    paulin_allGalaxies_rca_testgal = paulin_allPositions_rca_testgal_list[:,pos,:]
+  
+    m_mean_lbda,m_std_lbda,c1_mean_lbda,c1_std_lbda,c2_mean_lbda,c2_std_lbda = utils.paulin_stats(paulin_allGalaxies_lbda_testgal)
+    m_mean_rca,m_std_rca,c1_mean_rca,c1_std_rca,c2_mean_rca,c2_std_rca = utils.paulin_stats(paulin_allGalaxies_rca_testgal)
+    
+    paulin_rca_testgal_m_mean_throughgals_list.append(m_mean_rca)
+    paulin_lbda_testgal_m_mean_throughgals_list.append(m_mean_lbda)
+    paulin_rca_testgal_m_std_throughgals_list.append(m_std_rca)
+    paulin_lbda_testgal_m_std_throughgals_list.append(m_std_lbda)
+    
+    paulin_rca_testgal_c1_mean_throughgals_list.append(c1_mean_rca)
+    paulin_lbda_testgal_c1_mean_throughgals_list.append(c1_mean_lbda)
+    paulin_rca_testgal_c1_std_throughgals_list.append(c1_std_rca)
+    paulin_lbda_testgal_c1_std_throughgals_list.append(c1_std_lbda)
+    
+    paulin_rca_testgal_c2_mean_throughgals_list.append(c2_mean_rca)
+    paulin_lbda_testgal_c2_mean_throughgals_list.append(c2_mean_lbda)
+    paulin_rca_testgal_c2_std_throughgals_list.append(c2_std_rca)
+    paulin_lbda_testgal_c2_std_throughgals_list.append(c2_std_lbda)
+ 
+    
+# Save reverse Paulin    
+np.save(results_path+'paulin_rca_testgal_m_mean_throughgals_list.npy',np.array(paulin_rca_testgal_m_mean_throughgals_list))
+np.save(results_path+'paulin_lbda_testgal_m_mean_throughgals_list.npy',np.array(paulin_lbda_testgal_m_mean_throughgals_list))
+np.save(results_path+'paulin_rca_testgal_m_std_throughgals_list.npy',np.array(paulin_rca_testgal_m_std_throughgals_list))
+np.save(results_path+'paulin_lbda_testgal_m_std_throughgals_list.npy',np.array(paulin_lbda_testgal_m_std_throughgals_list))
+
+np.save(results_path+'paulin_rca_testgal_c1_mean_throughgals_list.npy',np.array(paulin_rca_testgal_c1_mean_throughgals_list))
+np.save(results_path+'paulin_lbda_testgal_c1_mean_throughgals_list.npy',np.array(paulin_lbda_testgal_c1_mean_throughgals_list))
+np.save(results_path+'paulin_rca_testgal_c1_std_throughgals_list.npy',np.array(paulin_rca_testgal_c1_std_throughgals_list))
+np.save(results_path+'paulin_lbda_testgal_c1_std_throughgals_list.npy',np.array(paulin_lbda_testgal_c1_std_throughgals_list))
+
+np.save(results_path+'paulin_rca_testgal_c2_mean_throughgals_list.npy',np.array(paulin_rca_testgal_c2_mean_throughgals_list))
+np.save(results_path+'paulin_lbda_testgal_c2_mean_throughgals_list.npy',np.array(paulin_lbda_testgal_c2_mean_throughgals_list))
+np.save(results_path+'paulin_rca_testgal_c2_std_throughgals_list.npy',np.array(paulin_rca_testgal_c2_std_throughgals_list))
+np.save(results_path+'paulin_lbda_testgal_c2_std_throughgals_list.npy',np.array(paulin_lbda_testgal_c2_std_throughgals_list))
+
+ 
+#%% Plot
+        
+if plot_paulin_testGal_all: 
+        
+    cmap_1=cm.spring #cm.Reds
+    cmap_2 = cm.winter #cm.winter
+    color_indx = 1.0/(nb_pos_test-1)*np.array(range(nb_pos_test))
+    random.shuffle(color_indx)
+    
+    fig, ax = plt.subplots()
+    for pos in range(nb_pos_test):
+        plt.errorbar(sizes, paulin_rca_testgal_m_mean_throughgals_list[pos],yerr=paulin_rca_testgal_m_std_throughgals_list[pos], c=cmap_1(color_indx[pos]), lw=2, capsize=5)
+        plt.errorbar(sizes, paulin_lbda_testgal_m_mean_throughgals_list[pos],yerr=paulin_lbda_testgal_m_std_throughgals_list[pos], c=cmap_2(color_indx[pos]), alpha=.7, capsize=5)
+    plt.xlabel(r'Galaxy size $R$ (arcsec)')
+    plt.ylabel(r'Paulin predicted $m$')     
+    plt.legend(leg)
+    plt.title(r'Multiplicative bias: with galaxy SEDs at galaxy positions. Curves in positions, errors in SEDs.')
+    plt.show()
+
+    fig, ax = plt.subplots()
+    for pos in range(nb_pos_test):
+        plt.errorbar(sizes, paulin_rca_testgal_c1_mean_throughgals_list[pos],yerr=paulin_rca_testgal_c1_std_throughgals_list[pos],  c=cmap_1(color_indx[pos]), lw=2, capsize=5)
+        plt.errorbar(sizes, paulin_lbda_testgal_c1_mean_throughgals_list[pos],yerr=paulin_lbda_testgal_c1_std_throughgals_list[pos], c=cmap_2(color_indx[pos]), alpha=.7, capsize=5)
         
     plt.xlabel(r'Galaxy size $R$ (arcsec)')
     plt.ylabel(r'Paulin predicted $c_1$')
     plt.legend(leg)
     plt.xlim(.075,0.525)
     plt.plot([0,0.6], [0,0], 'k--')
-    plt.title('Additive bias (1st component): with galaxy SEDs at galaxy positions STDS')
+    plt.title(r'Additive bias (1st component): with galaxy SEDs at galaxy positions. Curves in positions, errors in SEDs.')
     plt.show()
-    
-    for gal in range(len(paulin_rca_testgal_m_mean_list)):
-        plt.errorbar(sizes, paulin_rca_testgal_c2_mean_list[gal], c=cmap_1(color_indx[gal]), lw=2, capsize=5)
-        plt.errorbar(sizes, paulin_lbda_testgal_c2_mean_list[gal], c=cmap_2(color_indx[gal]), alpha=.7, capsize=5)
+
+    fig, ax = plt.subplots()
+    for pos in range(len(nb_pos_test)):
+        plt.errorbar(sizes, paulin_rca_testgal_c2_mean_throughgals_list[pos],yerr=paulin_rca_testgal_c2_std_throughgals_list[pos], c=cmap_1(color_indx[pos]), lw=2, capsize=5)
+        plt.errorbar(sizes, paulin_lbda_testgal_c2_mean_throughgals_list[pos],yerr=paulin_lbda_testgal_c2_std_throughgals_list[pos], c=cmap_2(color_indx[pos]), alpha=.7, capsize=5)
         
     plt.xlabel(r'Galaxy size $R$ (arcsec)')
     plt.ylabel(r'Paulin predicted $c_2$')
     plt.legend(leg)
     plt.xlim(.075,0.525)
     plt.plot([0,0.6], [0,0], 'k--')
-    plt.title('Additive bias (2nd component): with galaxy SEDs at galaxy positions MEANS')
-    plt.show()     
-    
-    
-        
-    for gal in range(len(paulin_rca_testgal_m_mean_list)):
-        plt.errorbar(sizes, paulin_rca_testgal_c2_std_list[gal], c=cmap_1(color_indx[gal]), lw=2, capsize=5)
-        plt.errorbar(sizes, paulin_lbda_testgal_c2_std_list[gal], color=cmap_2(color_indx[gal]), alpha=.7, capsize=5)
-        
-    plt.xlabel(r'Galaxy size $R$ (arcsec)')
-    plt.ylabel(r'Paulin predicted $c_2$')
-    plt.legend(leg)
-    plt.xlim(.075,0.525)
-    plt.plot([0,0.6], [0,0], 'k--')
-    plt.title('Additive bias (2nd component): with galaxy SEDs at galaxy positions STDS')
+    plt.title('Additive bias (2nd component): with galaxy SEDs at galaxy positions. Curves in positions, errors in SEDs.')
     plt.show()     
 
 
 
 
-    
 
-   
-  #red = Color("red")
-#colors = list(red.range_to(Color("green"),10))  
     
     

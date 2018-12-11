@@ -32,7 +32,7 @@ plt.rcParams['font.family'] = 'serif'
 plt.rcParams['font.serif'] = 'cm'
 
 
-def interp_SEDs(lbdas,sed_path,plot_path,angs_unit=True,interpolate_ponctual=False):
+def interp_SEDs(lbdas,sed_path,plot_path,angs_unit=True,interpolate_ponctual=True):
     nlbdas = len(lbdas)
     SED_names = [f for f in listdir(sed_path) if isfile(join(sed_path, f))]
     SED_names.remove('.DS_Store')
@@ -43,46 +43,68 @@ def interp_SEDs(lbdas,sed_path,plot_path,angs_unit=True,interpolate_ponctual=Fal
     # prepare interpolated SED array
     lmin, lmax = 550, 900 # VIS
     
+    # Number of redshifts in every galaxy
+    nb_redshifts_wanted = 5
     
-    SEDs = []
+    
+    
+    
+    # Create redshift probability distribution out of Euclid data
+    fulldata = np.loadtxt('/Users/rararipe/Documents/Data/galsim/redshifst/Euclid_Lensing_nz/n_z_without_1_plus_z.dat')
+    zs = fulldata[:,0]
+    nz = np.sum(fulldata[:,1:], axis=1)
+    pdf_redshift = 1.0*nz/np.sum(nz)
+    plt.plot(zs, pdf_redshift,color='darkorchid')
+    plt.xlabel(r'Redshift $z$')
+    plt.ylabel(r'PDF')
+    plt.show()
+    
+    SEDs = []        
     for galtype,col in zip(SED_names,colors):
-    
         # Read SED 
-        sed = np.loadtxt(sed_path+galtype)
+        sed_ori = np.loadtxt(sed_path+galtype)
         if angs_unit:
-            sed[:,0]/=10.0 # and convert to nm
-        
-        # Linearly interpolate
-        interp = interp1d(sed[:,0], sed[:,1])
-        
-        if interpolate_ponctual:
-            this_sed = np.array([interp(lbda) for lbda in lbdas])
-
-            # Keep only Euclid VIS band
-            sed = sed[(lmin<=sed[:,0]) & (sed[:,0]<=lmax)]
-        
-        else:
+            sed_ori[:,0]/=10.0 # and convert to nm
             
-            # Keep only Euclid VIS band
-            sed = sed[(lmin<=sed[:,0]) & (sed[:,0]<=lmax)] 
+        # Get redshifts
+        redshifts = np.random.choice(zs,nb_redshifts_wanted,p=pdf_redshift)
+        
+        for z in redshifts:         
+            sed = np.copy(sed_ori)   
+            # Red-shift
+            sed[:,0] = sed[:,0]*(1.0 + z)
             
-            #  Take the mean of spectrum chunk in front
-            this_sed = []
-            for v in range(nlbdas-1):
-                if v == 0:
-                    lbdamin = lbdas[0]
-                else:
-                    lbdamin = lbdas[v-1]
-                lbdamax = lbdas[v+1]
-                sed_chunk = sed[(lbdamin<=sed[:,0]) & (sed[:,0]<lbdamax)]
-                this_sed.append(np.mean(sed_chunk[:,1]))
-            this_sed.append(interp(lbdas[-1]))
+            # Linearly interpolate
+            interp = interp1d(sed[:,0], sed[:,1])
             
-        SEDs.append(this_sed)   
+            if interpolate_ponctual:
+                this_sed = np.array([interp(lbda) for lbda in lbdas])
     
-        # Plot it
-        plt.plot(lbdas, this_sed, c=col)
-        plt.plot(sed[:,0], sed[:,1], '.', c=col)
+                # Keep only Euclid VIS band
+                sed = sed[(lmin<=sed[:,0]) & (sed[:,0]<=lmax)]
+            
+            else:
+                
+                # Keep only Euclid VIS band
+                sed = sed[(lmin<=sed[:,0]) & (sed[:,0]<=lmax)] 
+                
+                #  Take the mean of spectrum chunk in front
+                this_sed = []
+                for v in range(nlbdas-1):
+                    if v == 0:
+                        lbdamin = lbdas[0]
+                    else:
+                        lbdamin = lbdas[v-1]
+                    lbdamax = lbdas[v+1]
+                    sed_chunk = sed[(lbdamin<=sed[:,0]) & (sed[:,0]<lbdamax)]
+                    this_sed.append(np.mean(sed_chunk[:,1]))
+                this_sed.append(interp(lbdas[-1]))
+                
+            SEDs.append(this_sed)   
+        
+            # Plot it
+            plt.plot(lbdas, this_sed, c=col)
+            plt.plot(sed[:,0], sed[:,1], '.', c=col)
         
         
     plt.xlabel('Wavelength (nm)')
@@ -147,6 +169,18 @@ def paulin(gal_size, trupsf_shape, estpsf_shape):
            deltapsf[2]/gal_size*trupsf_shape[:2])
     return m, c
 
+def paulin_stats(paulinvar):
+    
+    m_mean = [np.mean([r[0] for r in rcap])-1 for rcap in paulinvar]
+    m_std = [np.std([r[0] for r in rcap]) for rcap in paulinvar]
+    
+    c1_mean = [np.mean([r[1][0] for r in rcap]) for rcap in paulinvar]
+    c1_std = [np.std([r[1][0] for r in rcap]) for rcap in paulinvar]
+    
+    c2_mean = [np.mean([r[1][1] for r in rcap]) for rcap in paulinvar]
+    c2_std = [np.std([r[1][1] for r in rcap]) for rcap in paulinvar]
+    
+    return m_mean,m_std,c1_mean,c1_std,c2_mean,c2_std
 
 def paulin_predict(tru_shapes, rec_shapes, R2s):
     
@@ -154,22 +188,13 @@ def paulin_predict(tru_shapes, rec_shapes, R2s):
     paulin_allPositions = [[paulin(siz,tru_shap,rca_shap) for
               tru_shap,rca_shap in zip(tru_shapes,rec_shapes)] for siz in R2s]
 
-    
-#    paulin_allPositions = [[paulin(siz,tru_shap,rec_shap) for siz in R2s] for
-#              tru_shap,rec_shap in zip(tru_shapes,rec_shapes)]
-    
-    m_mean = [np.mean([r[0] for r in rcap])-1 for rcap in paulin_allPositions]
-    m_std = [np.std([r[0] for r in rcap]) for rcap in paulin_allPositions]
-    
-    c1_mean = [np.mean([r[1][0] for r in rcap]) for rcap in paulin_allPositions]
-    c1_std = [np.std([r[1][0] for r in rcap]) for rcap in paulin_allPositions]
-    
-    c2_mean = [np.mean([r[1][1] for r in rcap]) for rcap in paulin_allPositions]
-    c2_std = [np.std([r[1][1] for r in rcap]) for rcap in paulin_allPositions]
+    m_mean,m_std,c1_mean,c1_std,c2_mean,c2_std = paulin_stats(paulin_allPositions)
+
   
-    return m_mean,m_std,c1_mean,c1_std,c2_mean,c2_std
+    return m_mean,m_std,c1_mean,c1_std,c2_mean,c2_std,paulin_allPositions
 
 
+    
 
 
 

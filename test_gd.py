@@ -181,13 +181,14 @@ print "Loading data.."
 # first_guesses = np.load('/Users/rararipe/Documents/Data/lbdaRCA_wdl/Fake_SEDs/morgan_stars/first_guesses.npy')
 first_guesses = np.load('/Users/rararipe/Documents/Data/QuickestGenerator/FirstGuess_500/first_guesses.npy')
 # Load data
-load_path = '/Users/rararipe/Documents/Data/QuickestGenerator/trueSEDs/42x42pixels_8lbdas80pos/'
+load_path = '/Users/rararipe/Documents/Data/QuickestGenerator/trueSEDs/42x42pixels_12newlbdas80pos/'
 stars = np.load(load_path+'stars.npy')
 spectrums = np.load(load_path+'SEDs.npy')
 lbdas = np.load(load_path+'lbdas.npy')
 fov = np.load(load_path+'fov.npy')
 gt_PSFs = np.load(load_path + 'PSFs_2euclidrec.npy')
 gt_stars_2euclidrec = np.load(load_path+'stars_2euclidrec_gt.npy')
+
 
 shifts = None
 sig = None
@@ -223,14 +224,18 @@ n_iter_sink = 10
 n_iter = 2 #6
 max_iter_FB_dict = 200 #4# rca Fred is 200 for each
 max_iter_FB_coef = 200 # 20
-list_iterations_dict = [7,4,3]
+list_iterations_dict = [4,4,3]
 alpha_step = [1.0,1.0,1.0] # 0.07 1.0
 list_iterations_coef = [30,30,30]
 n_iter = len(list_iterations_coef)
 Fred = False
 alg = "genFB" #genFB
-logit = True
+logit = False
+gt_wvlAll = True
 
+if gt_wvlAll:
+    all_lbdas = np.load(load_path+'all_lbdas.npy')
+    all_spectrums = np.load(load_path+'all_SEDs.npy')
 
 
 
@@ -246,7 +251,7 @@ fb_lambda_param_coef = 1.0 # must be in ]0,1[
 # Logit
 #save_path = '/Users/rararipe/Documents/Data/GradientDescent_output/trueSEDs/42x42pixels_8lbdas80pos_3chrom0RCA_sr_zout1zin1p2_coef_dict_sigmaEqualsLinTrace_alpha321p5beta0p1_absA_3it753dict303030coef_weight4dict1p5coef_noFluxUpdate_logitCondatSparsity_sink15'
 # ClassicCondat
-save_path = '/Users/rararipe/Documents/Data/GradientDescent_output/trueSEDs/42x42pixels_8lbdas80pos_3chrom0RCA_sr_zout0p6zin1p2_dict_coef_sigmaEqualsLinTrace_alpha1pBeta0p1_binAradialSR_3it743dict30coef_weight4dict1p5coef_FluxUpdate_genFB_sink10_unicornio_lbdaEquals1p0_LowPass_W0p20p40p4_newData_LOGIT'
+save_path = '/Users/rararipe/Documents/Data/GradientDescent_output/trueSEDs/42x42pixels_12newlbdas80pos_3chrom0RCA_sr_zout0p6zin1p2_coef_dict_sigmaEqualsLinTrace_alpha1pBeta0p1_abssvdASR50_3it443dict30coef_weight4dict1p5coef_FluxUpdate_genFB_sink10_unicornio_lbdaEquals1p0_LowPass_W0p20p40p4'
 
 #save_path = '/Users/rararipe/Documents/Data/GradientDescent_output/trueSEDs/42x42pixels_8lbdas80pos_3chrom0RCA_sr_zout0p6zin1p2_coef_dict_sigmaEqualsLinTrace_alpha1beta0p5_absA_3it10dict5030coef_weight4dict1p5coef_FluxUpdate_Condat_sink10_THEANO_low_pass'
 if not os.path.exists(save_path):
@@ -267,6 +272,7 @@ elif nb_comp_chrom == 0:
 else:
     problem_type = 'mix'
 
+import pdb; pdb.set_trace()  # breakpoint 3d87ba10 //
 
 print "------------------- Noise estimation ------------------------"
 centroids = None
@@ -340,8 +346,8 @@ elif problem_type == 'lbdaRCA':
     # A = (alph.dot(basis))
     
     #======== USUAL ============
-#    A = utils.cube_svd(stars,nb_comp=nb_comp)
-#    A = abs(A)
+    A = utils.cube_svd(stars,nb_comp=nb_comp)
+    A = abs(A)
     #===========================
     
     # A[2:,:] = np.copy(-A[2:,:])
@@ -438,6 +444,10 @@ np.save(save_path+'/stars.npy', stars)
 t = (lbdas-lbdas.min()).astype(float)/(lbdas.max()-lbdas.min())
 w_stack = np.array([t + 1e-10, 1 - t - 1e-10]).T
 
+if gt_wvlAll:
+    t_wvlAll = (all_lbdas-all_lbdas.min()).astype(float)/(all_lbdas.max()-all_lbdas.min())
+    w_stack_wvlAll = np.array([t_wvlAll + 1e-10, 1 - t_wvlAll - 1e-10]).T
+   
 
 print "-------------------- First guess initialization -----------------------"
 
@@ -449,7 +459,8 @@ print "-------------------- First guess initialization -----------------------"
 
 
 #first_guesses,A = psflu.SR_first_guesses_kmeans(stars,fov,shifts,nb_comp)
-first_guesses,A = psflu.SR_first_guesses_radial(stars,fov,shifts,nb_comp)
+#first_guesses,A = psflu.SR_first_guesses_radial(stars,fov,shifts,nb_comp)
+first_guesses = psflu.SR_first_guesses_rnd(stars,shifts,nb_comp)
 
 if problem_type in ['lbdaRCA','mix']:
     if feat_init == 'ground_truth':
@@ -492,7 +503,6 @@ if problem_type == 'RCA':
 
 
 # Indicators
-psf_est_all = []
 MSE_rel_nor = []
 MSE_rel_nor_alternates = []
 MSE_rel_nor_integrated = []
@@ -739,14 +749,19 @@ np.save(save_path+'/gt_integrated_nor.npy', gt_integrated_nor)
 
 
 if problem_type == 'lbdaRCA':
-    psf_est = field_reconstruction_wdl(barycenters,A,shap)
+    if gt_wvlAll:        
+        barycenters_wvlAll = Wdl_comp.compute_barys(w_stack=w_stack_wvlAll)
+        psf_est = field_reconstruction_wdl(barycenters_wvlAll,A,shap)
+    else:
+        psf_est = field_reconstruction_wdl(barycenters,A,shap)
 elif problem_type =='mix':
     psf_est = field_reconstruction_mix(barycenters,A_mix[0],shap,S_stack,A_mix[1])
 elif problem_type == 'RCA':
     psf_est = field_reconstruction_RCA(S_stack,A,shap)
 
-psf_est_all.append(psf_est)
-if problem_type in ['lbdaRCA','mix']:
+
+
+if problem_type in ['lbdaRCA','mix']:    
     psf_est_shift = psflu.shift_PSF_to_gt(psf_est,gt_PSFs)
     psf_est_integrated_shift_nor = np.sum(psf_est_shift,axis=3)/np.sum(abs(np.sum(psf_est_shift,axis=3)),axis=(0,1))
     psf_est_shift_nor = psf_est_shift/np.sum(abs(psf_est_shift),axis=(0,1))
@@ -754,7 +769,10 @@ if problem_type in ['lbdaRCA','mix']:
     MSE_rel_nor.append(relative_mse(gt_PSFs,psf_est_shift_nor))
     Wdl_coef.set_barycenters(barycenters)
     obs_est = Wdl_coef.MX()
-    stars_est_2euclidres = reconstruct_stars_est_2euclidres(psf_est_shift,spectrums)
+    if gt_wvlAll:  
+        stars_est_2euclidres = reconstruct_stars_est_2euclidres(psf_est_shift,all_spectrums)
+    else:
+        stars_est_2euclidres = reconstruct_stars_est_2euclidres(psf_est_shift,spectrums)
     stars_est_2euclidres_nor = stars_est_2euclidres/np.sum(abs(stars_est_2euclidres), axis=(0,1))
 if problem_type == 'RCA':
     psf_integrated_shift = psflu.shift_PSFinter_to_gt(psf_est,gt_stars_2euclidrec)
@@ -793,12 +811,205 @@ for i in tqdm(range(n_iter)):
 
 
     # raise ValueError('Check gradient of mix_stack[1]  VERSAO MASTER with small data. Pq nao ta mudando quase nada???????')
+ 
+    
+    print "-------------------- Steps coefficients set-up -----------------------"
+    Wdl_coef.min_coef = None
+    if i ==0:
+        fb_gamma_param_coef = Wdl_coef_A.gamma_update(fb_gamma_param_coef)
+    else:
+        fb_gamma_param_coef = Wdl_coef.gamma_update(fb_gamma_param_coef) # or maybe pass the entire update_step_function aqui
+    # if i == 0:
+    #     print "first iter of coefficients"
+    #     fb_gamma_param_coef = fb_gamma_param_coef/1000.0 # because the proxs will cause the cost to increase a lot at first iteration of all
+
+    
+    print "-------------------- Coefficients estimation -----------------------"
+    # Coefficients update
+    if not Fred:
+        if problem_type in ['lbdaRCA','RCA']:
+            if i == 0:
+               min_coef = optimalg.GenForwardBackward(A,Wdl_coef_A,[IdentityProx()],Cost_coef_A,auto_iterate=False,
+                gamma_param=fb_gamma_param_coef,lambda_param =fb_lambda_param_coef, gamma_update=Wdl_coef_A.gamma_update)
+            else:
+                min_coef = optimalg.GenForwardBackward(alph,Wdl_coef,proxs_coef,Cost_coef,auto_iterate=False,
+                gamma_param=fb_gamma_param_coef,lambda_param =fb_lambda_param_coef, gamma_update=Wdl_coef.gamma_update)
+        elif problem_type == 'mix':
+            min_coef = optimalg.GenForwardBackward(alph_mix,Wdl_coef,proxs_coef,Cost_coef,auto_iterate=False,
+                gamma_param=fb_gamma_param_coef,lambda_param =fb_lambda_param_coef, gamma_update=Wdl_coef.gamma_update)
+        
+
+        if i == 0:
+            Wdl_coef_A.set_min_coef(min_coef) 
+            Wdl_coef_A.reset_costs()
+            Wdl_coef_A.reset_steps()
+        else:
+            Wdl_coef.set_min_coef(min_coef) 
+            Wdl_coef.reset_costs()
+            Wdl_coef.reset_steps()
+        tic = time.time()
+        if list_iterations_coef is None:
+            min_coef.iterate(max_iter=max_iter_FB_coef)
+        else:
+            min_coef.iterate(max_iter=list_iterations_coef[i])
+        toc = time.time()
+        print "Done in: " + str((toc-tic)/60.0) + " min"
+
+        # Update
+        if i == 0:
+            if problem_type in ['lbdaRCA','RCA']:
+                A = min_coef.x_final
+                alph =  A.dot(np.transpose(basis))/(1.0*nb_comp)
+        else:
+            if problem_type in ['lbdaRCA','RCA']:
+                alph = min_coef.x_final
+                A = alph.dot(basis)
+            elif problem_type == 'mix':
+                alph_mix = min_coef.x_final
+                A_mix[0] = alph_mix[0].dot(basis_mix[0])
+                A_mix[1] = alph_mix[1].dot(basis_mix[1])
+                # alph = np.concatenate((alph_mix[0], alph_mix[1]), axis=0)
+            if problem_type == 'RCA':
+                AS_transform.set_matrix(A)
+    
+    elif problem_type == 'RCA' :
+        comp_lr = zeros((int(shap[0]/2),int(shap[1]/2),nb_comp_RCA,nb_obj))
+        for l in range(nb_comp_RCA):
+            for p in range(nb_obj):
+                comp_lr[:,:,l,p] = (flux[i]/sig[i])*utils.decim(scisig.fftconvolve(S_stack[:,l].reshape(shap),ker[:,:,i],mode='same'),D,av_en=0)
+
+        n_max = n_iter-1
+        if i < n_max:
+            weights_k = None
+            weights_k,alph,supports = utils.non_unif_smoothing_mult_coeff_pos_cp_5(stars,comp_lr,S_stack.reshape((shap[0],shap[1],nb_comp_RCA)),neigh,basis,alph,\
+                nb_iter=max_iter_FB_coef*2,tol=0.1,Ainit=A)
+            for l in range(nb_comp):
+                a = sqrt((weights_k[l,:]**2).sum())
+                if a>0:
+                    S_stack[:,l] *= a
+                    weights_k[l,:] /= a
+
+            A = np.copy(weights_k)
+            # alph = A.dot(np.transpose(basis))/(1.0*nb_comp_RCA)
 
 
-  
+    # CHANGE comp_mix to alpha_mix !!!!!!! it is positive even without the constraint, but pay attention!!
+    if problem_type in ['lbdaRCA','RCA']:
+        Wdl_coef.set_alpha(alph)
+        Wdl_comp.set_A(alph.dot(basis))
+    elif problem_type == 'mix':
+        Wdl_coef.set_alpha_mix(alph_mix)
+        Wdl_comp.set_A_mix(A_mix)
+
+    # Weights update
+    if problem_type =='mix':
+        # ini_all = Wdl_comp.MtX_noise()
+        # ini_n_dict = ini_all[0]
+        # ini_n_RCA = ini_all[1]
+        noise_map_dict = psflu.get_noise_arr_dict_wvl(mix_stack[0],shap)*nsigma_dict
+        noise_map_RCA = psflu.get_noise_arr_RCA_wvl(mix_stack[1],shap)*nsigma_RCA
+        Sparse_prox_dict.update_weights(noise_map_dict) 
+        Sparse_prox_RCA.update_weights(noise_map_RCA)
+#    elif problem_type == 'lbdaRCA': # no need to update after updating A because I actually use D_stack and not Mt(stars)
+#        noise_map_dict = psflu.get_noise_arr_dict_wvl(Wdl_comp.MtX_noise(),shap)*nsigma_dict
+#        Sparse_prox_dict.update_weights(noise_map_dict) 
+    elif problem_type == 'RCA':
+        noise_map_RCA = psflu.get_noise_arr_RCA_wvl(S_stack,shap)*nsigma_RCA
+        Sparse_prox_RCA.update_weights(noise_map_RCA)
+    
+        
+    
+
+    # Evaluation
+    if problem_type == 'lbdaRCA':
+        obs_est = Wdl_coef.MX()
+        if gt_wvlAll:        
+            barycenters_wvlAll = Wdl_comp.compute_barys(w_stack=w_stack_wvlAll)
+            psf_est = field_reconstruction_wdl(barycenters_wvlAll,A,shap)
+        else:
+            psf_est = field_reconstruction_wdl(barycenters,A,shap)
+    elif problem_type =='mix':
+        obs_est = Wdl_coef.MX()
+        psf_est = field_reconstruction_mix(barycenters,A_mix[0],shap,mix_stack[1],A_mix[1])
+    elif problem_type =='RCA':
+        obs_est = Wdl_coef.MX(alph)
+        psf_est = field_reconstruction_RCA(S_stack,alph.dot(basis),shap)
 
 
-#    import pdb; pdb.set_trace()  # breakpoint bc817e81 //
+    if problem_type in ['lbdaRCA','mix']:
+        psf_est_shift = psflu.shift_PSF_to_gt(psf_est,gt_PSFs)
+        # psf_est_inner_shift = 
+        psf_est_integrated_shift_nor = np.sum(psf_est_shift,axis=3)/np.sum(abs(np.sum(psf_est_shift,axis=3)),axis=(0,1))
+        psf_est_shift_nor = psf_est_shift/np.sum(abs(psf_est_shift),axis=(0,1))
+        MSE_rel_nor_alternates.append(relative_mse(gt_PSFs,psf_est_shift_nor))
+        if gt_wvlAll:  
+            stars_est_2euclidres = reconstruct_stars_est_2euclidres(psf_est_shift,all_spectrums)
+        else:
+            stars_est_2euclidres = reconstruct_stars_est_2euclidres(psf_est_shift,spectrums)
+        stars_est_2euclidres_nor = stars_est_2euclidres/np.sum(abs(stars_est_2euclidres), axis=(0,1))
+    if problem_type == 'RCA':
+        psf_integrated_shift = psflu.shift_PSFinter_to_gt(psf_est,gt_stars_2euclidrec)
+        psf_est_integrated_shift_nor = psf_integrated_shift/np.sum(abs(psf_integrated_shift),axis=(0,1))
+        stars_est_2euclidres = np.copy(psf_integrated_shift)
+        stars_est_2euclidres_nor = np.copy(psf_est_integrated_shift_nor)
+
+    MSE_rel_nor_integrated_alternates.append(relative_mse(gt_integrated_nor,psf_est_integrated_shift_nor))
+    MSE_rel_nor_stars_2euclidres_alternates.append(relative_mse(gt_stars_2euclidrec,stars_est_2euclidres_nor))
+    energy_est = np.sum(abs(psf_est),axis=(0,1))
+    print "PSF est energy: ",energy_est
+    np.save(save_path+'/iter_'+str(i)+'/stars_est_2euclidres_2.npy', stars_est_2euclidres)
+    np.save(save_path+'/iter_'+str(i)+'/psf_est_2.npy', psf_est)
+    np.save(save_path+'/iter_'+str(i)+'/obs_est_2.npy', obs_est)
+    np.save(save_path+'/iter_'+str(i)+'/psf_est_integrated_shift_nor_2.npy', psf_est_integrated_shift_nor)
+    if problem_type == 'lbdaRCA':
+        np.save(save_path+'/iter_'+str(i)+'/psf_est_shift_nor_2.npy', psf_est_shift_nor)
+        np.save(save_path+'/iter_'+str(i)+'/alpha_2.npy', alph)
+        np.save(save_path+'/iter_'+str(i)+'/A_2.npy', A)
+        np.save(save_path+'/iter_'+str(i)+'/D_stack_2.npy', D_stack)
+        np.save(save_path+'/iter_'+str(i)+'/barycenters_2.npy', barycenters)
+        np.save(save_path+'/iter_'+str(i)+'/psf_est_shift_2.npy', psf_est_shift)
+    elif problem_type == 'mix':
+        np.save(save_path+'/iter_'+str(i)+'/psf_est_shift_nor_2.npy', psf_est_shift_nor)
+        np.save(save_path+'/iter_'+str(i)+'/A_chrom_2.npy', A_mix[0])
+        np.save(save_path+'/iter_'+str(i)+'/D_stack_2.npy', mix_stack[0])
+        np.save(save_path+'/iter_'+str(i)+'/S_stack_2.npy', mix_stack[1])
+        np.save(save_path+'/iter_'+str(i)+'/A_rca_2.npy', A_mix[1])
+        np.save(save_path+'/iter_'+str(i)+'/barycenters_2.npy', barycenters)
+        np.save(save_path+'/iter_'+str(i)+'/psf_est_shift_2.npy', psf_est_shift)
+    elif problem_type == 'RCA':
+        np.save(save_path+'/iter_'+str(i)+'/alpha_2.npy', alph)
+        np.save(save_path+'/iter_'+str(i)+'/A_2.npy', alph.dot(basis))
+        np.save(save_path+'/iter_'+str(i)+'/psf_est_shift_2.npy', psf_integrated_shift)
+        np.save(save_path+'/iter_'+str(i)+'/S_stack_2.npy', S_stack)
+
+    # Bilan
+    res_rec = euclidean_cost(obs_est,stars)
+    print " > Cost in test_gd: {}".format(res_rec)
+    if problem_type == 'lbdaRCA':
+        print "Cost from dict"
+        Wdl_comp.cost(D_stack, verbose=True,count=False)
+        print "Cost from coef please be the same"
+        Wdl_coef.cost(alph, verbose=True,count=False)
+    elif problem_type =='mix':
+        print "Cost from dict"
+        Wdl_comp.cost(mix_stack, verbose=True,count=False)
+        print "Cost from coef please be the same"
+        Wdl_coef.cost(alph_mix, verbose=True,count=False)
+    elif problem_type =='RCA':
+        print "Cost from dict"
+        Wdl_comp.cost(S_stack, verbose=True,count=False)
+        print "Cost from coef please be the same"
+        Wdl_coef.cost(alph, verbose=True,count=False)
+    if i ==0:
+        loss_inners[0] += Wdl_coef_A.costs
+        steps_inners.append(Wdl_coef_A.steps)
+    else:
+        loss_inners.append(Wdl_coef.costs)
+        steps_inners.append(Wdl_coef.steps)
+    loss_alternates.append(res_rec)
+    
+    
+    #    import pdb; pdb.set_trace()  # breakpoint bc817e81 //
     print "-------------------- Steps dictionary set-up -----------------------"
     Wdl_comp.min_coef = None
     Wdl_comp.alpha = alpha_step[i] # se quiser mudar alpha, mudar la em cima na lista
@@ -973,7 +1184,11 @@ for i in tqdm(range(n_iter)):
               obs_est = Wdl_comp.compute_MX(Dlog_stack) 
         else:              
               obs_est = Wdl_comp.compute_MX(D_stack)
-        psf_est = field_reconstruction_wdl(barycenters,A,shap)
+        if gt_wvlAll:        
+            barycenters_wvlAll = Wdl_comp.compute_barys(w_stack=w_stack_wvlAll)
+            psf_est = field_reconstruction_wdl(barycenters_wvlAll,A,shap)
+        else:
+            psf_est = field_reconstruction_wdl(barycenters,A,shap)
     elif problem_type =='mix':
         obs_est = Wdl_comp._current_rec
         psf_est = field_reconstruction_mix(barycenters,A_mix[0],shap,mix_stack[1],A_mix[1])
@@ -990,7 +1205,10 @@ for i in tqdm(range(n_iter)):
         psf_est_shift_nor = psf_est_shift/np.sum(abs(psf_est_shift),axis=(0,1))
         MSE_rel_nor_alternates.append(relative_mse(gt_PSFs,psf_est_shift_nor))
 
-        stars_est_2euclidres = reconstruct_stars_est_2euclidres(psf_est_shift,spectrums)
+        if gt_wvlAll:  
+            stars_est_2euclidres = reconstruct_stars_est_2euclidres(psf_est_shift,all_spectrums)
+        else:
+            stars_est_2euclidres = reconstruct_stars_est_2euclidres(psf_est_shift,spectrums)
         stars_est_2euclidres_nor = stars_est_2euclidres/np.sum(abs(stars_est_2euclidres), axis=(0,1))
 
     if problem_type == 'RCA':
@@ -1066,209 +1284,12 @@ for i in tqdm(range(n_iter)):
     
     
     
-    print "-------------------- Steps coefficients set-up -----------------------"
-    Wdl_coef.min_coef = None
-    if i ==0:
-        fb_gamma_param_coef = Wdl_coef_A.gamma_update(fb_gamma_param_coef)
-    else:
-        fb_gamma_param_coef = Wdl_coef.gamma_update(fb_gamma_param_coef) # or maybe pass the entire update_step_function aqui
-    # if i == 0:
-    #     print "first iter of coefficients"
-    #     fb_gamma_param_coef = fb_gamma_param_coef/1000.0 # because the proxs will cause the cost to increase a lot at first iteration of all
-
-    
-    print "-------------------- Coefficients estimation -----------------------"
-    # Coefficients update
-    if not Fred:
-        if problem_type in ['lbdaRCA','RCA']:
-            if i == 0:
-               min_coef = optimalg.GenForwardBackward(A,Wdl_coef_A,[IdentityProx()],Cost_coef_A,auto_iterate=False,
-                gamma_param=fb_gamma_param_coef,lambda_param =fb_lambda_param_coef, gamma_update=Wdl_coef_A.gamma_update)
-            else:
-                min_coef = optimalg.GenForwardBackward(alph,Wdl_coef,proxs_coef,Cost_coef,auto_iterate=False,
-                gamma_param=fb_gamma_param_coef,lambda_param =fb_lambda_param_coef, gamma_update=Wdl_coef.gamma_update)
-        elif problem_type == 'mix':
-            min_coef = optimalg.GenForwardBackward(alph_mix,Wdl_coef,proxs_coef,Cost_coef,auto_iterate=False,
-                gamma_param=fb_gamma_param_coef,lambda_param =fb_lambda_param_coef, gamma_update=Wdl_coef.gamma_update)
-        
-
-        if i == 0:
-            Wdl_coef_A.set_min_coef(min_coef) 
-            Wdl_coef_A.reset_costs()
-            Wdl_coef_A.reset_steps()
-        else:
-            Wdl_coef.set_min_coef(min_coef) 
-            Wdl_coef.reset_costs()
-            Wdl_coef.reset_steps()
-        tic = time.time()
-        if list_iterations_coef is None:
-            min_coef.iterate(max_iter=max_iter_FB_coef)
-        else:
-            min_coef.iterate(max_iter=list_iterations_coef[i])
-        toc = time.time()
-        print "Done in: " + str((toc-tic)/60.0) + " min"
-
-        # Update
-        if i == 0:
-            if problem_type in ['lbdaRCA','RCA']:
-                A = min_coef.x_final
-                alph =  A.dot(np.transpose(basis))/(1.0*nb_comp)
-        else:
-            if problem_type in ['lbdaRCA','RCA']:
-                alph = min_coef.x_final
-                A = alph.dot(basis)
-            elif problem_type == 'mix':
-                alph_mix = min_coef.x_final
-                A_mix[0] = alph_mix[0].dot(basis_mix[0])
-                A_mix[1] = alph_mix[1].dot(basis_mix[1])
-                # alph = np.concatenate((alph_mix[0], alph_mix[1]), axis=0)
-            if problem_type == 'RCA':
-                AS_transform.set_matrix(A)
-    
-    elif problem_type == 'RCA' :
-        comp_lr = zeros((int(shap[0]/2),int(shap[1]/2),nb_comp_RCA,nb_obj))
-        for l in range(nb_comp_RCA):
-            for p in range(nb_obj):
-                comp_lr[:,:,l,p] = (flux[i]/sig[i])*utils.decim(scisig.fftconvolve(S_stack[:,l].reshape(shap),ker[:,:,i],mode='same'),D,av_en=0)
-
-        n_max = n_iter-1
-        if i < n_max:
-            weights_k = None
-            weights_k,alph,supports = utils.non_unif_smoothing_mult_coeff_pos_cp_5(stars,comp_lr,S_stack.reshape((shap[0],shap[1],nb_comp_RCA)),neigh,basis,alph,\
-                nb_iter=max_iter_FB_coef*2,tol=0.1,Ainit=A)
-            for l in range(nb_comp):
-                a = sqrt((weights_k[l,:]**2).sum())
-                if a>0:
-                    S_stack[:,l] *= a
-                    weights_k[l,:] /= a
-
-            A = np.copy(weights_k)
-            # alph = A.dot(np.transpose(basis))/(1.0*nb_comp_RCA)
-
-
-    # CHANGE comp_mix to alpha_mix !!!!!!! it is positive even without the constraint, but pay attention!!
-    if problem_type in ['lbdaRCA','RCA']:
-        Wdl_coef.set_alpha(alph)
-        Wdl_comp.set_A(alph.dot(basis))
-    elif problem_type == 'mix':
-        Wdl_coef.set_alpha_mix(alph_mix)
-        Wdl_comp.set_A_mix(A_mix)
-
-    # Weights update
-    if problem_type =='mix':
-        # ini_all = Wdl_comp.MtX_noise()
-        # ini_n_dict = ini_all[0]
-        # ini_n_RCA = ini_all[1]
-        noise_map_dict = psflu.get_noise_arr_dict_wvl(mix_stack[0],shap)*nsigma_dict
-        noise_map_RCA = psflu.get_noise_arr_RCA_wvl(mix_stack[1],shap)*nsigma_RCA
-        Sparse_prox_dict.update_weights(noise_map_dict) 
-        Sparse_prox_RCA.update_weights(noise_map_RCA)
-#    elif problem_type == 'lbdaRCA': # no need to update after updating A because I actually use D_stack and not Mt(stars)
-#        noise_map_dict = psflu.get_noise_arr_dict_wvl(Wdl_comp.MtX_noise(),shap)*nsigma_dict
-#        Sparse_prox_dict.update_weights(noise_map_dict) 
-    elif problem_type == 'RCA':
-        noise_map_RCA = psflu.get_noise_arr_RCA_wvl(S_stack,shap)*nsigma_RCA
-        Sparse_prox_RCA.update_weights(noise_map_RCA)
-    
-        
-    
-
-    # Evaluation
-    if problem_type == 'lbdaRCA':
-        obs_est = Wdl_coef.MX()
-        psf_est = field_reconstruction_wdl(barycenters,A,shap)
-    elif problem_type =='mix':
-        obs_est = Wdl_coef.MX()
-        psf_est = field_reconstruction_mix(barycenters,A_mix[0],shap,mix_stack[1],A_mix[1])
-    elif problem_type =='RCA':
-        obs_est = Wdl_coef.MX(alph)
-        psf_est = field_reconstruction_RCA(S_stack,alph.dot(basis),shap)
-
-
-    if problem_type in ['lbdaRCA','mix']:
-        psf_est_shift = psflu.shift_PSF_to_gt(psf_est,gt_PSFs)
-        # psf_est_inner_shift = 
-        psf_est_integrated_shift_nor = np.sum(psf_est_shift,axis=3)/np.sum(abs(np.sum(psf_est_shift,axis=3)),axis=(0,1))
-        psf_est_shift_nor = psf_est_shift/np.sum(abs(psf_est_shift),axis=(0,1))
-        MSE_rel_nor_alternates.append(relative_mse(gt_PSFs,psf_est_shift_nor))
-
-
-        stars_est_2euclidres = reconstruct_stars_est_2euclidres(psf_est_shift,spectrums)
-        stars_est_2euclidres_nor = stars_est_2euclidres/np.sum(abs(stars_est_2euclidres), axis=(0,1))
-    if problem_type == 'RCA':
-        psf_integrated_shift = psflu.shift_PSFinter_to_gt(psf_est,gt_stars_2euclidrec)
-        psf_est_integrated_shift_nor = psf_integrated_shift/np.sum(abs(psf_integrated_shift),axis=(0,1))
-        stars_est_2euclidres = np.copy(psf_integrated_shift)
-        stars_est_2euclidres_nor = np.copy(psf_est_integrated_shift_nor)
-
-    MSE_rel_nor_integrated_alternates.append(relative_mse(gt_integrated_nor,psf_est_integrated_shift_nor))
-    MSE_rel_nor_stars_2euclidres_alternates.append(relative_mse(gt_stars_2euclidrec,stars_est_2euclidres_nor))
-    energy_est = np.sum(abs(psf_est),axis=(0,1))
-    print "PSF est energy: ",energy_est
-    np.save(save_path+'/iter_'+str(i)+'/stars_est_2euclidres_2.npy', stars_est_2euclidres)
-    np.save(save_path+'/iter_'+str(i)+'/psf_est_2.npy', psf_est)
-    np.save(save_path+'/iter_'+str(i)+'/obs_est_2.npy', obs_est)
-    np.save(save_path+'/iter_'+str(i)+'/psf_est_integrated_shift_nor_2.npy', psf_est_integrated_shift_nor)
-    if problem_type == 'lbdaRCA':
-        np.save(save_path+'/iter_'+str(i)+'/psf_est_shift_nor_2.npy', psf_est_shift_nor)
-        np.save(save_path+'/iter_'+str(i)+'/alpha_2.npy', alph)
-        np.save(save_path+'/iter_'+str(i)+'/A_2.npy', A)
-        np.save(save_path+'/iter_'+str(i)+'/D_stack_2.npy', D_stack)
-        np.save(save_path+'/iter_'+str(i)+'/barycenters_2.npy', barycenters)
-        np.save(save_path+'/iter_'+str(i)+'/psf_est_shift_2.npy', psf_est_shift)
-    elif problem_type == 'mix':
-        np.save(save_path+'/iter_'+str(i)+'/psf_est_shift_nor_2.npy', psf_est_shift_nor)
-        np.save(save_path+'/iter_'+str(i)+'/A_chrom_2.npy', A_mix[0])
-        np.save(save_path+'/iter_'+str(i)+'/D_stack_2.npy', mix_stack[0])
-        np.save(save_path+'/iter_'+str(i)+'/S_stack_2.npy', mix_stack[1])
-        np.save(save_path+'/iter_'+str(i)+'/A_rca_2.npy', A_mix[1])
-        np.save(save_path+'/iter_'+str(i)+'/barycenters_2.npy', barycenters)
-        np.save(save_path+'/iter_'+str(i)+'/psf_est_shift_2.npy', psf_est_shift)
-    elif problem_type == 'RCA':
-        np.save(save_path+'/iter_'+str(i)+'/alpha_2.npy', alph)
-        np.save(save_path+'/iter_'+str(i)+'/A_2.npy', alph.dot(basis))
-        np.save(save_path+'/iter_'+str(i)+'/psf_est_shift_2.npy', psf_integrated_shift)
-        np.save(save_path+'/iter_'+str(i)+'/S_stack_2.npy', S_stack)
-
-    # Bilan
-    res_rec = euclidean_cost(obs_est,stars)
-    print " > Cost in test_gd: {}".format(res_rec)
-    if problem_type == 'lbdaRCA':
-        print "Cost from dict"
-        Wdl_comp.cost(D_stack, verbose=True,count=False)
-        print "Cost from coef please be the same"
-        Wdl_coef.cost(alph, verbose=True,count=False)
-    elif problem_type =='mix':
-        print "Cost from dict"
-        Wdl_comp.cost(mix_stack, verbose=True,count=False)
-        print "Cost from coef please be the same"
-        Wdl_coef.cost(alph_mix, verbose=True,count=False)
-    elif problem_type =='RCA':
-        print "Cost from dict"
-        Wdl_comp.cost(S_stack, verbose=True,count=False)
-        print "Cost from coef please be the same"
-        Wdl_coef.cost(alph, verbose=True,count=False)
-    if i ==0:
-        loss_inners[0] += Wdl_coef_A.costs
-        steps_inners.append(Wdl_coef_A.steps)
-    else:
-        loss_inners.append(Wdl_coef.costs)
-        steps_inners.append(Wdl_coef.steps)
-    loss_alternates.append(res_rec)
-    
-    
-    
-    
-    
-    
-    
     
     
 
 #    import pdb; pdb.set_trace()  # breakpoint 3d87ba10 //
     # End of alternate turn  
     loss_iters.append(res_rec)
-    psf_est_all.append(psf_est)
     if problem_type in ['lbdaRCA','mix']:    
         MSE_rel_nor.append(relative_mse(gt_PSFs,psf_est_shift/np.sum(psf_est_shift,axis=(0,1))))
 
@@ -1331,7 +1352,6 @@ print "Time per iteration "+ str((toc_ext-tic_ext)/60.0/n_iter) + " min"
 
 
 
-psf_est_all = np.array(psf_est_all)
 MSE_rel_nor = np.array(MSE_rel_nor)
 MSE_rel_nor_alternates = np.array(MSE_rel_nor_alternates)
 steps_inners = np.array(steps_inners)
@@ -1393,7 +1413,7 @@ plt.xlabel(r'Objects')
 plt.ylabel(r'relative MSE integrated PSF')
 plt.title('Final')
 
-for wvl in range(nb_wvl):
+for wvl in range(MSE_rel_nor_alternates.shape[2]):
     fig = plt.figure()
     plt.plot(range(MSE_rel_nor_alternates.shape[0]), MSE_rel_nor_alternates[:,:,wvl]) # <iter,objs, wvls>
     plt.title(r'MSE at wvl {} across alternate scheme'.format(wvl))
@@ -1500,6 +1520,10 @@ for pos in range(gt_PSFs.shape[2]):
         print "error ", error_energy[pos,wvl]
         tk.plot_func(error[:,:,pos,wvl])
 
+#%%
+for obj in range(nb_obj):
+    print np.sum(abs(stars[:,:,obj]))
+    tk.plot_func(stars[:,:,obj])
 #%%
 
 for wvl in range(nb_wvl):
