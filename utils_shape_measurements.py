@@ -155,7 +155,7 @@ def computeHSMshapes(PSFs,pixel_scale):
     return shapes
 
 
-def paulin(gal_size, trupsf_shape, estpsf_shape):
+def paulin(gal_size, trupsf_shape, estpsf_shape,flat=False):
     """Computes Paulin predicted bias values.
     
     Assumes last two inputs are length-3 arrays containing (e1,e2,R^2).
@@ -167,22 +167,44 @@ def paulin(gal_size, trupsf_shape, estpsf_shape):
     m = 1. + deltapsf[2] / gal_size
     c = -(trupsf_shape[2]/gal_size*deltapsf[:2] + 
            deltapsf[2]/gal_size*trupsf_shape[:2])
+    if flat:
+        return m,c[0],c[1]
     return m, c
 
-def paulin_stats(paulinvar):
+def paulin_stats(paulinvar,flat=False):
     
-    m_mean = [np.mean([r[0] for r in rcap])-1 for rcap in paulinvar]
+    m_mean = [np.mean([r[0] for r in rcap])-1 for rcap in paulinvar] 
     m_std = [np.std([r[0] for r in rcap]) for rcap in paulinvar]
     
-    c1_mean = [np.mean([r[1][0] for r in rcap]) for rcap in paulinvar]
-    c1_std = [np.std([r[1][0] for r in rcap]) for rcap in paulinvar]
-    
-    c2_mean = [np.mean([r[1][1] for r in rcap]) for rcap in paulinvar]
-    c2_std = [np.std([r[1][1] for r in rcap]) for rcap in paulinvar]
+    if flat:
+        c1_mean = [np.mean([r[1] for r in rcap]) for rcap in paulinvar]
+        c1_std = [np.std([r[1] for r in rcap]) for rcap in paulinvar]
+        
+        c2_mean = [np.mean([r[2] for r in rcap]) for rcap in paulinvar]
+        c2_std = [np.std([r[2] for r in rcap]) for rcap in paulinvar]
+     
+    else:
+        c1_mean = [np.mean([r[1][0] for r in rcap]) for rcap in paulinvar]
+        c1_std = [np.std([r[1][0] for r in rcap]) for rcap in paulinvar]
+        
+        c2_mean = [np.mean([r[1][1] for r in rcap]) for rcap in paulinvar]
+        c2_std = [np.std([r[1][1] for r in rcap]) for rcap in paulinvar]
     
     return m_mean,m_std,c1_mean,c1_std,c2_mean,c2_std
 
+
+
 def paulin_predict(tru_shapes, rec_shapes, R2s):
+    
+    
+    paulin_allPositions = [[paulin(siz,tru_shap,rca_shap) for
+              tru_shap,rca_shap in zip(tru_shapes,rec_shapes)] for siz in R2s]
+
+
+    return paulin_allPositions
+
+    
+def paulin_predict_old(tru_shapes, rec_shapes, R2s):
     
     
     paulin_allPositions = [[paulin(siz,tru_shap,rca_shap) for
@@ -192,10 +214,6 @@ def paulin_predict(tru_shapes, rec_shapes, R2s):
 
   
     return m_mean,m_std,c1_mean,c1_std,c2_mean,c2_std,paulin_allPositions
-
-
-    
-
 
 
 

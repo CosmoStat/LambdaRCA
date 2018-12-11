@@ -224,9 +224,9 @@ for gal_i in tqdm(range(nb_loops)):
     lbdaPSFs_testGal = components_gal.dot(A_test_lbdaRCA).swapaxes(2,1).swapaxes(1,0) # reconstruct PSF at galaxy positions
     lbdaPSFs_testGal /= np.sum(abs(lbdaPSFs_testGal),axis=(1,2)).reshape(lbdaPSFs_testGal.shape[0],1,1)
     
-    # lbdaRCA: train positions and galSED
-    lbdaPSFsgal_train = components_gal.dot(A_train_lbdaRCA).swapaxes(2,1).swapaxes(1,0) #construct PSFs using components built with gal SEDs
-    lbdaPSFsgal_train /= np.sum(abs(lbdaPSFsgal_train),axis=(1,2)).reshape(lbdaPSFsgal_train.shape[0],1,1)
+#    # lbdaRCA: train positions and galSED
+#    lbdaPSFsgal_train = components_gal.dot(A_train_lbdaRCA).swapaxes(2,1).swapaxes(1,0) #construct PSFs using components built with gal SEDs
+#    lbdaPSFsgal_train /= np.sum(abs(lbdaPSFsgal_train),axis=(1,2)).reshape(lbdaPSFsgal_train.shape[0],1,1)
     
     
     
@@ -487,10 +487,10 @@ for gal_i in tqdm(range(nb_loops)):
     
     if gal_i == 0:
         paulin_rca_m_mean, paulin_rca_m_std, paulin_rca_c1_mean, \
-        paulin_rca_c1_std,paulin_rca_c2_mean, paulin_rca_c2_std,paulin_allPositions_rca  = utils.paulin_predict(truInt_shapes, rca_shapes, R2s)
+        paulin_rca_c1_std,paulin_rca_c2_mean, paulin_rca_c2_std,paulin_allPositions_rca  = utils.paulin_predict_old(truInt_shapes, rca_shapes, R2s)
     
     paulin_rca_testgal_m_mean ,paulin_rca_testgal_m_std,paulin_rca_testgal_c1_mean,\
-    paulin_rca_testgal_c1_std,paulin_rca_testgal_c2_mean,paulin_rca_testgal_c2_std,paulin_allPositions_rca_testgal =  utils.paulin_predict(truInt_shapes_testgal, rca_shapes_test, R2s)
+    paulin_rca_testgal_c1_std,paulin_rca_testgal_c2_mean,paulin_rca_testgal_c2_std,paulin_allPositions_rca_testgal =  utils.paulin_predict_old(truInt_shapes_testgal, rca_shapes_test, R2s)
     
 #    paulin_rca_traingal_m_mean,paulin_rca_traingal_m_std,paulin_rca_traingal_c1_mean,\
 #    paulin_rca_traingal_c1_std,paulin_rca_traingal_c2_mean,paulin_rca_traingal_c2_std  =  utils.paulin_predict(truInt_shapes_traingal, rca_shapes, R2s)
@@ -498,11 +498,11 @@ for gal_i in tqdm(range(nb_loops)):
     #===
     if gal_i == 0:
         paulin_lbda_m_mean,paulin_lbda_m_std,paulin_lbda_c1_mean,\
-        paulin_lbda_c1_std,paulin_lbda_c2_mean,paulin_lbda_c2_std,paulin_allPositions_lbda  =  utils.paulin_predict(truInt_shapes, lbdaInt_shapes, R2s)
+        paulin_lbda_c1_std,paulin_lbda_c2_mean,paulin_lbda_c2_std,paulin_allPositions_lbda  =  utils.paulin_predict_old(truInt_shapes, lbdaInt_shapes, R2s)
     
     
     paulin_lbda_testgal_m_mean,paulin_lbda_testgal_m_std,paulin_lbda_testgal_c1_mean,\
-    paulin_lbda_testgal_c1_std,paulin_lbda_testgal_c2_mean,paulin_lbda_testgal_c2_std,paulin_allPositions_lbda_testgal  =  utils.paulin_predict(truInt_shapes_testgal, lbdaInt_shapes_testgal, R2s)
+    paulin_lbda_testgal_c1_std,paulin_lbda_testgal_c2_mean,paulin_lbda_testgal_c2_std,paulin_allPositions_lbda_testgal  =  utils.paulin_predict_old(truInt_shapes_testgal, lbdaInt_shapes_testgal, R2s)
     
     
 #    paulin_lbda_traingal_m_mean,paulin_lbda_traingal_m_std,paulin_lbda_traingal_c1_mean,\
@@ -758,7 +758,6 @@ if plot_shape_measurements_all:
     for gal in range(len(full_shapes_testgal_list)):    
         fig, ax = plt.subplots()
         plt.plot(full_shapes_testgal_list[gal][:,0],truInt_shapes_testgal_list[gal][:,0],'.',label=r'$e_1$',c=cmap_1(color_indx[gal]))
-        plt.plot(full_shapes_testgal_list[gal][:,1],truInt_shapes_testgal_list[gal][:,1],'.',label=r'$e_2$',c=cmap_2(color_indx[gal]))
     plt.legend(loc=0)
     plt.xlabel('PSF ellipticity measured at full resolution')
     plt.ylabel('`Known\' PSF ellipticity')

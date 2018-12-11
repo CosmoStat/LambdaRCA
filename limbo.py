@@ -18,3 +18,10 @@ CORES
 #    scalarMap_2 = cm.ScalarMappable(norm=cNorm, cmap=cm.winter)
   
   import matplotlib.colors as colors
+  
+  
+  
+  
+ paulin_stats_rca = np.empty(3,dtype=np.ndarray) # <m,c1,c2>
+for i in range(3):
+    paulin_stats_rca[i] = np.empty(2,dtype=np.ndarray) # <mean,std>

@@ -1044,7 +1044,7 @@ for i in tqdm(range(n_iter)):
         if problem_type == 'lbdaRCA':
             if logit:
                 min_dict = modoptAlgorithms.GenForwardBackward(Dlog_stack,Wdl_comp,proxs_comp,cost=Cost_comp,auto_iterate=False,
-                    gamma_param=fb_gamma_param_dict,lambda_param =fb_lambda_param_dict, gamma_update=Wdl_comp.gamma_update) # check again the effects of these weights weights=[0.1, 0.9]
+                    gamma_param=fb_gamma_param_dict,lambda_param =fb_lambda_param_dict, gamma_update=Wdl_comp.gamma_update,logit=logit) # check again the effects of these weights weights=[0.1, 0.9]
             else:
                 min_dict = modoptAlgorithms.GenForwardBackward(D_stack,Wdl_comp,proxs_comp,cost=Cost_comp,auto_iterate=False,
                     gamma_param=fb_gamma_param_dict,lambda_param =fb_lambda_param_dict, gamma_update=Wdl_comp.gamma_update,weights=[0.2,0.4,0.4])
@@ -1058,7 +1058,7 @@ for i in tqdm(range(n_iter)):
         if problem_type == 'lbdaRCA':
             if logit:
                 min_dict = modoptAlgorithms.ForwardBackward(Dlog_stack,Wdl_comp,Sparse_prox_dict,cost=Cost_comp,auto_iterate=False,
-                    beta_param=fb_gamma_param_dict,lambda_param =fb_lambda_param_dict, beta_update=Wdl_comp.gamma_update) 
+                    beta_param=fb_gamma_param_dict,lambda_param =fb_lambda_param_dict, beta_update=Wdl_comp.gamma_update ) 
     if alg=="condat":
         if problem_type == 'lbdaRCA':
             if logit:
@@ -1376,7 +1376,8 @@ np.save(result_path+'/MSE_rel_nor_integrated.npy', MSE_rel_nor_integrated)
 np.save(result_path+'/MSE_rel_nor_stars_2euclidres.npy', MSE_rel_nor_stars_2euclidres)
 np.save(result_path+'/MSE_rel_nor_stars_2euclidres_alternates.npy', MSE_rel_nor_stars_2euclidres_alternates)
 
-
+if gt_wvlAll:
+    np.save(result_path+'barycenters_wvlAll.npy',barycenters_wvlAll)
 np.save(result_path+'/D_stack.npy',D_stack)
 np.save(result_path+'/barycenters.npy',barycenters)
 np.save(result_path+'/A.npy',A)

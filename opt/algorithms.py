@@ -463,6 +463,7 @@ class GenForwardBackward(SetUp):
                  weights=None, auto_iterate=True, metric_call_period=5,
                  metrics={}, linear=None,extra_factor_LP=1.0,logit=False):
 
+        self.logit = logit
         # Set default algorithm properties
         super(GenForwardBackward, self).__init__(
            metric_call_period=metric_call_period,
@@ -617,14 +618,15 @@ class GenForwardBackward(SetUp):
         tk.plot_func(mask_1, title="mask 1")
         print("DEBUG")
         
-        ##================= UNCOMMENT if log =================
-#        grad_normal = np.exp(self._grad.grad)
-#        x_old_normal = np.exp(self._x_old)
-#        tk.plot_func(grad_normal[:,0,0], title="grad 0")
-#        tk.plot_func(grad_normal[:,1,0], title="grad 1")
-#        tk.plot_func(x_old_normal[:,0,0], title="x_old 0")
-#        tk.plot_func(x_old_normal[:,1,0], title="x_old 1")
-        ##====================================================
+        if self.logit:
+            ##================= UNCOMMENT if log =================
+            grad_normal = np.exp(self._grad.grad)
+            x_old_normal = np.exp(self._x_old)
+            tk.plot_func(grad_normal[:,0,0], title="grad 0")
+            tk.plot_func(grad_normal[:,1,0], title="grad 1")
+            tk.plot_func(x_old_normal[:,0,0], title="x_old 0")
+            tk.plot_func(x_old_normal[:,1,0], title="x_old 1")
+            ##====================================================
 
         # Update z values.
         for i in range(self._prox_list.size):
@@ -646,24 +648,25 @@ class GenForwardBackward(SetUp):
             print ("energy z prox")
             print (np.sum(abs(z_prox), axis=0))
             
-            ##================= UNCOMMENT if log =================
-#            step_grad_normal = np.exp(- self._gamma *self._grad.grad)
-#            step_zi = np.exp(- self._z[i])
-#            tk.plot_func(step_grad_normal[:,0,0], title="step grad 0")
-#            tk.plot_func(- self._gamma *self._grad.grad[:,0,0], title="step grad 0 LOG")
-#            tk.plot_func(step_grad_normal[:,1,0], title="step grad 1")
-#            tk.plot_func(- self._gamma *self._grad.grad[:,1,0], title="step grad 1 LOG")
-#            tk.plot_func(step_zi[:,0,0], title="step -z[i] 0")
-#            tk.plot_func(step_zi[:,1,0], title="step -z[i] 1")
-#            z_temp_normal = np.exp(z_temp)
-#            z_prox_normal = np.exp(z_prox)
-#            tk.plot_func(z_temp_normal[:,0,0], title="z_temp 0")
-#            tk.plot_func(z_temp_normal[:,1,0], title="z_temp 1")
-#            tk.plot_func(z_prox_normal[:,0,0], title="z_prox 0")
-#            tk.plot_func(z_prox_normal[:,1,0], title="z_prox 1")
-#            print ("energy z prox")
-#            print (np.sum(abs(z_prox_normal), axis=0))
-            ##====================================================
+            if self.logit:
+                ##================= UNCOMMENT if log =================
+                step_grad_normal = np.exp(- self._gamma *self._grad.grad)
+                step_zi = np.exp(- self._z[i])
+                tk.plot_func(step_grad_normal[:,0,0], title="step grad 0")
+                tk.plot_func(- self._gamma *self._grad.grad[:,0,0], title="step grad 0 LOG")
+                tk.plot_func(step_grad_normal[:,1,0], title="step grad 1")
+                tk.plot_func(- self._gamma *self._grad.grad[:,1,0], title="step grad 1 LOG")
+                tk.plot_func(step_zi[:,0,0], title="step -z[i] 0")
+                tk.plot_func(step_zi[:,1,0], title="step -z[i] 1")
+                z_temp_normal = np.exp(z_temp)
+                z_prox_normal = np.exp(z_prox)
+                tk.plot_func(z_temp_normal[:,0,0], title="z_temp 0")
+                tk.plot_func(z_temp_normal[:,1,0], title="z_temp 1")
+                tk.plot_func(z_prox_normal[:,0,0], title="z_prox 0")
+                tk.plot_func(z_prox_normal[:,1,0], title="z_prox 1")
+                print ("energy z prox")
+                print (np.sum(abs(z_prox_normal), axis=0))
+                ##====================================================
             
             
             
@@ -676,15 +679,15 @@ class GenForwardBackward(SetUp):
             print ("energy z[i]")
             print (np.sum(abs(self._z[i]), axis=0))
             
-            
-            ##================= UNCOMMENT if log =================
-#            zi_normal = np.exp(self._z[i])
-#            tk.plot_func(zi_normal[:,0,0], title=" new z[i] 0")
-#            tk.plot_func(zi_normal[:,1,0], title=" new z[i] 1")
-#                        
-#            print ("energy z[i]")
-#            print (np.sum(abs(zi_normal), axis=0))            
-            ##===================================================
+            if self.logit:
+                ##================= UNCOMMENT if log =================
+                zi_normal = np.exp(self._z[i])
+                tk.plot_func(zi_normal[:,0,0], title=" new z[i] 0")
+                tk.plot_func(zi_normal[:,1,0], title=" new z[i] 1")
+                            
+                print ("energy z[i]")
+                print (np.sum(abs(zi_normal), axis=0))            
+                ##===================================================
             
 
         #MY CHANGE: self.gamma to 1.0 in extra factor , self.weights[i] to 1.0 in extra_factor
@@ -710,8 +713,8 @@ class GenForwardBackward(SetUp):
         
         
 
-        ## COMMENT FOR LOGIT
-        self._x_new[self._x_new < 0.0] = abs(self._x_new[self._x_new < 0.0])/1e3
+        if not self.logit:
+            self._x_new[self._x_new < 0.0] = abs(self._x_new[self._x_new < 0.0])/1e3
 #        self._x_new = abs(self._x_new)
         
         
@@ -723,15 +726,15 @@ class GenForwardBackward(SetUp):
         print ("energy x new")
         print (np.sum(abs(self._x_new), axis=0))
         
-        
-        ##================= UNCOMMENT if log =================       
-#        x_new_normal = self._x_new
-#        print("var_new ============")
-#        tk.plot_func(x_new_normal[:,0,0], title="x_new 0")
-#        tk.plot_func(x_new_normal[:,1,0], title="x_new 1")
-#        print ("energy x new")
-#        print (np.sum(abs(x_new_normal), axis=0))
-        ##===================================================
+        if self.logit:
+            ##================= UNCOMMENT if log =================       
+            x_new_normal = self._x_new
+            print("var_new ============")
+            tk.plot_func(x_new_normal[:,0,0], title="x_new 0")
+            tk.plot_func(x_new_normal[:,1,0], title="x_new 1")
+            print ("energy x new")
+            print (np.sum(abs(x_new_normal), axis=0))
+            ##===================================================
         
         
         
