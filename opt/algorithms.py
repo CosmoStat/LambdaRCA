@@ -593,39 +593,45 @@ class GenForwardBackward(SetUp):
         print(self._gamma)
         print("lambda")
         print(self._lambda_param)
-        lambda_LP = min(self._gamma, self._lambda_param)
-        self.lambda_list = [self._lambda_param,self._lambda_param,lambda_LP]
+        
+        if not self.logit:
+            lambda_LP = min(self._gamma, self._lambda_param)
+            self.lambda_list = [self._lambda_param,self._lambda_param,lambda_LP]
+        if self.logit:
+            lambda_LP = min(self._gamma, 0.2)
+            self.lambda_list = [self._lambda_param,lambda_LP]
         print("lambda list")
         print(self.lambda_list)
         print("extra_factor LP")
         print(self.extra_factor_LP)
+        
+        
         self._grad.get_grad(self._x_old)
         
-        tk.plot_func(self._grad.grad[:,0,0], title="grad 0", cmap="bwr")
-        tk.plot_func(self._grad.grad[:,1,0], title="grad 1", cmap="bwr")
-        tk.plot_func(self._x_old[:,0,0], title="x_old 0")
-        tk.plot_func(np.log(abs(self._x_old[:,0,0])), title="x_old 0 LOG")
-        tk.plot_func(self._x_old[:,1,0], title="x_old 1")
-        tk.plot_func(np.log(abs(self._x_old[:,1,0])), title="x_old 1 LOG")
-        # EU
-        print("min pixel")
-        print(np.min(self._x_old[:,0,0]),np.min(self._x_old[:,1,0]))
-        mask_0 = np.zeros(self._x_old[:,0,0].shape)
-        mask_1 = np.zeros(self._x_old[:,1,0].shape)
-        mask_0[np.argwhere(self._x_old[:,0,0] < 0.0)] = 1.0
-        mask_1[np.argwhere(self._x_old[:,1,0] < 0.0)] = 1.0
-        tk.plot_func(mask_0,title="mask 0")
-        tk.plot_func(mask_1, title="mask 1")
-        print("DEBUG")
+        if not self.logit:
+            tk.plot_func(self._grad.grad[:,0,0], title="grad 0", cmap="bwr")
+            tk.plot_func(self._grad.grad[:,1,0], title="grad 1", cmap="bwr")
+            tk.plot_func(self._x_old[:,0,0], title="x_old 0")
+            tk.plot_func(np.log(abs(self._x_old[:,0,0])), title="x_old 0 LOG")
+            tk.plot_func(self._x_old[:,1,0], title="x_old 1")
+            tk.plot_func(np.log(abs(self._x_old[:,1,0])), title="x_old 1 LOG")
+            # EU
+            print("min pixel")
+            print(np.min(self._x_old[:,0,0]),np.min(self._x_old[:,1,0]))
+            mask_0 = np.zeros(self._x_old[:,0,0].shape)
+            mask_1 = np.zeros(self._x_old[:,1,0].shape)
+            mask_0[np.argwhere(self._x_old[:,0,0] < 0.0)] = 1.0
+            mask_1[np.argwhere(self._x_old[:,1,0] < 0.0)] = 1.0
+            tk.plot_func(mask_0,title="mask 0")
+            tk.plot_func(mask_1, title="mask 1")
+            print("DEBUG")
         
         if self.logit:
             ##================= UNCOMMENT if log =================
-            grad_normal = np.exp(self._grad.grad)
-            x_old_normal = np.exp(self._x_old)
-            tk.plot_func(grad_normal[:,0,0], title="grad 0")
-            tk.plot_func(grad_normal[:,1,0], title="grad 1")
-            tk.plot_func(x_old_normal[:,0,0], title="x_old 0")
-            tk.plot_func(x_old_normal[:,1,0], title="x_old 1")
+            tk.plot_func(self._grad.grad[:,0,0], title="grad 0")
+            tk.plot_func(self._grad.grad[:,1,0], title="grad 1")
+            tk.plot_func(self._x_old[:,0,0], title="x_old 0")
+            tk.plot_func(self._x_old[:,1,0], title="x_old 1")
             ##====================================================
 
         # Update z values.
@@ -635,49 +641,49 @@ class GenForwardBackward(SetUp):
             z_prox = self._prox_list[i].op(z_temp, extra_factor=1.0, extra_factor_LP=self.extra_factor_LP)
             
             print("=================== PROX ",str(i))
-            tk.plot_func(- self._gamma *self._grad.grad[:,0,0], title="step grad 0")
-            tk.plot_func(np.log(abs(- self._gamma *self._grad.grad[:,0,0])), title="step grad 0 LOG")
-            tk.plot_func(- self._gamma *self._grad.grad[:,1,0], title="step grad 1")
-            tk.plot_func(np.log(abs(- self._gamma *self._grad.grad[:,1,0])), title="step grad 1 LOG")
-            tk.plot_func(- self._z[i][:,0,0], title="step -z[i] 0")
-            tk.plot_func(- self._z[i][:,1,0], title="step -z[i] 1")
-            tk.plot_func(z_temp[:,0,0], title="z_temp 0")
-            tk.plot_func(z_temp[:,1,0], title="z_temp 1")
-            tk.plot_func(z_prox[:,0,0], title="z_prox 0")
-            tk.plot_func(z_prox[:,1,0], title="z_prox 1")
-            print ("energy z prox")
-            print (np.sum(abs(z_prox), axis=0))
+            
+            if not self.logit:
+                tk.plot_func(- self._gamma *self._grad.grad[:,0,0], title="step grad 0")
+                tk.plot_func(np.log(abs(- self._gamma *self._grad.grad[:,0,0])), title="step grad 0 LOG")
+                tk.plot_func(- self._gamma *self._grad.grad[:,1,0], title="step grad 1")
+                tk.plot_func(np.log(abs(- self._gamma *self._grad.grad[:,1,0])), title="step grad 1 LOG")
+                tk.plot_func(- self._z[i][:,0,0], title="step -z[i] 0")
+                tk.plot_func(- self._z[i][:,1,0], title="step -z[i] 1")
+                tk.plot_func(z_temp[:,0,0], title="z_temp 0")
+                tk.plot_func(z_temp[:,1,0], title="z_temp 1")
+                tk.plot_func(z_prox[:,0,0], title="z_prox 0")
+                tk.plot_func(z_prox[:,1,0], title="z_prox 1")
+                print ("energy z prox")
+                print (np.sum(abs(z_prox), axis=0))
             
             if self.logit:
                 ##================= UNCOMMENT if log =================
-                step_grad_normal = np.exp(- self._gamma *self._grad.grad)
-                step_zi = np.exp(- self._z[i])
-                tk.plot_func(step_grad_normal[:,0,0], title="step grad 0")
-                tk.plot_func(- self._gamma *self._grad.grad[:,0,0], title="step grad 0 LOG")
-                tk.plot_func(step_grad_normal[:,1,0], title="step grad 1")
-                tk.plot_func(- self._gamma *self._grad.grad[:,1,0], title="step grad 1 LOG")
-                tk.plot_func(step_zi[:,0,0], title="step -z[i] 0")
-                tk.plot_func(step_zi[:,1,0], title="step -z[i] 1")
+                tk.plot_func(- self._gamma *self._grad.grad[:,0,0], title="step grad 0")
+                tk.plot_func(- self._gamma *self._grad.grad[:,0,0], title="step grad 1")
+                tk.plot_func(- self._z[i][:,0,0], title="step -z[i] 0")
+                tk.plot_func(- self._z[i][:,1,0], title="step -z[i] 1")
                 z_temp_normal = np.exp(z_temp)
                 z_prox_normal = np.exp(z_prox)
-                tk.plot_func(z_temp_normal[:,0,0], title="z_temp 0")
-                tk.plot_func(z_temp_normal[:,1,0], title="z_temp 1")
-                tk.plot_func(z_prox_normal[:,0,0], title="z_prox 0")
-                tk.plot_func(z_prox_normal[:,1,0], title="z_prox 1")
+                tk.plot_func(z_temp_normal[:,0,0], title="z_temp 0 normal")
+                tk.plot_func(z_temp_normal[:,1,0], title="z_temp 1 normal")
+                tk.plot_func(z_prox_normal[:,0,0], title="z_prox 0 normal")
+                tk.plot_func(z_prox_normal[:,1,0], title="z_prox 1 normal")
                 print ("energy z prox")
                 print (np.sum(abs(z_prox_normal), axis=0))
+#                import pdb; pdb.set_trace()  # breakpoint 3d87ba10 //
                 ##====================================================
             
             
             
             self._z[i] += self.lambda_list[i] * (z_prox - self._x_old) # self._lambda_param when LOGIT self.lambda_list ELSE na vdd tentar com lambda so alguma hora
             
-            tk.plot_func(self._z[i][:,0,0], title=" new z[i] 0")
-            tk.plot_func(self._z[i][:,1,0], title=" new z[i] 1")
+            if not self.logit:
+                tk.plot_func(self._z[i][:,0,0], title=" new z[i] 0")
+                tk.plot_func(self._z[i][:,1,0], title=" new z[i] 1")
             
             
-            print ("energy z[i]")
-            print (np.sum(abs(self._z[i]), axis=0))
+                print ("energy z[i]")
+                print (np.sum(abs(self._z[i]), axis=0))
             
             if self.logit:
                 ##================= UNCOMMENT if log =================
@@ -698,14 +704,15 @@ class GenForwardBackward(SetUp):
         
         print("WEIGHTS")
         print(self._weights)
-        print("min pixel")
-        print(np.min(self._x_new[:,0,0]),np.min(self._x_new[:,1,0]))
-        mask_0 = np.zeros(self._x_new[:,0,0].shape)
-        mask_1 = np.zeros(self._x_new[:,1,0].shape)
-        mask_0[np.argwhere(self._x_new[:,0,0] < 0.0)] = 1.0 
-        mask_1[np.argwhere(self._x_new[:,1,0] < 0.0)] = 1.0
-        tk.plot_func(mask_0,title="mask 0") 
-        tk.plot_func(mask_1, title="mask 1")
+        if not self.logit:
+            print("min pixel")
+            print(np.min(self._x_new[:,0,0]),np.min(self._x_new[:,1,0]))
+            mask_0 = np.zeros(self._x_new[:,0,0].shape)
+            mask_1 = np.zeros(self._x_new[:,1,0].shape)
+            mask_0[np.argwhere(self._x_new[:,0,0] < 0.0)] = 1.0 
+            mask_1[np.argwhere(self._x_new[:,1,0] < 0.0)] = 1.0
+            tk.plot_func(mask_0,title="mask 0") 
+            tk.plot_func(mask_1, title="mask 1")
         
         
         
@@ -715,20 +722,17 @@ class GenForwardBackward(SetUp):
 
         if not self.logit:
             self._x_new[self._x_new < 0.0] = abs(self._x_new[self._x_new < 0.0])/1e3
-#        self._x_new = abs(self._x_new)
-        
-        
-        
-#        normal_x_new = np.exp(self._x_new)/np.sum(np.exp(self._x_new), axis = 0)
-        print("var_new ============")
-        tk.plot_func(self._x_new[:,0,0], title="x_new 0")
-        tk.plot_func(self._x_new[:,1,0], title="x_new 1")
-        print ("energy x new")
-        print (np.sum(abs(self._x_new), axis=0))
+
+        if not self.logit:
+            print("var_new ============")
+            tk.plot_func(self._x_new[:,0,0], title="x_new 0")
+            tk.plot_func(self._x_new[:,1,0], title="x_new 1")
+            print ("energy x new")
+            print (np.sum(abs(self._x_new), axis=0))
         
         if self.logit:
             ##================= UNCOMMENT if log =================       
-            x_new_normal = self._x_new
+            x_new_normal = np.exp(self._x_new)
             print("var_new ============")
             tk.plot_func(x_new_normal[:,0,0], title="x_new 0")
             tk.plot_func(x_new_normal[:,1,0], title="x_new 1")

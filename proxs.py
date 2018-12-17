@@ -131,10 +131,16 @@ class LowPass(object):
       self.cost = self.op
       
     def op(self,data,extra_factor_LP=1.0,**kwargs):
+        
+        
+        if self.logit:
+            print "lowpass logit"
+            data = np.exp(data)/np.sum(np.exp(data), axis = 0)  
+        
+        
         data_ori = np.copy(data)
         data = data.reshape((self.shap[0], self.shap[1],2,data.shape[-1]))
-        if self.logit:
-            data = np.exp(data)/np.sum(np.exp(data), axis = 0)        
+        
         
         fft_data = np.zeros((self.shap[0],self.shap[1],2,data.shape[-1]),dtype='complex128')
 
@@ -168,7 +174,6 @@ class LowPass(object):
                 
         if self.logit:
             data_rec = np.log(abs(data_rec))
-        
         
         
         

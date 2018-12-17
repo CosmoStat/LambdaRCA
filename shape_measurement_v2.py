@@ -43,12 +43,13 @@ save_stuff = False
 root_path = '/Users/rararipe/Documents/Data/'
 
 # PSFs paths
-data_path = root_path+'QuickestGenerator/trueSEDs/42x42pixels_8lbdas80pos/'
-RCA_path = root_path+'RCA/trueSEDs/42x42pixels_8lbdas80pos/'
-lbdaRCA_path = root_path+ 'GradientDescent_output/trueSEDs/42x42pixels_8lbdas80pos_3chrom0RCA_sr_zout0p6zin1p2_dict_coef_sigmaEqualsLinTrace_alpha1pBeta0p1_binAradialSR_3it743dict30coef_weight4dict1p5coef_FluxUpdate_genFB_sink10_unicornio_lbdaEquals1p0_LowPass_W0p20p40p4_newData/result/'
-fullres_path = lbdaRCA_path+'full_res/'
-test_data_path = root_path+'QuickestGenerator/trueSEDs/folderoftest/'
-nb_pos_test = 300
+lbdaRCA_path = root_path+ 'GradientDescent_output/trueSEDs/42x42pixels_14lbdas80pos_3chrom0RCA_sr_zout0p6zin1p2_coef_dict_sigmaEqualsLinTrace_alpha1pBeta0p1_abssvdASR50_3it643dict30coef_weight4dict1p5coef_FluxUpdate_genFB_sink10_unicornio_lbdaEquals1p0_LowPass_W0p20p40p4/result/'
+data_path = root_path+'QuickestGenerator/full_res_70lbdas_80train300test/train/PickleSEDs/Interp_14wvls/'
+gtobs_path = root_path+'QuickestGenerator/full_res_70lbdas_80train300test/train/PickleSEDs/'
+full_res_gt_path = root_path+'QuickestGenerator/full_res_70lbdas_80train300test/train/full_res_gt/'
+test_data_path = root_path+'QuickestGenerator/full_res_70lbdas_80train300test/test/'
+RCA_path = root_path+'RCA/trueSEDs/42x42pixels_Pickles70lbdasStars80pos/'
+nb_pos_test = 300 
 nb_pos = 80
 
 # Paulin paramenters
@@ -70,9 +71,6 @@ results_path = lbdaRCA_path + "Shape_measurements/"
 plot_path = results_path + 'Plots/'
 
 
-
-if not os.path.exists(fullres_path):
-        os.makedirs(fullres_path)
 if not os.path.exists(plot_path):
     os.makedirs(plot_path)        
  
@@ -84,41 +82,35 @@ if not os.path.exists(rca_interp_path):
 #%% Get galaxies SEDs
 
 # Load lbdas used in lbdaRCA
-all_lbdas = np.load(data_path+'all_lbdas.npy') 
+all_lbdas = np.load(gtobs_path+'all_lbdas.npy') 
       
 galSEDs = utils.interp_SEDs(all_lbdas,sed_path,plot_path) # <nb_wvl, nb_gal>
 
-      
+fov = np.load(gtobs_path+'fov.npy') 
+fov_test = np.load(test_data_path+'fov.npy') 
+np.save(results_path+'fov.npy',fov)
+np.save(results_path+'fov_test.npy',fov_test)    
 #%% Load all PSFs, barycenters, components and weights
         
-# full res PSFs
+PSFs_integrated_fr = np.load(gtobs_path+'stars_fullres_gt.npy')
+PSFs_integrated_fr /= np.sum(abs(PSFs_integrated_fr), axis=(0,1))
+# HSM format
+PSFs_integrated_fr = PSFs_integrated_fr.swapaxes(2,1).swapaxes(1,0)
 
-#PSFs_fr = np.load(data_path+'PSFs_full_res.npy')
-#PSFs_fr /= np.sum(abs(PSFs_fr), axis=(0,1))
-
-
-PSFs_integrated_fr = np.load(data_path+'stars_fullres_gt.npy')
-PSFs_integrated_fr /= np.sum(abs(PSFs_integrated_fr), axis=(1,2)).reshape((PSFs_integrated_fr.shape[0],1,1))
-
-PSFs_full_res_test_gt = np.load(data_path+'PSFs_full_res_test.npy')
-PSFs_full_res_test_gt /= np.sum(abs(PSFs_full_res_test_gt),axis=(0,1))
-PSFs_fr_W, _ ,nb_wvl , nb_obj  = PSFs_full_res_test_gt.shape
-
-PSFs_full_res_test_gt =  PSFs_full_res_test_gt.swapaxes(3,2).swapaxes(2,1).swapaxes(1,0) 
-
-
-fov_test = np.load(data_path+'fov_test.npy')
-fov_train = np.load(data_path+'fov.npy')
+fov_test = np.load(test_data_path+'fov.npy')
+fov_train = np.load(gtobs_path+'fov.npy')
 
 
 # and "experimental" PSFs, starting with "true" ones...
-truPSFs = np.load(data_path+'PSFs_2euclidrec.npy')
+truPSFs = np.load(gtobs_path+'PSFs_2euclidrec.npy')
 
 truPSFs /= np.sum(abs(truPSFs), axis=(0,1))
 truPSFs = truPSFs.swapaxes(2,3)
-truPSFs_integrated = np.load(data_path+'stars_2euclidrec_gt.npy')
+truPSFs_integrated = np.load(gtobs_path+'stars_2euclidrec_gt.npy')
 truPSFs_integrated /= np.sum(abs(truPSFs_integrated), axis=(0,1))
 W,_,_ = truPSFs_integrated.shape
+# HSM format
+truPSFs_integrated = truPSFs_integrated.swapaxes(2,1).swapaxes(1,0)
 
 # ... lbdaRCA ones...
 lbdaPSFs = np.load(lbdaRCA_path+'psf_est.npy')
@@ -127,7 +119,8 @@ lbdaPSFs_integrated = np.load(lbdaRCA_path+'stars_est_2euclidres.npy')
 lbdaPSFs_integrated /= np.sum(abs(lbdaPSFs_integrated),axis=(0,1))
 barycenters = np.load(lbdaRCA_path+'barycenters_wvlAll.npy')
 A_train_lbdaRCA = np.load(lbdaRCA_path+'A.npy')
-
+# HSM format
+lbdaPSFs_integrated = lbdaPSFs_integrated.swapaxes(2,1).swapaxes(1,0)
 
 
 # ... And RCA ones
@@ -135,7 +128,8 @@ rcaPSFs = fits.getdata(RCA_path+'est_psf.fits')
 rcaPSFs /= np.sum(abs(rcaPSFs),axis=(0,1))
 components_rca = fits.getdata(RCA_path+'components.fits')
 A_train_rca = fits.getdata(RCA_path+'A.fits')
-
+# HSM format
+rcaPSFs = rcaPSFs.swapaxes(2,1).swapaxes(1,0)
 
 #%% Interpolations that don't depend on SED
 
@@ -153,12 +147,11 @@ np.save(rca_interp_path+'rcaPSFs_test.npy',rcaPSFs_test)
 np.save(lbda_interp_path+'A_test_lbdaRCA.npy',A_test_lbdaRCA)
 #%% Shapes that don't depend on SED
 
-full_shapes = utils.computeHSMshapes(PSFs_integrated_fr,pixel_scale) # obs: format of PSFs has to be <nb_obj, pixel, pixel>
-truInt_shapes = utils.computeHSMshapes(truPSFs_integrated.swapaxes(2,1).swapaxes(1,0),pixel_scale)
-rca_shapes = utils.computeHSMshapes(rcaPSFs.swapaxes(2,1).swapaxes(1,0),pixel_scale)
-rca_shapes_test = utils.computeHSMshapes(rcaPSFs_test,pixel_scale)
-lbdaInt_shapes = utils.computeHSMshapes(lbdaPSFs_integrated.swapaxes(2,1).swapaxes(1,0),pixel_scale)
-#WHY PIXEL SCALE AND NOT TWICE EUCLID RESOLUTION IN TRUE INT??
+full_shapes = utils.computeHSMshapes_stack(PSFs_integrated_fr,pixel_scale) # obs: format of PSFs has to be <nb_obj, pixel, pixel>
+truInt_shapes = utils.computeHSMshapes_stack(truPSFs_integrated,twiceEuclid)
+rca_shapes = utils.computeHSMshapes_stack(rcaPSFs,twiceEuclid)
+rca_shapes_test = utils.computeHSMshapes_stack(rcaPSFs_test,twiceEuclid)
+lbdaInt_shapes = utils.computeHSMshapes_stack(lbdaPSFs_integrated,twiceEuclid)
 
 full_R_pixel = full_shapes[:,2]
 truInt_R_pixel = truInt_shapes[:,2]
@@ -174,8 +167,8 @@ rca_shapes_test[:,2]*= twiceEuclid**2
 lbdaInt_shapes[:,2]*= twiceEuclid**2
 
 # Paulin predictions
-paulin_preds_rca = utils.paulin_predict(truInt_shapes, rca_shapes, R2s)
-paulin_preds_lbda = utils.paulin_predict(truInt_shapes, lbdaInt_shapes, R2s)
+paulin_preds_rca = utils.paulin_predict_stack(truInt_shapes, rca_shapes, R2s)
+paulin_preds_lbda = utils.paulin_predict_stack(truInt_shapes, lbdaInt_shapes, R2s)
 
 #%% Delete heavy stuff
 del PSFs_integrated_fr
@@ -203,14 +196,15 @@ for pos in tqdm(range(nb_pos_test)):
     lbdaInt_R_pixels_testgal_thrgals = []
     paulin_pred_rca_testgal_thrgals = []
     paulin_pred_lbda_testgal_thrgals = []
-    for gal_i in tqdm(range(galSEDs.shape[-1])): 
+    for gal_i in range(2): # galSEDs.shape[-1]
        
-        PSFs_full_res_test_gt = np.load(test_data_path+'PSFs_full_res_test_gt{}.npy'.format(pos))
-        PSFs_full_res_test_gt /= np.sum(abs(PSFs_full_res_test_gt),axis=(0,1))
-        star_testGal_fr_gt = PSFs_full_res_test_gt.dot(galSEDs[:,gal_i])
+        PSFs_full_res_test_gt = np.load(test_data_path+'PSF{}.npy'.format(pos))
+        PSFs_full_res_test_gt /= np.sum(abs(PSFs_full_res_test_gt),axis=(1,2)).reshape((PSFs_full_res_test_gt.shape[0],1,1))
+        star_testGal_fr_gt = np.sum(PSFs_full_res_test_gt * galSEDs[:,gal_i].reshape(-1,1,1), axis=0)
+        
            
         star_2euclidrec_testGal_gt = tk.decimate(star_testGal_fr_gt, downsamp=6)
-        star_2euclidrec_testGal_gt = star_2euclidrec_testGal_gt[:,21:21+42,21:21+42]
+        star_2euclidrec_testGal_gt = star_2euclidrec_testGal_gt[21:21+42,21:21+42]
         
         star_testGal_fr_gt /= np.sum(abs(star_testGal_fr_gt))
         star_2euclidrec_testGal_gt /= np.sum(abs(star_2euclidrec_testGal_gt))
@@ -226,7 +220,7 @@ for pos in tqdm(range(nb_pos_test)):
         # Compute HSM shapes
         full_shape_testgal = utils.computeHSMshapes(star_testGal_fr_gt,pixel_scale)
         del star_testGal_fr_gt
-        truInt_shape_testgal = utils.computeHSMshapes(star_2euclidrec_testGal_gt,pixel_scale) # ATTENTION MAYBE IT WILL BE NECESSARY TO CHANGE FUNCTION TO RETURN A LIST AND NOT LISTS OF LISTS OF ONE ELEMENT
+        truInt_shape_testgal = utils.computeHSMshapes(star_2euclidrec_testGal_gt,pixel_scale)
         del star_2euclidrec_testGal_gt        
         lbdaInt_shape_testgal = utils.computeHSMshapes(lbdaPSF_testGal,pixel_scale)
         del lbdaPSF_testGal
@@ -241,6 +235,18 @@ for pos in tqdm(range(nb_pos_test)):
         lbdaInt_shape_testgal[2] *= twiceEuclid**2
         
         # Compute Paulin prediction
+#        raise ValueError('Ops')
+        # DEBUG
+#        estpsf_shape = rca_shapes_test[pos]
+#        trupsf_shape = truInt_shape_testgal
+#        gal_size = R2s[0]
+#        
+#        deltapsf = np.array(estpsf_shape) - np.array(trupsf_shape)
+#        m = 1. + deltapsf[2] / gal_size
+#        c = -(trupsf_shape[2]/gal_size*deltapsf[:2] + 
+#               deltapsf[2]/gal_size*trupsf_shape[:2])
+        #DEBUG
+
         paulin_pred_rca_testgal_thrgals.append([utils.paulin(siz,truInt_shape_testgal,rca_shapes_test[pos],flat=True) for siz in R2s])
         paulin_pred_lbda_testgal_thrgals.append([utils.paulin(siz,truInt_shape_testgal,lbdaInt_shape_testgal,flat=True) for siz in R2s])
         
@@ -270,55 +276,129 @@ full_R_pixels_testgal = np.array(full_R_pixels_testgal)
 truInt_R_pixels_testgal = np.array(truInt_R_pixels_testgal)
 lbdaInt_R_pixels_testgal = np.array(lbdaInt_R_pixels_testgal) 
 
-paulin_pred_rca_testgal_thrgals = np.array(paulin_pred_rca_testgal_thrgals)
-paulin_pred_lbda_testgal_thrgals = np.array(paulin_pred_lbda_testgal_thrgals)
+paulin_preds_rca_testgal = np.array(paulin_preds_rca_testgal)
+paulin_preds_lbda_testgal = np.array(paulin_preds_lbda_testgal)
 
 #%% Paulin stats
 paulin_stats_rca = np.zeros((6,len(R2s))) # <m_mean,m_std,c1_mean,c1_std,c2_mean,c2_std>
 
-paulin_stats_rca[0,:],paulin_stats_rca[1,:],paulin_stats_rca[2,:],paulin_stats_rca[3,:],
-paulin_stats_rca[4,:],paulin_stats_rca[5,:] = utils.paulin_stats(paulin_preds_rca)
+paulin_stats_rca[0,:],paulin_stats_rca[1,:],paulin_stats_rca[2,:],paulin_stats_rca[3,:],paulin_stats_rca[4,:],paulin_stats_rca[5,:] = utils.paulin_stats(paulin_preds_rca)
 
 paulin_stats_lbda = np.zeros((6,len(R2s))) # <m_mean,m_std,c1_mean,c1_std,c2_mean,c2_std>
 
-paulin_stats_lbda[0,:],paulin_stats_lbda[1,:],paulin_stats_lbda[2,:],paulin_stats_lbda[3,:],
-paulin_stats_lbda[4,:],paulin_stats_lbda[5,:] = utils.paulin_stats(paulin_preds_lbda)
+paulin_stats_lbda[0,:],paulin_stats_lbda[1,:],paulin_stats_lbda[2,:],paulin_stats_lbda[3,:],paulin_stats_lbda[4,:],paulin_stats_lbda[5,:] = utils.paulin_stats(paulin_preds_lbda)
 
 
 temp = np.zeros((6,len(R2s))) # <m_mean,m_std,c1_mean,c1_std,c2_mean,c2_std>
 
 paulin_stats_rca_testgal_listPos = []
-for pos in range(nb_pos_test): 
-    temp[0,:],temp[1,:],temp[2,:],temp[3,:],
-    temp[4,:],temp[5,:] = utils.paulin_stats(paulin_pred_rca_testgal_thrgals[pos],flat=True)    
+for pos in range(paulin_preds_rca_testgal.shape[0]): 
+    temp[0,:],temp[1,:],temp[2,:],temp[3,:],\
+    temp[4,:],temp[5,:] = utils.paulin_stats(paulin_preds_rca_testgal[pos].swapaxes(0,1),flat=True) # make sure format is <30 points of R,  gal or pos, , 3 shapes>    
     paulin_stats_rca_testgal_listPos.append(np.copy(temp))   
 paulin_stats_rca_testgal_listPos = np.array(paulin_stats_rca_testgal_listPos)
 
 paulin_stats_rca_testgal_listGals = []
-for gal_i in range(galSEDs.shape[-1]):
-    temp[0,:],temp[1,:],temp[2,:],temp[3,:],
-    temp[4,:],temp[5,:] = utils.paulin_stats(paulin_pred_rca_testgal_thrgals[:,gal_i,:],flat=True)    
+for gal_i in range(paulin_preds_rca_testgal.shape[1]):
+    temp[0,:],temp[1,:],temp[2,:],temp[3,:],\
+    temp[4,:],temp[5,:] = utils.paulin_stats(paulin_preds_rca_testgal[:,gal_i,:].swapaxes(0,1),flat=True)    
     paulin_stats_rca_testgal_listGals.append(np.copy(temp))    
-paulin_statsPos_rca_testgal_listGals = np.array(paulin_stats_rca_testgal_listGals)
+paulin_stats_rca_testgal_listGals = np.array(paulin_stats_rca_testgal_listGals)
 
 paulin_stats_lbda_testgal_listPos = []
-for pos in range(nb_pos_test): 
-    temp[0,:],temp[1,:],temp[2,:],temp[3,:],
-    temp[4,:],temp[5,:] = utils.paulin_stats(paulin_pred_lbda_testgal_thrgals[pos],flat=True)    
+for pos in range(paulin_preds_lbda_testgal.shape[0]): 
+    temp[0,:],temp[1,:],temp[2,:],temp[3,:],\
+    temp[4,:],temp[5,:] = utils.paulin_stats(paulin_preds_lbda_testgal[pos].swapaxes(0,1),flat=True)    
     paulin_stats_lbda_testgal_listPos.append(np.copy(temp))   
 paulin_stats_lbda_testgal_listPos = np.array(paulin_stats_lbda_testgal_listPos)
 
 paulin_stats_lbda_testgal_listGals = []
-for gal_i in range(galSEDs.shape[-1]):
-    temp[0,:],temp[1,:],temp[2,:],temp[3,:],
-    temp[4,:],temp[5,:] = utils.paulin_stats(paulin_pred_lbda_testgal_thrgals[:,gal_i,:],flat=True)    
+for gal_i in range(paulin_preds_lbda_testgal.shape[1]):
+    temp[0,:],temp[1,:],temp[2,:],temp[3,:],\
+    temp[4,:],temp[5,:] = utils.paulin_stats(paulin_preds_lbda_testgal[:,gal_i,:].swapaxes(0,1),flat=True)    
     paulin_stats_lbda_testgal_listGals.append(np.copy(temp))    
 paulin_stats_lbda_testgal_listGals = np.array(paulin_stats_lbda_testgal_listGals)
 
+#%% Paulin stats stacking positions and galaxies as a single mix of datapoints
+
+data_stack_lbda = np.zeros((len(R2s),paulin_preds_lbda_testgal.shape[0]*paulin_preds_lbda_testgal.shape[1],3))# <30 points of R,all, 3 shapes> 
+for r in range(len(R2s)):
+    for s in range(3):
+       data_stack_lbda[r,:,s]  = paulin_preds_lbda_testgal[:,:,r,s].reshape(-1) # <pos, gals, Rs, shapes>
+
+paulin_stats_lbda_testgal_All = np.zeros((6,len(R2s))) # <m_mean,m_std,c1_mean,c1_std,c2_mean,c2_std>
+paulin_stats_lbda_testgal_All[0,:],paulin_stats_lbda_testgal_All[1,:],paulin_stats_lbda_testgal_All[2,:],paulin_stats_lbda_testgal_All[3,:],\
+    paulin_stats_lbda_testgal_All[4,:],paulin_stats_lbda_testgal_All[5,:] = utils.paulin_stats(data_stack_lbda,flat=True) 
+ 
+#%%
+data_stack_rca = np.zeros((len(R2s),paulin_preds_rca_testgal.shape[0]*paulin_preds_rca_testgal.shape[1],3))# <30 points of R,all, 3 shapes> 
+for r in range(len(R2s)):
+    for s in range(3):
+       data_stack_rca[r,:,s]  = paulin_preds_rca_testgal[:,:,r,s].reshape(-1) # <pos, gals, Rs, shapes>
+
+paulin_stats_rca_testgal_All = np.zeros((6,len(R2s))) # <m_mean,m_std,c1_mean,c1_std,c2_mean,c2_std>
+paulin_stats_rca_testgal_All[0,:],paulin_stats_rca_testgal_All[1,:],paulin_stats_rca_testgal_All[2,:],paulin_stats_rca_testgal_All[3,:],\
+    paulin_stats_rca_testgal_All[4,:],paulin_stats_rca_testgal_All[5,:] = utils.paulin_stats(data_stack_rca,flat=True) 
+
 #%% Save work
+np.save(results_path+'full_R_pixel.npy',full_R_pixel)
+np.save(results_path+'truInt_R_pixel.npy',truInt_R_pixel)
+np.save(results_path+'rca_R_pixel.npy',rca_R_pixel)
+np.save(results_path+'rca_R_pixel_test.npy',rca_R_pixel_test)
+np.save(results_path+'lbdaInt_R_pixel.npy',lbdaInt_R_pixel)
+
+np.save(results_path+'full_shapes.npy',full_shapes)
+np.save(results_path+'truInt_shapes.npy',truInt_shapes)
+np.save(results_path+'rca_shapes.npy',rca_shapes)
+np.save(results_path+'rca_shapes_test.npy',rca_shapes_test)
+np.save(results_path+'lbdaInt_shapes.npy',lbdaInt_shapes)
+
+
+#np.save(results_path+'paulin_preds_rca.npy',paulin_preds_rca)
+#np.save(results_path+'paulin_preds_lbda.npy',paulin_preds_lbda)
+
+np.save(results_path+'full_shapes_testgal.npy',full_shapes_testgal)
+np.save(results_path+'truInt_shapes_testgal.npy',truInt_shapes_testgal)
+np.save(results_path+'lbdaInt_shapes_testgal.npy',lbdaInt_shapes_testgal)
+
+np.save(results_path+'full_R_pixels_testgal.npy',full_R_pixels_testgal)
+np.save(results_path+'truInt_R_pixels_testgal.npy',truInt_R_pixels_testgal)
+np.save(results_path+'lbdaInt_R_pixels_testgal.npy',lbdaInt_R_pixels_testgal)
+
+np.save(results_path+'paulin_pred_rca_testgal_thrgals.npy',paulin_pred_rca_testgal_thrgals)
+np.save(results_path+'paulin_pred_lbda_testgal_thrgals.npy',paulin_pred_lbda_testgal_thrgals)
+
+np.save(results_path+'paulin_stats_rca_testgal_listPos.npy',paulin_stats_rca_testgal_listPos)
+np.save(results_path+'paulin_stats_rca_testgal_listGals.npy',paulin_stats_rca_testgal_listGals)
+np.save(results_path+'paulin_stats_lbda_testgal_listPos.npy',paulin_stats_lbda_testgal_listPos)
+np.save(results_path+'paulin_stats_lbda_testgal_listGals.npy',paulin_stats_lbda_testgal_listGals)
+np.save(results_path+'paulin_stats_rca.npy',paulin_stats_rca)
+np.save(results_path+'paulin_stats_lbda.npy',paulin_stats_lbda)
+np.save(results_path+'paulin_stats_lbda_testgal_All.npy',paulin_stats_lbda_testgal_All)
+np.save(results_path+'paulin_stats_rca_testgal_All.npy',paulin_stats_rca_testgal_All)
+
+np.save(results_path+'sizes.npy',sizes)
 
 
 #%% Plot shapes
+
+# Thomas Tram's plot parameters
+plt.rcParams['figure.autolayout'] = False
+plt.rcParams['axes.labelsize'] = 18 
+plt.rcParams['axes.titlesize'] = 20 
+plt.rcParams['legend.fontsize'] = 14 
+plt.rcParams['font.size'] = 16 
+plt.rcParams['lines.linewidth'] = 1.3 # he has 2.0 here but I like 1.3 better
+plt.rcParams['lines.markersize'] = 5.0 
+plt.rcParams['text.usetex'] = True 
+plt.rcParams['font.family'] = 'serif' 
+plt.rcParams['font.serif'] = 'cm'
+
+# plus bigger pics!
+plt.rcParams['figure.figsize'] = 10, 7.5
+
+
+
 
 fig, ax = plt.subplots()
 plt.plot(full_shapes[:,0],truInt_shapes[:,0],'.',label=r'$e_1$')
@@ -335,11 +415,12 @@ plt.plot(lims, lims, 'k--')
 cmap_1=cm.winter 
 cmap_2 = cm.spring 
 cmap_3 = cm.Greys
-color_indx = 1.0/(len(galSEDs.shape[-1])-1)*np.array(range(len(galSEDs.shape[-1])))
-random.shuffle(color_indx)
+color_indx = 1.0/(full_shapes_testgal.shape[1]-1)*np.array(range(full_shapes_testgal.shape[1]))
+color_indx_2 = 1.0/(full_shapes_testgal.shape[0]-1)*np.array(range(full_shapes_testgal.shape[0]))
+#random.shuffle(color_indx)
 
 fig, ax = plt.subplots()
-for gal_i in range(galSEDs.shape[-1]):
+for gal_i in range(full_shapes_testgal.shape[1]):
         plt.plot(full_shapes_testgal[:,gal_i,0],truInt_shapes_testgal[:,gal_i,0],'.',label=r'$e_1$',c=cmap_1(color_indx[gal_i]))
 plt.legend(loc=0)
 plt.xlabel('PSF ellipticity measured at full resolution')
@@ -353,10 +434,10 @@ plt.show()
 
 #=== Recovered shapes
 fig, ax = plt.subplots()
-plt.plot(truInt_shapes[:,0],lbdaInt_shapes[:,0],'o',label=r'lbdaRCA $e_1$',c='blue')
-plt.plot(truInt_shapes[:,1],lbdaInt_shapes[:,1],'*',label=r'lbdaRCA $e_2$',c='midnightblue')
+plt.plot(truInt_shapes[:,0],lbdaInt_shapes[:,0],'*',label=r'lbdaRCA $e_1$',c='blue')
+plt.plot(truInt_shapes[:,1],lbdaInt_shapes[:,1],'o',label=r'lbdaRCA $e_2$',c='blue')
 plt.plot(truInt_shapes[:,0],rca_shapes[:,0],'o',label=r'RCA $e_1$',c='red')
-plt.plot(truInt_shapes[:,1],rca_shapes[:,1],'*',label=r'RCA $e_2$',c='darkred')
+plt.plot(truInt_shapes[:,1],rca_shapes[:,1],'*',label=r'RCA $e_2$',c='red')
 plt.xlabel('`Known\' PSF ellipticity')
 plt.ylabel('Recovered PSF ellipticity')
 plt.title(r'PSF ellipticity with star SEDs at star positions')
@@ -367,39 +448,164 @@ plt.plot(lims, lims, 'k--')
 plt.show()
     
 fig, ax = plt.subplots()
-for gal_i in range(galSEDs.shape[-1]):
-    plt.plot(truInt_shapes_testgal[:,gal_i,0],lbdaInt_shapes_testgal[:,gal_i,0],'o',label=r'lbdaRCA $e_1$',c=cmap_1(color_indx[gal_i]))
-    plt.plot(truInt_shapes_testgal[:,gal_i,1],lbdaInt_shapes_testgal[:,gal_i,1],'*',label=r'lbdaRCA $e_2$',c=cmap_1(color_indx[gal_i]))
-    plt.plot(truInt_shapes_testgal[:,gal_i,0],rca_shapes[:,0],'o',label=r'RCA $e_1$',c=cmap_2(color_indx[gal_i]))
-    plt.plot(truInt_shapes_testgal[:,gal_i,1],rca_shapes[:,1],'*',label=r'RCA $e_2$',c=cmap_2(color_indx[gal_i]))
-plt.xlabel('`Known\' PSF ellipticity')
-plt.ylabel('Recovered PSF ellipticity')
-plt.title(r'PSF ellipticity with galaxy SED at galaxy positions')
-plt.legend(loc=0)
+this_cmap = cm.get_cmap('Spectral',full_shapes_testgal.shape[1])
+c = np.arange(1,full_shapes_testgal.shape[1]+1)
+dummie_cax = ax.scatter(c, c, c=c, cmap=this_cmap)
+# Clear axis
+ax.cla()
+for gal_i in range(full_shapes_testgal.shape[1]):
+    plt.scatter(truInt_shapes_testgal[:,gal_i,0],lbdaInt_shapes_testgal[:,gal_i,0],c=this_cmap(color_indx[gal_i]))
+#    plt.scatter(truInt_shapes_testgal[:,gal_i,1],lbdaInt_shapes_testgal[:,gal_i,1],marker='*',c=this_cmap(color_indx[gal_i]))
+#    plt.plot(truInt_shapes_testgal[:,gal_i,0],rca_shapes_test[:,0],'o',label=r'RCA $e_1$',c=cmap_2(color_indx[gal_i]))
+#    plt.plot(truInt_shapes_testgal[:,gal_i,1],rca_shapes_test[:,1],'*',label=r'RCA $e_2$',c=cmap_2(color_indx[gal_i]))
+plt.xlabel('`Known\' PSF ellipticity $e_1$')
+plt.ylabel('Recovered PSF ellipticity $e_1$')
+plt.title(r'$\lambda$RCA')
+cb=fig.colorbar(dummie_cax)
+cb.set_ticks([])
+cb.set_label(r'Galaxies')
+#plt.legend(loc='lower left', bbox_to_anchor=(1, 0.5))
 lims = [np.min([ax.get_xlim(), ax.get_ylim()]),
         np.max([ax.get_xlim(), ax.get_ylim()])]
 plt.plot(lims, lims, 'k--')
 plt.show()
-    
-    
+##=================================
+fig, ax = plt.subplots()
+this_cmap = cm.get_cmap('Spectral',full_shapes_testgal.shape[1])
+c = np.arange(1,full_shapes_testgal.shape[1]+1)
+dummie_cax = ax.scatter(c, c, c=c, cmap=this_cmap)
+# Clear axis
+ax.cla()
+for gal_i in range(full_shapes_testgal.shape[1]):
+#    plt.scatter(truInt_shapes_testgal[:,gal_i,0],lbdaInt_shapes_testgal[:,gal_i,0],marker='o',c=this_cmap(color_indx[gal_i]))
+    plt.scatter(truInt_shapes_testgal[:,gal_i,1],lbdaInt_shapes_testgal[:,gal_i,1],c=this_cmap(color_indx[gal_i]))
+#    plt.plot(truInt_shapes_testgal[:,gal_i,0],rca_shapes_test[:,0],'o',label=r'RCA $e_1$',c=cmap_2(color_indx[gal_i]))
+#    plt.plot(truInt_shapes_testgal[:,gal_i,1],rca_shapes_test[:,1],'*',label=r'RCA $e_2$',c=cmap_2(color_indx[gal_i]))
+plt.xlabel('`Known\' PSF ellipticity $e_2$')
+plt.ylabel('Recovered PSF ellipticity $e_2$')
+plt.title(r'$\lambda$RCA')
+cb=fig.colorbar(dummie_cax)
+cb.set_ticks([])
+cb.set_label(r'Galaxies')
+#plt.legend(loc='lower left', bbox_to_anchor=(1, 0.5))
+lims = [np.min([ax.get_xlim(), ax.get_ylim()]),
+        np.max([ax.get_xlim(), ax.get_ylim()])]
+plt.plot(lims, lims, 'k--')
+plt.show()
+##=================================
+fig, ax = plt.subplots()
+this_cmap = cm.get_cmap('Spectral',full_shapes_testgal.shape[1])
+c = np.arange(1,full_shapes_testgal.shape[1]+1)
+dummie_cax = ax.scatter(c, c, c=c, cmap=this_cmap)
+# Clear axis
+ax.cla()
+for gal_i in range(full_shapes_testgal.shape[1]):
+#    plt.scatter(truInt_shapes_testgal[:,gal_i,0],lbdaInt_shapes_testgal[:,gal_i,0],marker='o',c=this_cmap(color_indx[gal_i]))
+#    plt.scatter(truInt_shapes_testgal[:,gal_i,1],lbdaInt_shapes_testgal[:,gal_i,1],c=this_cmap(color_indx[gal_i]))
+    plt.scatter(truInt_shapes_testgal[:,gal_i,0],rca_shapes_test[:,0],c=this_cmap(color_indx[gal_i]))
+#    plt.plot(truInt_shapes_testgal[:,gal_i,1],rca_shapes_test[:,1],'*',label=r'RCA $e_2$',c=cmap_2(color_indx[gal_i]))
+plt.xlabel('`Known\' PSF ellipticity $e_1$')
+plt.ylabel('Recovered PSF ellipticity $e_1$')
+plt.title(r'RCA')
+cb=fig.colorbar(dummie_cax)
+cb.set_ticks([])
+cb.set_label(r'Galaxies')
+#plt.legend(loc='lower left', bbox_to_anchor=(1, 0.5))
+lims = [np.min([ax.get_xlim(), ax.get_ylim()]),
+        np.max([ax.get_xlim(), ax.get_ylim()])]
+plt.plot(lims, lims, 'k--')
+plt.show()
+##=================================
+fig, ax = plt.subplots()
+this_cmap = cm.get_cmap('Spectral',full_shapes_testgal.shape[1])
+c = np.arange(1,full_shapes_testgal.shape[1]+1)
+dummie_cax = ax.scatter(c, c, c=c, cmap=this_cmap)
+# Clear axis
+ax.cla()
+for gal_i in range(full_shapes_testgal.shape[1]):
+#    plt.scatter(truInt_shapes_testgal[:,gal_i,0],lbdaInt_shapes_testgal[:,gal_i,0],marker='o',c=this_cmap(color_indx[gal_i]))
+#    plt.scatter(truInt_shapes_testgal[:,gal_i,1],lbdaInt_shapes_testgal[:,gal_i,1],c=this_cmap(color_indx[gal_i]))
+#    plt.plot(truInt_shapes_testgal[:,gal_i,0],rca_shapes_test[:,0],c=cmap_2(color_indx[gal_i]))
+    plt.scatter(truInt_shapes_testgal[:,gal_i,1],rca_shapes_test[:,1],c=this_cmap(color_indx[gal_i]))
+plt.xlabel('`Known\' PSF ellipticity $e_2$')
+plt.ylabel('Recovered PSF ellipticity $e_2$')
+plt.title(r'RCA')
+cb=fig.colorbar(dummie_cax)
+cb.set_ticks([])
+cb.set_label(r'Galaxies')
+#plt.legend(loc='lower left', bbox_to_anchor=(1, 0.5))
+lims = [np.min([ax.get_xlim(), ax.get_ylim()]),
+        np.max([ax.get_xlim(), ax.get_ylim()])]
+plt.plot(lims, lims, 'k--')
+plt.show()
+##=================================
 fig, ax = plt.subplots()
 plt.plot(full_shapes[:,2],truInt_shapes[:,2],'o',c='k')#0/05 for trueInt_shapes
-plt.plot(full_shapes[:,2],rca_shapes[:,2],'o',c='r')
-plt.plot(full_shapes[:,2],lbdaInt_shapes[:,2],'o',c='blue')
+plt.plot(full_shapes[:,2],rca_shapes[:,2],'o',label=r'RCA',c='r')
+plt.plot(full_shapes[:,2],lbdaInt_shapes[:,2],'o',label=r'$\lambda$RCA',c='blue')
 plt.title("PSF errors with star SEDs at star positions")
+plt.xlabel('`Known\' PSF size $R$')
+plt.ylabel('Recovered PSF size $R$')
+plt.legend()
 lims = [np.min([ax.get_xlim(), ax.get_ylim()]),
         np.max([ax.get_xlim(), ax.get_ylim()])]
+lims = [np.min([ax.get_xlim(), ax.get_ylim()]), 0.006]
 plt.plot(lims, lims, 'k--')
 plt.show()
-    
+##=================================    
+leg = ['true','RCA', 'lbdaRCA']
 fig, ax = plt.subplots()
-for gal_i in range(galSEDs.shape[-1]):
-    plt.plot(full_shapes_testgal[:,gal_i,2],truInt_shapes_testgal[:,gal_i,2],'o',c=cmap_3(color_indx[gal_i]))#0/05 for trueInt_shapes
-    plt.plot(full_shapes_testgal[:,gal_i,2],rca_shapes_test[:,gal_i,],'o',c=cmap_2(color_indx[gal_i]))
-    plt.plot(full_shapes_testgal[:,gal_i,2],lbdaInt_shapes_testgal[:,gal_i,2],'o',c=cmap_1(color_indx[gal_i]))
+this_cmap = cm.get_cmap('Spectral',full_shapes_testgal.shape[1])
+grey_cmap = cm.get_cmap('Greys',full_shapes_testgal.shape[1])
+c = np.arange(1,full_shapes_testgal.shape[1]+1)
+dummie_cax = ax.scatter(c, c, c=c, cmap=this_cmap)
+#grey_cax = ax.scatter(c, c, c=c, cmap=grey_cmap)
+# Clear axis
+ax.cla()
+for gal_i in range(full_shapes_testgal.shape[1]):
+    plt.plot(full_shapes_testgal[:,gal_i,2],truInt_shapes_testgal[:,gal_i,2],'o',c=this_cmap(color_indx[gal_i]))#0/05 for trueInt_shapes
+    plt.plot(full_shapes_testgal[:,gal_i,2],rca_shapes_test[:,2],'v',c=this_cmap(color_indx[gal_i]))
+    plt.plot(full_shapes_testgal[:,gal_i,2],lbdaInt_shapes_testgal[:,gal_i,2],'x',c=this_cmap(color_indx[gal_i]))
 plt.title("PSF errors with galaxy SEDs at galaxy positions")
+plt.legend(leg) #,loc='lower left', bbox_to_anchor=(1, 0.5)
+#cb_grey=fig.colorbar(grey_cax)
+#cb_grey.set_ticks([])
+#cb_grey.set_label(r'Galaxies')
+cb=fig.colorbar(dummie_cax)
+cb.set_ticks([])
+cb.set_label(r'Galaxies')
 lims = [np.min([ax.get_xlim(), ax.get_ylim()]),
         np.max([ax.get_xlim(), ax.get_ylim()])]
+lims = [np.min([ax.get_xlim(), ax.get_ylim()]), 0.007]
+plt.plot(lims, lims, 'k--')
+plt.show()   
+
+##======================= Same as before but each dot is a galaxy
+pos_chosen - []
+leg = ['true','RCA', 'lbdaRCA']
+fig, ax = plt.subplots()
+this_cmap = cm.get_cmap('Spectral',full_shapes_testgal.shape[0])
+grey_cmap = cm.get_cmap('Greys',full_shapes_testgal.shape[0])
+c = np.arange(1,full_shapes_testgal.shape[0]+1)
+dummie_cax = ax.scatter(c, c, c=c, cmap=this_cmap)
+#grey_cax = ax.scatter(c, c, c=c, cmap=grey_cmap)
+# Clear axis
+ax.cla()
+for pos in range(full_shapes_testgal.shape[0]):
+    plt.plot(full_shapes_testgal[pos,:,2],truInt_shapes_testgal[pos,:,2],'o',c=this_cmap(color_indx_2[pos]))#0/05 for trueInt_shapes
+    plt.plot(full_shapes_testgal[pos,:,2],[rca_shapes_test[pos,2] for i in range(full_shapes_testgal.shape[1])],'v',c=this_cmap(color_indx_2[pos]))
+    plt.plot(full_shapes_testgal[pos,:,2],lbdaInt_shapes_testgal[pos,:,2],'x',c=this_cmap(color_indx_2[pos]))
+plt.title("PSF errors with galaxy SEDs at galaxy positions")
+plt.legend(leg) #,loc='lower left', bbox_to_anchor=(1, 0.5)
+#cb_grey=fig.colorbar(grey_cax)
+#cb_grey.set_ticks([])
+#cb_grey.set_label(r'Galaxies')
+cb=fig.colorbar(dummie_cax)
+cb.set_ticks([])
+cb.set_label(r'Positions')
+lims = [np.min([ax.get_xlim(), ax.get_ylim()]),
+        np.max([ax.get_xlim(), ax.get_ylim()])]
+lims = [np.min([ax.get_xlim(), ax.get_ylim()]), 0.007]
 plt.plot(lims, lims, 'k--')
 plt.show()   
 
@@ -417,7 +623,7 @@ plt.close()
 
 fig, ax = plt.subplots()
 gal_i = 0
-plt.hist(truInt_shapes_testgal[:,gal_i,0]-rca_shapes_test[:,gal_i,0], bins=11, label='RCA', color='darkorchid', alpha=.6)
+plt.hist(truInt_shapes_testgal[:,gal_i,0]-rca_shapes_test[:,0], bins=11, label='RCA', color='darkorchid', alpha=.6)
 plt.hist(truInt_shapes_testgal[:,gal_i,0]-lbdaInt_shapes_testgal[:,gal_i,0], bins=11, label='lbdaRCA', color='red', alpha=.2)
 plt.xlim(-.06,.06)
 plt.xlabel(r'$e_1^\mathrm{true} - e_1^\mathrm{est}$')
@@ -437,7 +643,7 @@ plt.close()
 
 fig, ax = plt.subplots()
 gal_i = 0        
-plt.hist(truInt_shapes_testgal[:,gal_i,1]-rca_shapes_test[:,gal_i,1], bins=11, label='RCA', color='darkorchid', alpha=.6)
+plt.hist(truInt_shapes_testgal[:,gal_i,1]-rca_shapes_test[:,1], bins=11, label='RCA', color='darkorchid', alpha=.6)
 plt.hist(truInt_shapes_testgal[:,gal_i,1]-lbdaInt_shapes_testgal[:,gal_i,1], bins=11, label='lbdaRCA', color='red', alpha=.2)
 #plt.xlim(-.4,.4)
 plt.xlabel(r'$e_2^\mathrm{true} - e_2^\mathrm{est}$')
@@ -472,17 +678,6 @@ plt.close()
   
 #%% Plot Paulin
 leg = ['RCA', 'lbdaRCA']
-plt.rcParams['figure.autolayout'] = False
-plt.rcParams['axes.labelsize'] = 17 
-plt.rcParams['axes.titlesize'] = 17 
-plt.rcParams['font.size'] = 22
-plt.rcParams['lines.linewidth'] = 1.3 # he has 2.0 here but I like 1.3 better
-plt.rcParams['lines.markersize'] = 8 
-plt.rcParams['legend.fontsize'] = 17
-plt.rcParams['text.usetex'] = True 
-plt.rcParams['font.family'] = 'serif' 
-plt.rcParams['font.serif'] = 'cm'
-
 
 # Multiplicative bias
 plt.errorbar(sizes,paulin_stats_rca[0], yerr=paulin_stats_rca[1], c='darkorchid', lw=2, capsize=5)
@@ -501,7 +696,7 @@ color_indx_gal = 1.0/(galSEDs.shape[-1]-1)*np.array(range(galSEDs.shape[-1]))
 random.shuffle(color_indx_gal) 
    
 fig, ax = plt.subplots()
-for pos in range(nb_pos_test):
+for pos in range(paulin_stats_rca_testgal_listPos.shape[0]):
     plt.errorbar(sizes, paulin_stats_rca_testgal_listPos[pos,0,:],yerr=paulin_stats_rca_testgal_listPos[pos,1,:], c=cmap_1(color_indx_pos[pos]), lw=2, capsize=5)
     plt.errorbar(sizes, paulin_stats_lbda_testgal_listPos[pos,0,:],yerr=paulin_stats_rca_testgal_listPos[pos,1,:], c=cmap_2(color_indx_pos[pos]), alpha=.7, capsize=5)
 plt.xlabel(r'Galaxy size $R$ (arcsec)')
@@ -511,7 +706,7 @@ plt.title(r'Multiplicative bias: with galaxy SEDs at galaxy positions.  Errorbar
 plt.show()
  
 fig, ax = plt.subplots()
-for gal_i in range(galSEDs.shape[-1]):
+for gal_i in range(paulin_stats_rca_testgal_listGals.shape[0]):
     plt.errorbar(sizes, paulin_stats_rca_testgal_listGals[gal_i,0,:],yerr=paulin_stats_rca_testgal_listGals[gal_i,1,:], c=cmap_1(color_indx_gal[gal_i]), lw=2, capsize=5)
     plt.errorbar(sizes, paulin_stats_lbda_testgal_listGals[gal_i,0,:],yerr=paulin_stats_rca_testgal_listGals[gal_i,1,:], c=cmap_2(color_indx_gal[gal_i]), alpha=.7, capsize=5)
 plt.xlabel(r'Galaxy size $R$ (arcsec)')
@@ -533,7 +728,7 @@ plt.title(r'Additive bias (1st component): with star SEDs at star positions.')
 plt.show()    
 
 fig, ax = plt.subplots()
-for pos in range(nb_pos_test):
+for pos in range(paulin_stats_rca_testgal_listPos.shape[0]):
     plt.errorbar(sizes, paulin_stats_rca_testgal_listPos[pos,2,:],yerr=paulin_stats_rca_testgal_listPos[pos,3,:], c=cmap_1(color_indx_pos[pos]), lw=2, capsize=5)
     plt.errorbar(sizes, paulin_stats_lbda_testgal_listPos[pos,2,:],yerr=paulin_stats_rca_testgal_listPos[pos,3,:], c=cmap_2(color_indx_pos[pos]), alpha=.7, capsize=5)
 plt.xlabel(r'Galaxy size $R$ (arcsec)')
@@ -545,7 +740,7 @@ plt.title(r'Additive bias (1st component): with galaxy SEDs at galaxy positions.
 plt.show()
 
 fig, ax = plt.subplots()
-for gal_i in range(galSEDs.shape[-1]):
+for gal_i in range(paulin_stats_rca_testgal_listGals.shape[0]):
     plt.errorbar(sizes, paulin_stats_rca_testgal_listGals[gal_i,2,:],yerr=paulin_stats_rca_testgal_listGals[gal_i,3,:], c=cmap_1(color_indx_gal[gal_i]), lw=2, capsize=5)
     plt.errorbar(sizes, paulin_stats_lbda_testgal_listGals[gal_i,2,:],yerr=paulin_stats_rca_testgal_listGals[gal_i,3,:], c=cmap_2(color_indx_gal[gal_i]), alpha=.7, capsize=5)
 plt.xlabel(r'Galaxy size $R$ (arcsec)')
@@ -568,7 +763,7 @@ plt.title(r'Additive bias (2nd component): with star SEDs at star positions.')
 plt.show()    
 
 fig, ax = plt.subplots()
-for pos in range(nb_pos_test):
+for pos in range(paulin_stats_rca_testgal_listPos.shape[0]):
     plt.errorbar(sizes, paulin_stats_rca_testgal_listPos[pos,4,:],yerr=paulin_stats_rca_testgal_listPos[pos,5,:], c=cmap_1(color_indx_pos[pos]), lw=2, capsize=5)
     plt.errorbar(sizes, paulin_stats_lbda_testgal_listPos[pos,4,:],yerr=paulin_stats_rca_testgal_listPos[pos,5,:], c=cmap_2(color_indx_pos[pos]), alpha=.7, capsize=5)
 plt.xlabel(r'Galaxy size $R$ (arcsec)')
@@ -580,7 +775,7 @@ plt.title(r'Additive bias (2nd component): with galaxy SEDs at galaxy positions.
 plt.show()
 
 fig, ax = plt.subplots()
-for gal_i in range(galSEDs.shape[-1]):
+for gal_i in range(paulin_stats_rca_testgal_listGals.shape[0]):
     plt.errorbar(sizes, paulin_stats_rca_testgal_listGals[gal_i,4,:],yerr=paulin_stats_rca_testgal_listGals[gal_i,5,:], c=cmap_1(color_indx_gal[gal_i]), lw=2, capsize=5)
     plt.errorbar(sizes, paulin_stats_lbda_testgal_listGals[gal_i,4,:],yerr=paulin_stats_rca_testgal_listGals[gal_i,5,:], c=cmap_2(color_indx_gal[gal_i]), alpha=.7, capsize=5)
 plt.xlabel(r'Galaxy size $R$ (arcsec)')

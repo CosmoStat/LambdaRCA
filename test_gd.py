@@ -180,15 +180,20 @@ print "Loading data.."
 
 # first_guesses = np.load('/Users/rararipe/Documents/Data/lbdaRCA_wdl/Fake_SEDs/morgan_stars/first_guesses.npy')
 first_guesses = np.load('/Users/rararipe/Documents/Data/QuickestGenerator/FirstGuess_500/first_guesses.npy')
+
 # Load data
-load_path = '/Users/rararipe/Documents/Data/QuickestGenerator/trueSEDs/42x42pixels_12newlbdas80pos/'
+load_path = '/Users/rararipe/Documents/Data/QuickestGenerator/full_res_70lbdas_80train300test/train/PickleSEDs/'
 stars = np.load(load_path+'stars.npy')
-spectrums = np.load(load_path+'SEDs.npy')
-lbdas = np.load(load_path+'lbdas.npy')
 fov = np.load(load_path+'fov.npy')
 gt_PSFs = np.load(load_path + 'PSFs_2euclidrec.npy')
 gt_stars_2euclidrec = np.load(load_path+'stars_2euclidrec_gt.npy')
+all_lbdas = np.load(load_path+'all_lbdas.npy')
+all_spectrums = np.load(load_path+'all_SEDs.npy')
 
+# Load interpolated spectrum for learning
+load_path_seds = load_path + 'Interp_6wvls/'
+spectrums = np.load(load_path_seds+'SEDs.npy')
+lbdas = np.load(load_path_seds+'lbdas.npy')
 
 shifts = None
 sig = None
@@ -219,13 +224,11 @@ feat_init = "super_res_zout"
 feat_init_RCA = "super_res"
 gamma = 0.3
 n_iter_sink = 10
-
+list_iterations_dict = [6,4,3]
 # Gradient descent parameters / alternate optimization
 n_iter = 2 #6
 max_iter_FB_dict = 200 #4# rca Fred is 200 for each
 max_iter_FB_coef = 200 # 20
-list_iterations_dict = [4,4,3]
-alpha_step = [1.0,1.0,1.0] # 0.07 1.0
 list_iterations_coef = [30,30,30]
 n_iter = len(list_iterations_coef)
 Fred = False
@@ -233,11 +236,11 @@ alg = "genFB" #genFB
 logit = False
 gt_wvlAll = True
 
-if gt_wvlAll:
-    all_lbdas = np.load(load_path+'all_lbdas.npy')
-    all_spectrums = np.load(load_path+'all_SEDs.npy')
+if logit:
+    alpha_step = [10.0,10.0,10.0] # 0.07 1.0
 
-
+else:
+    alpha_step = [1.0,1.0,1.0] # 0.07 1.0
 
 fb_gamma_param_dict = 1.0
 fb_lambda_param_dict = 1.0 # must be in ]0,1[
@@ -251,7 +254,7 @@ fb_lambda_param_coef = 1.0 # must be in ]0,1[
 # Logit
 #save_path = '/Users/rararipe/Documents/Data/GradientDescent_output/trueSEDs/42x42pixels_8lbdas80pos_3chrom0RCA_sr_zout1zin1p2_coef_dict_sigmaEqualsLinTrace_alpha321p5beta0p1_absA_3it753dict303030coef_weight4dict1p5coef_noFluxUpdate_logitCondatSparsity_sink15'
 # ClassicCondat
-save_path = '/Users/rararipe/Documents/Data/GradientDescent_output/trueSEDs/42x42pixels_12newlbdas80pos_3chrom0RCA_sr_zout0p6zin1p2_coef_dict_sigmaEqualsLinTrace_alpha1pBeta0p1_abssvdASR50_3it443dict30coef_weight4dict1p5coef_FluxUpdate_genFB_sink10_unicornio_lbdaEquals1p0_LowPass_W0p20p40p4'
+save_path = '/Users/rararipe/Documents/Data/GradientDescent_output/trueSEDs/42x42pixels_6lbdas80pos_3chrom0RCA_sr_zout0p6zin1p2_coef_dict_sigmaEqualsLinTrace_alpha1pBeta0p1_abssvdASR50_3it643dict30coef_weight4dict1p5coef_FluxUpdate_genFB_sink10_unicornio_lbdaEquals1p0_LowPass_W0p20p40p4'
 
 #save_path = '/Users/rararipe/Documents/Data/GradientDescent_output/trueSEDs/42x42pixels_8lbdas80pos_3chrom0RCA_sr_zout0p6zin1p2_coef_dict_sigmaEqualsLinTrace_alpha1beta0p5_absA_3it10dict5030coef_weight4dict1p5coef_FluxUpdate_Condat_sink10_THEANO_low_pass'
 if not os.path.exists(save_path):
@@ -272,7 +275,6 @@ elif nb_comp_chrom == 0:
 else:
     problem_type = 'mix'
 
-import pdb; pdb.set_trace()  # breakpoint 3d87ba10 //
 
 print "------------------- Noise estimation ------------------------"
 centroids = None
@@ -466,7 +468,7 @@ if problem_type in ['lbdaRCA','mix']:
     if feat_init == 'ground_truth':
         D_stack = psflu.D_stack_first_guess(shap,nb_obj,nb_comp_chrom,feat_init,gt_PSFs=gt_PSFs)
     else:
-        D_stack = psflu.D_stack_first_guess(shap,nb_obj,nb_comp_chrom,feat_init,sr_first_guesses=first_guesses)
+        D_stack = psflu.D_stack_first_guess(shap,nb_obj,nb_comp_chrom,feat_init,sr_first_guesses=first_guesses,logit=logit)
 
     D_stack = abs(D_stack)
     D_stack = D_stack/np.sum(D_stack, axis=0)
@@ -1044,7 +1046,7 @@ for i in tqdm(range(n_iter)):
         if problem_type == 'lbdaRCA':
             if logit:
                 min_dict = modoptAlgorithms.GenForwardBackward(Dlog_stack,Wdl_comp,proxs_comp,cost=Cost_comp,auto_iterate=False,
-                    gamma_param=fb_gamma_param_dict,lambda_param =fb_lambda_param_dict, gamma_update=Wdl_comp.gamma_update,logit=logit) # check again the effects of these weights weights=[0.1, 0.9]
+                    gamma_param=fb_gamma_param_dict,lambda_param =fb_lambda_param_dict, gamma_update=Wdl_comp.gamma_update,logit=logit,weights=[0.7,0.3]) # check again the effects of these weights weights=[0.1, 0.9]
             else:
                 min_dict = modoptAlgorithms.GenForwardBackward(D_stack,Wdl_comp,proxs_comp,cost=Cost_comp,auto_iterate=False,
                     gamma_param=fb_gamma_param_dict,lambda_param =fb_lambda_param_dict, gamma_update=Wdl_comp.gamma_update,weights=[0.2,0.4,0.4])
@@ -1377,7 +1379,7 @@ np.save(result_path+'/MSE_rel_nor_stars_2euclidres.npy', MSE_rel_nor_stars_2eucl
 np.save(result_path+'/MSE_rel_nor_stars_2euclidres_alternates.npy', MSE_rel_nor_stars_2euclidres_alternates)
 
 if gt_wvlAll:
-    np.save(result_path+'barycenters_wvlAll.npy',barycenters_wvlAll)
+    np.save(result_path+'/barycenters_wvlAll.npy',barycenters_wvlAll)
 np.save(result_path+'/D_stack.npy',D_stack)
 np.save(result_path+'/barycenters.npy',barycenters)
 np.save(result_path+'/A.npy',A)

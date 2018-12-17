@@ -137,7 +137,7 @@ def rbf_components(rep_train, pos_train, pos_test, n_neighbors=15):
     
     
     
-def computeHSMshapes(PSFs,pixel_scale): 
+def computeHSMshapes_stack_old(PSFs,pixel_scale): 
    
     # Convert to galsim images 
     PSFs_galS = []
@@ -154,6 +154,30 @@ def computeHSMshapes(PSFs,pixel_scale):
 
     return shapes
 
+def computeHSMshapes(PSF,pixel_scale): 
+   
+    
+    # Convert to galsim images 
+    PSF_galS = galsim.Image(PSF, scale=pixel_scale)
+
+    # Compute HSM shapes
+    moms = galsim.hsm.FindAdaptiveMom(PSF_galS)    
+    shapes = [moms.observed_shape.g1, moms.observed_shape.g2, 2.*moms.moments_sigma**2] 
+
+    return np.array(shapes)
+
+
+def computeHSMshapes_stack(PSFs,pixel_scale): 
+   
+    shapes = []
+    
+    for psf in PSFs:
+       shapes.append(computeHSMshapes(psf,pixel_scale)) 
+
+    shapes = np.array(shapes)
+
+    return shapes
+
 
 def paulin(gal_size, trupsf_shape, estpsf_shape,flat=False):
     """Computes Paulin predicted bias values.
@@ -163,7 +187,7 @@ def paulin(gal_size, trupsf_shape, estpsf_shape,flat=False):
     Returns:
     m, c
     m the multiplicative term and c the additive one."""
-    deltapsf = estpsf_shape - trupsf_shape
+    deltapsf = np.array(estpsf_shape) - np.array(trupsf_shape)
     m = 1. + deltapsf[2] / gal_size
     c = -(trupsf_shape[2]/gal_size*deltapsf[:2] + 
            deltapsf[2]/gal_size*trupsf_shape[:2])
@@ -194,14 +218,15 @@ def paulin_stats(paulinvar,flat=False):
 
 
 
-def paulin_predict(tru_shapes, rec_shapes, R2s):
+def paulin_predict_stack(tru_shapes, rec_shapes, R2s,flat=False):
     
     
-    paulin_allPositions = [[paulin(siz,tru_shap,rca_shap) for
+    paulin_allPositions = [[paulin(siz,tru_shap,rca_shap,flat=flat) for
               tru_shap,rca_shap in zip(tru_shapes,rec_shapes)] for siz in R2s]
 
 
     return paulin_allPositions
+
 
     
 def paulin_predict_old(tru_shapes, rec_shapes, R2s):

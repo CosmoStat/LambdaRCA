@@ -40,7 +40,6 @@ def MX(A,barycenters,spectrums,sig,flux,ker,D=2):
     shap = (int(np.sqrt(N)),int(np.sqrt(N)))
 
     mono_chromatic_psf = np.zeros((N,nb_obj,nb_wvl))
-
     for v in range(nb_wvl):
         mono_chromatic_psf[:,:,v] = barycenters[:,:,v].dot(A)
 
@@ -96,7 +95,7 @@ def get_noise_arr_RCA_wvl(S_stack,shap):
 
 
 
-def D_stack_first_guess(shap,nb_im,nb_comp,feat_init,sr_first_guesses=None,gt_PSFs=None):
+def D_stack_first_guess(shap,nb_im,nb_comp,feat_init,sr_first_guesses=None,gt_PSFs=None,logit=False):
     nb_atoms = 2
     p = shap[0]*shap[1] # number of pixels
     D_stack = []
@@ -203,7 +202,10 @@ def D_stack_first_guess(shap,nb_im,nb_comp,feat_init,sr_first_guesses=None,gt_PS
 
         elif feat_init == "super_res_zout":
             # Zoom
-            in_fact = 1.2
+            if logit:
+                in_fact = 1.0
+            else:
+                in_fact = 1.2
             out_fact = 0.6
             Ys = np.zeros((p,nb_atoms)) 
             guess = abs(sr_first_guesses[i])
@@ -595,7 +597,6 @@ def SR_first_guesses_radial_old(stars,fov,shifts,nb_comp):
         cum += fill_aux
     tk.plot_func(A)   
           
-    import pdb; pdb.set_trace()  # breakpoint 3d87ba10 //
     
     return sr_stars,A  
 
@@ -699,7 +700,7 @@ def SR_first_guesses_radial(stars,fov,shifts,nb_comp):
         cum += fill_aux
     tk.plot_func(A)   
           
-    import pdb; pdb.set_trace()  # breakpoint 3d87ba10 //
+#    import pdb; pdb.set_trace()  # breakpoint 3d87ba10 //
     
     return sr_stars,A  
 #def SR_first_guess_FOV_splitRadial():

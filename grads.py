@@ -54,7 +54,11 @@ class polychrom_eigen_psf(GradParent, PowerMethod):
         self.steps = []
         self.D_stack_energy = []
 
-        self.alpha = 1.0
+        
+        if logit:
+            self.alpha = 10.0
+        else:
+            self.alpha = 1.0
         self.n_iter = 0
         
         self.x_old = None
@@ -373,18 +377,27 @@ class polychrom_eigen_psf(GradParent, PowerMethod):
 #            self.alpha = 0.2
         
         gamma = utils.back_tracking_armijo_line_search(x_0, grad, f_0, self.cost, alpha=self.alpha, beta=beta)
-        max_gamma = 1.0
-        min_lmbda_fake = 0.7 # max gamma is 1.0
-        if self.min_dict is not None:
-            if self.n_iter == 0:
-                lmbda = max(min_lmbda_fake,gamma)
-                if gamma/lmbda <= max_gamma/15.0: # around 7 %
-                    lmbda /= 2.0 
-                self.min_dict.extra_factor_LP = 1.0
-            else:
-                lmbda = np.copy(gamma)
-                self.min_dict.extra_factor_LP = gamma
-            self.min_dict._lambda_param = lmbda
+        
+        if not self.logit:
+            max_gamma = 1.0
+            min_lmbda_fake = 0.7 # max gamma is 1.0
+            if self.min_dict is not None:
+                if self.n_iter == 0:
+                    lmbda = max(min_lmbda_fake,gamma)
+                    if gamma/lmbda <= max_gamma/15.0: # around 7 %
+                        lmbda /= 2.0 
+                    self.min_dict.extra_factor_LP = 1.0
+                else:
+                    lmbda = np.copy(gamma)
+                    self.min_dict.extra_factor_LP = gamma
+                self.min_dict._lambda_param = lmbda
+        else:
+            if self.min_dict is not None:
+               self.min_dict._lambda_param = 1.0
+               if self.n_iter == 0:
+                   self.min_dict.extra_factor_LP = 1.0
+               else:
+                   self.min_dict.extra_factor_LP = gamma/100.0
         return gamma
 
     
