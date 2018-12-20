@@ -461,8 +461,9 @@ class GenForwardBackward(SetUp):
     def __init__(self, x, grad, prox_list, cost='auto', gamma_param=1.0,
                  lambda_param=1.0, gamma_update=None, lambda_update=None,
                  weights=None, auto_iterate=True, metric_call_period=5,
-                 metrics={}, linear=None,extra_factor_LP=1.0,logit=False):
+                 metrics={}, linear=None,extra_factor_LP=1.0,logit=False,debug=False):
 
+        self.debug = debug
         self.logit = logit
         # Set default algorithm properties
         super(GenForwardBackward, self).__init__(
@@ -589,10 +590,11 @@ class GenForwardBackward(SetUp):
 
         # Calculate gradient for current iteration.
 
-        print("gamma ")
-        print(self._gamma)
-        print("lambda")
-        print(self._lambda_param)
+        if self.debug:
+            print("gamma ")
+            print(self._gamma)
+            print("lambda")
+            print(self._lambda_param)
         
         if not self.logit:
             lambda_LP = min(self._gamma, self._lambda_param)
@@ -600,22 +602,23 @@ class GenForwardBackward(SetUp):
         if self.logit:
             lambda_LP = min(self._gamma, 0.2)
             self.lambda_list = [self._lambda_param,lambda_LP]
-        print("lambda list")
-        print(self.lambda_list)
-        print("extra_factor LP")
-        print(self.extra_factor_LP)
+            
+        if self.debug:
+            print("lambda list")
+            print(self.lambda_list)
+            print("extra_factor LP")
+            print(self.extra_factor_LP)
         
         
         self._grad.get_grad(self._x_old)
         
-        if not self.logit:
+        if not self.logit and self.debug:
             tk.plot_func(self._grad.grad[:,0,0], title="grad 0", cmap="bwr")
             tk.plot_func(self._grad.grad[:,1,0], title="grad 1", cmap="bwr")
             tk.plot_func(self._x_old[:,0,0], title="x_old 0")
             tk.plot_func(np.log(abs(self._x_old[:,0,0])), title="x_old 0 LOG")
             tk.plot_func(self._x_old[:,1,0], title="x_old 1")
             tk.plot_func(np.log(abs(self._x_old[:,1,0])), title="x_old 1 LOG")
-            # EU
             print("min pixel")
             print(np.min(self._x_old[:,0,0]),np.min(self._x_old[:,1,0]))
             mask_0 = np.zeros(self._x_old[:,0,0].shape)
@@ -626,8 +629,8 @@ class GenForwardBackward(SetUp):
             tk.plot_func(mask_1, title="mask 1")
             print("DEBUG")
         
-        if self.logit:
-            ##================= UNCOMMENT if log =================
+        if self.logit and self.debug:
+            ##=================  log ===========================
             tk.plot_func(self._grad.grad[:,0,0], title="grad 0")
             tk.plot_func(self._grad.grad[:,1,0], title="grad 1")
             tk.plot_func(self._x_old[:,0,0], title="x_old 0")
@@ -642,7 +645,7 @@ class GenForwardBackward(SetUp):
             
             print("=================== PROX ",str(i))
             
-            if not self.logit:
+            if not self.logit and self.debug:
                 tk.plot_func(- self._gamma *self._grad.grad[:,0,0], title="step grad 0")
                 tk.plot_func(np.log(abs(- self._gamma *self._grad.grad[:,0,0])), title="step grad 0 LOG")
                 tk.plot_func(- self._gamma *self._grad.grad[:,1,0], title="step grad 1")
@@ -656,8 +659,8 @@ class GenForwardBackward(SetUp):
                 print ("energy z prox")
                 print (np.sum(abs(z_prox), axis=0))
             
-            if self.logit:
-                ##================= UNCOMMENT if log =================
+            if self.logit and self.debug:
+                ##=================   log =================
                 tk.plot_func(- self._gamma *self._grad.grad[:,0,0], title="step grad 0")
                 tk.plot_func(- self._gamma *self._grad.grad[:,0,0], title="step grad 1")
                 tk.plot_func(- self._z[i][:,0,0], title="step -z[i] 0")
@@ -670,14 +673,13 @@ class GenForwardBackward(SetUp):
                 tk.plot_func(z_prox_normal[:,1,0], title="z_prox 1 normal")
                 print ("energy z prox")
                 print (np.sum(abs(z_prox_normal), axis=0))
-#                import pdb; pdb.set_trace()  # breakpoint 3d87ba10 //
                 ##====================================================
             
             
             
-            self._z[i] += self.lambda_list[i] * (z_prox - self._x_old) # self._lambda_param when LOGIT self.lambda_list ELSE na vdd tentar com lambda so alguma hora
+            self._z[i] += self.lambda_list[i] * (z_prox - self._x_old) 
             
-            if not self.logit:
+            if not self.logit and self.debug:
                 tk.plot_func(self._z[i][:,0,0], title=" new z[i] 0")
                 tk.plot_func(self._z[i][:,1,0], title=" new z[i] 1")
             
@@ -685,8 +687,8 @@ class GenForwardBackward(SetUp):
                 print ("energy z[i]")
                 print (np.sum(abs(self._z[i]), axis=0))
             
-            if self.logit:
-                ##================= UNCOMMENT if log =================
+            if self.logit and self.debug:
+                ##=================  log =================
                 zi_normal = np.exp(self._z[i])
                 tk.plot_func(zi_normal[:,0,0], title=" new z[i] 0")
                 tk.plot_func(zi_normal[:,1,0], title=" new z[i] 1")
@@ -696,15 +698,18 @@ class GenForwardBackward(SetUp):
                 ##===================================================
             
 
-        #MY CHANGE: self.gamma to 1.0 in extra factor , self.weights[i] to 1.0 in extra_factor
+        #MY CHANGE with respect to modopt: 
+        # self.gamma to 1.0 in extra factor  
+        # self.weights[i] to 1.0 in extra_factor
+        # differents lambdas for each prox
 
         # Update current reconstruction.
         self._x_new = np.sum((z_i * w_i for z_i, w_i in
                               zip(self._z, self._weights)), axis=0)
-        
-        print("WEIGHTS")
-        print(self._weights)
-        if not self.logit:
+        if self.debug:
+            print("WEIGHTS")
+            print(self._weights)
+        if not self.logit and self.debug:
             print("min pixel")
             print(np.min(self._x_new[:,0,0]),np.min(self._x_new[:,1,0]))
             mask_0 = np.zeros(self._x_new[:,0,0].shape)
@@ -723,15 +728,15 @@ class GenForwardBackward(SetUp):
         if not self.logit:
             self._x_new[self._x_new < 0.0] = abs(self._x_new[self._x_new < 0.0])/1e3
 
-        if not self.logit:
+        if not self.logit and self.debug:
             print("var_new ============")
             tk.plot_func(self._x_new[:,0,0], title="x_new 0")
             tk.plot_func(self._x_new[:,1,0], title="x_new 1")
             print ("energy x new")
             print (np.sum(abs(self._x_new), axis=0))
         
-        if self.logit:
-            ##================= UNCOMMENT if log =================       
+        if self.logit and self.debug:
+            ##=================  log =================       
             x_new_normal = np.exp(self._x_new)
             print("var_new ============")
             tk.plot_func(x_new_normal[:,0,0], title="x_new 0")
@@ -928,9 +933,6 @@ class Condat(SetUp):
         # Step 1 from eq.9.
 
 
-#        self.prox_step = 0.5
-#        self.prox_step = np.min([0.8,self._sigma ]) # ok, talvez 0.7
-#        self.prox_step = 1.0
         
         self._grad.get_grad(self._x_old)
         
@@ -945,11 +947,9 @@ class Condat(SetUp):
 
         y_prox = (y_temp - self.prox_step * self._prox_dual.op(y_temp /self.prox_step, extra_factor=1.0/self.prox_step , extra_factor_LP=self.extra_factor_LP))
         
-        
-        
-
-
-        # MY CHANGES extra factor = 1.0/self.sigma to 1.0  EXTRA FACTOR SO EH USADO NO SPARSE THRESHOLD  
+  
+        # MY CHANGES with respect to modopt:
+        #extra factor = 1.0/self.sigma to 1.0 
         #self._sigma in step 2 replaced by prox_step
         #self.tau step 1 replaced by prox_step
 
@@ -957,69 +957,12 @@ class Condat(SetUp):
         self._x_new = self._rho * x_prox + (1 - self._rho) * self._x_old
         self._y_new = self._rho * y_prox + (1 - self._rho) * self._y_old
         
-        x_step = - self._tau * self._grad.grad
-        x_inGrad = self._x_old - self._tau * self._grad.grad
-        x_inProx = -self.prox_step * self._linear.adj_op(self._y_old)
-        projection = self._prox_dual.op(y_temp /self.prox_step, extra_factor=1.0 )
-        prox_input = y_temp /self.prox_step
+       
         
-        
-        ##============================== logit
-        normal_x_new = np.exp(self._x_new)/np.sum(np.exp(self._x_new), axis = 0)
-        normal_x_old = np.exp(self._x_old)/np.sum(np.exp(self._x_old), axis = 0)
-        normal_x_inGrad = np.exp(x_inGrad)/np.sum(np.exp(x_inGrad), axis = 0)
-        normal_x_inProx = np.exp(x_inProx)/np.sum(np.exp(x_inProx), axis = 0)
-#        normal_y_new_01 = np.exp(self._y_new[0][:,1,0])/np.sum(np.exp(self._y_new[0][:,1,0]), axis = 0)
-        tk.plot_func(normal_x_old[:,0,0],title="x_old_0 RECOVERED")
-        tk.plot_func(normal_x_inGrad[:,0,0],title="x_inGrad_0 RECOVERED")
-        tk.plot_func(normal_x_inProx[:,0,0],title="x_inProx_0 RECOVERED")
-        tk.plot_func(normal_x_new [:,0,0],title="x_new_0 RECOVERED")
-        
-        tk.plot_func(normal_x_old[:,1,0],title="x_old_1")
-        tk.plot_func(normal_x_inGrad[:,1,0],title="x_inGrad_1")
-        tk.plot_func(normal_x_inProx[:,1,0],title="x_inProx_1")
-        tk.plot_func(normal_x_new [:,1,0],title="x_new_1")
-#        tk.plot_func(normal_y_new_01,title="Sparsity y_new_1") 
-        
-        ##=========================== end logit
-        
-        tk.plot_func(self._x_old[:,0,0],title="x_old_0")
-        tk.plot_func(x_inGrad[:,0,0],title="x_inGrad_0")
-        tk.plot_func(x_inProx[:,0,0],title="x_inProx_0")
-        tk.plot_func(self._x_new [:,0,0],title="x_new_0")
-        tk.plot_func(self._x_old[:,1,0],title="x_old_1")
-    
-        tk.plot_func(x_step[:,1,0],title="x_step_1")
-        tk.plot_func(x_inGrad[:,1,0],title="x_inGrad_1")
-        tk.plot_func(x_inProx[:,1,0],title="x_inProx_1")
-        tk.plot_func(self._x_new [:,1,0],title="x_new_1")
-        tk.plot_func(prox_input[0][:,0,0],title="y input simplex at 0")
-        tk.plot_func(projection[0][:,0,0],title="Simplex projection at 0")
-        tk.plot_func(prox_input[1][:,0,0],title="y input sparsity at 0")         
-        tk.plot_func(projection[1][:,0,0],title="Sparsity projection at 0")
-#        tk.plot_func(prox_input[2][:,0,0],title="y input low pass at 0") 
-#        tk.plot_func(projection[2][:,0,0],title="Low pass projection at 0")
-        
-        tk.plot_func(prox_input[0][:,1,0],title="y input simplex at 1")
-        tk.plot_func(projection[0][:,1,0],title="Simplex projection at 1") 
-        tk.plot_func(prox_input[1][:,1,0],title="y input sparsity at 1")         
-        tk.plot_func(projection[1][:,1,0],title="Sparsity projection at 1")
-#        tk.plot_func(prox_input[2][:,1,0],title="y input low pass at 1") 
-#        tk.plot_func(projection[2][:,1,0],title="Low pass projection at 1")
-        print("-------")
-        tk.plot_func(self._y_new[0][:,1,0],title="Simplex y_new_1")         
-        tk.plot_func(self._y_new[1][:,1,0],title="Sparsity y_new_1")
-#        tk.plot_func(self._y_new[2][:,1,0],title="Low pass y_new_1")
-        print("-------")
-        tk.plot_func(self._y_new[0][:,0,0],title="Simplex y_new_0")         
-        tk.plot_func(self._y_new[1][:,0,0],title="Sparsity y_new_0")
-#        tk.plot_func(self._y_new[2][:,0,0],title="Low pass y_new_0")
-
 
         del x_prox, y_prox, y_temp
         
-        ## UNCOOMMENT FOR LOGIT
-#        self._x_new[self._x_new < 0.0] = abs(self._x_new[self._x_new < 0.0])/1e3
+  
 
         # Update old values for next iteration.
         np.copyto(self._x_old, self._x_new)

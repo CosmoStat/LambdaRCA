@@ -518,7 +518,7 @@ def flux_estimate(im,cent=None,rad=4): # Default value for the flux tunned for E
 
 
 
-def knn_interf(data,nb_neigh,return_index=False):
+def knn_interf(data,nb_neigh,return_index=False): #OK
     """ Computes closest neighbors. 
     
     #TODO: Probably some costly redundancy with :func:`full_displacement` here. Also is it me or is ``params`` not used?
@@ -537,7 +537,7 @@ def knn_interf(data,nb_neigh,return_index=False):
 
 
 
-def feat_dist_mat(feat_mat):
+def feat_dist_mat(feat_mat): #OK
     """Computes pairwise distances...?
     
     #TODO: maybe some redundancy with :func:`optim_utils.dist_map_2` here?"""
@@ -553,7 +553,7 @@ def feat_dist_mat(feat_mat):
 
 
 
-def log_sampling(val_min,val_max,nb_samp):
+def log_sampling(val_min,val_max,nb_samp): #OK
     """Literally ``np.logspace`` I think.
     
     #TODO: you know.
@@ -568,7 +568,7 @@ def log_sampling(val_min,val_max,nb_samp):
 
 
 
-def kernel_mat_stack_test_unit(mat_stack,mat_test,tol=0):
+def kernel_mat_stack_test_unit(mat_stack,mat_test,tol=0): #OK
     """ Computes whatever graph constraint-related quantity :func:`utils.kernel_mat_test_unit` computes
     for a set of matrices.
     
@@ -598,7 +598,7 @@ def kernel_mat_stack_test_unit(mat_stack,mat_test,tol=0):
 
 
 
-def kernel_mat_test_unit(mat,mat_test,tol=0.01):
+def kernel_mat_test_unit(mat,mat_test,tol=0.01): #OK
     """**[???]**
     
     Calls:
@@ -626,7 +626,7 @@ def kernel_mat_test_unit(mat,mat_test,tol=0.01):
 
 
 
-def mat_to_cube(mat,n1,n2):
+def mat_to_cube(mat,n1,n2): #OK
     """ Literally ``np.swapaxes`` I think.
     
     #TODO
@@ -699,175 +699,7 @@ def cube_svd(cube,nb_comp=None,ind=None,mean_sub=False):
 
     return coeff
 
-# def get_noise_arr(arr):
-#     """Estimate noise for each of a set of image.
-    
-#     Calls:
 
-#     * :func:`utils.cartesian_product`
-#     * :func:`utils.get_noise`
-#     """
-#     shap = arr.shape
-#     ind = list()
-#     for i in shap[2:]:
-#         ind.append(np.arange(0,i))
-#     coord = cartesian_product(ind)
-#     noise_map = np.ones(arr.shape)
-#     s = slice(None) # equivalent to ':
-#     for i in range(0,coord.shape[0]):
-#         sig = get_noise(arr[(s,s)+tuple(coord[i,:])])
-#         noise_map[(s,s)+tuple(coord[i,:])]*=sig
-
-#     return noise_map
-
-
-# def cartesian_product(arrays):
-#     """**[???]***"""
-#     broadcastable = np.ix_(*arrays)
-#     broadcasted = np.broadcast_arrays(*broadcastable)
-#     rows, cols = reduce(np.multiply, broadcasted[0].shape), len(broadcasted)
-#     out = np.empty(rows * cols, dtype=broadcasted[0].dtype)
-#     start, end = 0, rows
-#     for a in broadcasted:
-#         out[start:end] = a.reshape(-1)
-#         start, end = end, end + rows
-#     return out.reshape(cols, rows).T
-
-# def get_noise(im,nb_iter=5,k=3):
-#     """ Estimate noise level for one given image through one soft thresholding iterations.
-#     See SPRITE paper, appendix... I want to say A.
-    
-#     Calls:
-    
-#     * :func:`utils.mad`
-#     """
-#     sig = 1.4826*mad(im)
-#     for i in range(0,nb_iter):
-#         im_thresh = im*(abs(im)>k*sig)
-#         sig = 1.4826*mad(im-im_thresh)
-#     return sig
-
-
-def non_unif_smoothing_mult_coeff_pos_cp_5(im,src,src_hr,tree,basis,alpha_init,\
-                                            theta=0.1,p_smth_mat_inv=None,to=None,eps=0.01,nb_iter=100,tol=0.01,Ainit=None,\
-                                            pos_en=False,reg_param=1000,spars_en=True, verbose=True):
-    # to is the weight related to the primal variable;
-    # basis is a concatenation of the optimal notch filter
-    # operator eigenvectors
-    shap = src.shape
-    shap1 = src_hr.shape
-    src_mat = zeros((shap[2],shap[2]))
-    for i in range(0,shap[2]):
-        for j in range(i+1,shap[2]):
-            src_mat[i,j] = (src_hr[:,:,i]*src_hr[:,:,j]).sum()
-    src_mat = src_mat+transpose(src_mat)
-    for i in range(0,shap[2]):
-        src_mat[i,i] = (src[:,:,i]**2).sum()
-    U, s, Vt = svd(src_mat,full_matrices=False)
-    U, s2, Vt = svd(basis.dot(transpose(basis)),full_matrices=False)
-    spec_rad_pos = s.max()*s2.max()
-    nb_neigh = tree.shape[1]
-    Atemp,mat,v = lsq_mult_coeff_stack(im,src)
-    spec_rad = zeros((shap[3]))
-    rad = zeros((shap[3],))
-    for k in range(0,shap[3]):
-        res = copy(im[:,:,k])
-        for l in range(0,shap[2]):
-            res-=Ainit[l,k]*src[:,:,l,k]
-        rad[k] = (res**2).sum()
-    if verbose:
-        print "--->> ref res: <<---",rad.sum()
-    ref_res = rad.sum()
-    cost = 1
-    cost_old=0
-    for k in range(0,shap[3]):
-        U, s, Vt = svd(mat[:,:,k],full_matrices=False)
-        spec_rad[k] = s.max()#*(basis[:,k]**2).sum()
-    spec_norm=spec_rad.sum()*s2.max()
-    shapb = basis.shape
-    alpha = copy(alpha_init)*0
-    i=0
-    t = 1
-    alphax = copy(alpha)
-    shap_alpha = alpha.shape
-    supports = zeros((shap_alpha[0],shap_alpha[1],min(nb_iter,shapb[0])))
-    while (i < min(nb_iter,shapb[0])) and (100*abs((cost-cost_old)/cost)>0.01 or cost>1.1*ref_res) :
-        A = alpha.dot(basis)
-        res = copy(im)
-        for k in range(0,shap[3]):
-            for l in range(0,shap[2]):
-                res[:,:,k]-=A[l,k]*src[:,:,l,k]
-        if verbose:
-            print " -------- mse: ",(res**2).sum(),"-----------"
-        cost_old = cost
-        cost = (res**2).sum()
-        temp = Ainit*0
-        for k in range(0,shap[3]):
-            for l in range(0,shap[2]):
-                temp[l,k]+=(src[:,:,l,k]*res[:,:,k]).sum()
-        grad = -temp.dot(transpose(basis))
-        alphay = alpha - grad/spec_norm
-        alphax_old = copy(alphax)
-        if spars_en:
-            alphax = lineskthresholding(alphay,int(floor(sqrt(i)))+1)
-            supports[:,:,i] = copy(alphax)
-        else:
-            alphax = copy(alphay)
-        told = t
-        t = (1+sqrt(4*t**2 +1))/2
-        lambd = 1 + (told-1)/t
-        alpha  = alphax_old + lambd*(alphax-alphax_old)
-        supp = where(abs(alpha[0,:])>0)
-        i+=1
-    mat_out = alpha.dot(basis)
-    return mat_out,alpha,supports
-
-
-def lsq_mult_coeff_stack(im,src,man=True):
-    shap1 = src.shape
-    shap2 = im.shape
-    coeff_out = zeros((shap1[2],shap2[2]))
-    v = zeros((shap1[2],shap2[2]))
-    mat = zeros((shap1[2],shap1[2],shap1[3]))
-    for i in range(0,shap2[2]):
-        outi,mati,vi = lsq_mult_coeff(im[:,:,i],src[:,:,:,i],man=man)
-        coeff_out[:,i] = outi.reshape((shap1[2],))
-        mat[:,:,i] = copy(mati)
-        v[:,i] = vi.reshape((shap1[2],))
-    return coeff_out,mat,v
-
-
-def lsq_mult_coeff(im,src,man=True):
-    shap = src.shape
-    mat = zeros((shap[2],shap[2]))
-    for i in range(0,shap[2]):
-        for j in range(0,shap[2]):
-            mat[i,j] = (src[:,:,i]*src[:,:,j]).sum()
-    v = zeros((shap[2],1))
-    for k in range(0,shap[2]):
-        v[k,0] = (im*src[:,:,k]).sum()
-    output = None
-    if man:
-        output = man_inv(mat).dot(v)
-    else:
-        output = inv(mat).dot(v)
-    return output,mat,v
-
-
-def man_inv(mat,cond=None):
-    U, s, Vt = svd(mat,full_matrices=False)
-    eig = zeros((s.shape[0],s.shape[0]))
-    for i in range(0,s.shape[0]):
-        if cond is not None:
-            if s[i]>s[0]/cond:
-                eig[i,i] = (s[i])**(-1)
-            else:
-                eig[i,i] = cond/s[0]
-        else:
-            if s[i]>0:
-                eig[i,i] = (s[i])**(-1)
-    inv = U.dot(eig.dot(Vt))
-    return inv
 
 
 

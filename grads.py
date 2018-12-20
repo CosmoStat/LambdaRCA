@@ -24,7 +24,6 @@ class polychrom_eigen_psf(GradParent, PowerMethod):
         self.Dlog_stack = None
         self.logit = logit
         if logit:
-#            D_stack[D_stack< 0.0] = 1e-9
             D_stack = abs(D_stack)
             self.Dlog_stack = np.log(D_stack)
         self.w_stack = w_stack
@@ -66,13 +65,8 @@ class polychrom_eigen_psf(GradParent, PowerMethod):
         self.useTheano = useTheano
 
         if self.useTheano:
-#            self.C = ot.myAssymetricWellCost(self.shap[0], self.shap[1])
             self.C = ot.EuclidCost(self.shap[0], self.shap[1])
 
-
-        # PowerMethod.__init__(self, self.compute_MtMX_pm, D_stack.shape,verbose=True)
-        # self.spec_rad = pm.spec_rad
-        # self.inv_spec_rad = pm.inv_spec_rad
         
     def set_n_iter(self,n_iter_new):
         self.n_iter = n_iter_new
@@ -130,18 +124,6 @@ class polychrom_eigen_psf(GradParent, PowerMethod):
         return a-b 
 
 
-    # def compute_MtMX_pm(self,x):
-    #     x = abs(x)
-    #     y = np.zeros(self.stars.shape)
-    #     print "MtMX.."
-    #     tic = time.time()
-    #     res = omp.call_WDL(A=self.A,spectrums=self.spectrums,flux=self.flux,sig=self.sig,ker=self.ker,rot_ker=self.ker_rot, 
-    #         D_stack=x,w_stack=self.w_stack,gamma=self.gamma,n_iter_sink=self.n_iter_sink,y=y,N=self.N,func='--MtX_wdl')
-    #     toc = time.time()
-    #     print "Done in: " + str((toc-tic)/60.0) + " min"
-
-    #     return res[0]
-
     def compute_MtMX(self,stars=None,D_stack=None,Dlog_stack=None,count=False):
 
         y = self.stars
@@ -155,15 +137,11 @@ class polychrom_eigen_psf(GradParent, PowerMethod):
 
         if D_stack is not None:
             x = D_stack
-#            x[x< 0.0] = 1e-9
             x = abs(x)
             
 
         if Dlog_stack is not None:
             x = Dlog_stack
-
-        # Sadly, do abs of D_stack so that it doesn't explode. The projection on the simplex is not enough, it works in convergence but not at every iteration specifically.
-
 
         if self.useTheano:
             print "theano MtMX.."
@@ -208,7 +186,6 @@ class polychrom_eigen_psf(GradParent, PowerMethod):
         if x_in_log:
             D_stack = psflu.logitTonormal(x)
         else:
-#            x[x<0.0] = 1e-9
             x = abs(x)
             D_stack = x
 
@@ -228,9 +205,6 @@ class polychrom_eigen_psf(GradParent, PowerMethod):
         self.MX__MX = res[0]
         self.MX__barys = res[1]
 
-        
-
-        # print ">>>> Energy of reconstructed stars: ", np.sum(abs(self.MtMX__MX),axis=(0,1))
 
         return self.MX__MX
 
@@ -291,10 +265,6 @@ class polychrom_eigen_psf(GradParent, PowerMethod):
 
             res = self.MtMX__MtMX
 
-
-
-
-
         return res
 
 
@@ -324,7 +294,7 @@ class polychrom_eigen_psf(GradParent, PowerMethod):
         """ Compute data fidelity term. ``y`` is unused (it's just so ``modopt.opt.algorithms.Condat`` can feed
         the dual variable.)
         """
-#        import pdb; pdb.set_trace()  # breakpoint 3d87ba10 //
+
         if use_cache:
             if isinstance(self.MX__MX , type(None)):
                 self._current_rec = self.compute_MX(x,x_in_log=self.logit)
@@ -336,7 +306,7 @@ class polychrom_eigen_psf(GradParent, PowerMethod):
            self._current_rec = self.compute_MX(x,x_in_log=self.logit) 
 
         self.x_old = x
-#        self._current_rec = self.compute_MX(x,x_in_log=self.logit)
+
 
         cost_val = 0.5 * np.linalg.norm(self._current_rec - self.stars) ** 2
         if verbose:
@@ -351,10 +321,7 @@ class polychrom_eigen_psf(GradParent, PowerMethod):
 
     def gamma_update(self,gamma):
 
-
-
         print "gamma update called"
-
 
         if self.min_dict is not None:
             x_0 = np.copy(self.min_dict._x_new)
@@ -371,10 +338,8 @@ class polychrom_eigen_psf(GradParent, PowerMethod):
 
         if self.logit:
             beta = 0.1
-#            self.alpha = 1.0
         else:
             beta = 0.1
-#            self.alpha = 0.2
         
         gamma = utils.back_tracking_armijo_line_search(x_0, grad, f_0, self.cost, alpha=self.alpha, beta=beta)
         
@@ -401,47 +366,6 @@ class polychrom_eigen_psf(GradParent, PowerMethod):
         return gamma
 
     
-    # def sig_tau_update_old(self,sigma):
-
-    #     print "sigma update called"
-
-    #     if self.min_dict is not None:
-    #         x_0 = np.copy(self.min_dict._x_new)
-
-    #     else:
-    #         x_0 = np.copy(self.D_stack)
-            
-    #     grad = self.compute_grad(D_stack=x_0)
-    #     f_0 = self.cost(x_0,count=False) # this will be computed twice :/
-
-    #     if self.logit:
-    #         beta = 0.1
-    #         alpha = 60.0
-    #     else:
-    #         beta = 0.7
-    #         alpha = 1.0
-    #     L_est = utils.back_tracking_armijo_line_search(x_0, grad, f_0, self.cost, alpha=alpha, beta=beta)
-
-    #     sigma = 1.0/(L_est + self.lin_l1norm)
-    #     print "lin norm ",str(self.lin_l1norm)
-    #     print "final sigma ",str(sigma)
-    #     tau = np.copy(sigma)
-
-    #     # Check convergence condition
-    #     if 1.0/tau - sigma*self.lin_l1norm**2 >= L_est/2.0 :
-    #         print "good combination of parameters"
-    #     else:
-    #         print "attention: bad combination "
-
-    #     self.steps.append(sigma)
-
-    #     if self.min_dict is not None:
-    #         self.min_dict._tau = tau
-
-    #     return sigma
-
-
-
     def sig_tau_update(self,sigma,x=None):
 
         print "sigma update called"
@@ -465,10 +389,8 @@ class polychrom_eigen_psf(GradParent, PowerMethod):
         f_0 = self.cost(x_0,count=False,use_cache=True) # this will be computed twice :/
         if self.logit:
             beta = 0.1
-#            self.alpha = 1.0
         else:
             beta = 0.07
-#            self.alpha = 0.2
         gamma = utils.back_tracking_armijo_line_search(x_0, grad, f_0, self.cost,alpha=self.alpha, beta=beta)
 
         sigma = gamma
@@ -494,11 +416,7 @@ class polychrom_eigen_psf(GradParent, PowerMethod):
             self.min_dict._tau = tau
 
         return sigma
-    # def lambda_update(self,lbda):
-
-    #     gamma = self.min_dict.gamma
-
-    #     if lbda > 0 and lbda < 1.0:
+   
 
 
 class polychrom_eigen_psf_RCA(GradParent, PowerMethod):
@@ -550,10 +468,6 @@ class polychrom_eigen_psf_RCA(GradParent, PowerMethod):
 
         if not use_cache_grad:
             self.grad = self.MtX(self.MX(S_stack) - self.stars)
-
-
-
-
 
         return self.grad
 
@@ -909,320 +823,6 @@ class polychrom_eigen_psf_wrapper(GradParent, PowerMethod):
 
         return self.compute_barys__barys
 
-
-
-# class polychrom_eigen_psf_mixed_comp(GradParent, PowerMethod):
-
-#     def __init__(self,A,spectrums,flux,sig,ker,ker_rot,mix_stack,w_stack, gamma, n_iter_sink,stars,data_type=np.ndarray):
-#         self._grad_data_type = data_type
-#         self.A = A
-#         self.spectrums = spectrums
-#         self.flux = flux
-#         self.sig = sig
-#         self.ker = ker
-#         self.ker_rot = ker_rot
-#         self.w_stack = w_stack
-#         self.gamma = gamma
-#         self.n_iter_sink = n_iter_sink
-#         self.stars = stars
-#         self.shap = (stars.shape[0]*2,stars.shape[1]*2)
-#         self.N = self.shap[0]*self.shap[1]
-#         self.mix_stack = mix_stack
-
-#         self.nb_comp_chrom = mix_stack[0].shape[-1]
-
-#         self.MtMX_dict__MtMX = None
-#         self.MtMX_dict__MX = None
-#         self.MtMX_dict__barys = None
-#         self.MX_dict__MX = None
-#         self.MX_dict__barys = None
-#         self.compute__barys_barys = None
-#         self.compute_grad__resRCA = None
-#         self.compute_grad__res = None
-#         self._current_rec = None
-#         self.compute_MX__MX = None
-#         self.debug_grads = []
-#         self.iter = 0
-
-#         self.min_dict = None
-#         self.lin_l1norm = 0
-#         self.compute_grad__iter = 0
-#         self.get_grad__iter  = 0
-#         self.gamma_update__iter = 0
-
-
-#         # PowerMethod.__init__(self, self.compute_MtMX_pm, D_stack.shape,verbose=True)
-#         # self.spec_rad = pm.spec_rad
-#         # self.inv_spec_rad = pm.inv_spec_rad
-
-#     def set_A(self,A_new):
-#         self.A = np.copy(A_new)
-
-
-#     def set_mix_stack(self,mix_stack_new):
-#         self.mix_stack = np.copy(mix_stack_new)
-
-
-#     def set_flux(self,flux_new):
-#         self.flux = np.copy(flux_new)
-
-
-#     def set_min_dict(self, min_dict_new):
-#         self.min_dict = min_dict_new
-
-#     def set_lin_comb_l1norm(self,new_norm):
-#         self.lin_l1norm = new_norm
-
-#     def reset_iterations(self):
-#         self.compute_grad__iter = 0
-#         self.get_grad__iter  = 0
-#         self.gamma_update__iter = 0
-
-
-#     def get_flux(self):
-#         return self.flux
-
-#     def get_D_stack(self):
-#         return self.mix_stack[0]
-
-#     def get_S_stack(self):
-#         return self.mix_stack[1]
-
-
-
-#     def MtX_noise(self,mix_stack=None):
-        
-#         mix = self.mix_stack
-#         if mix_stack is not None:
-#             mix = mix_stack
-            
-
-#         a = self.compute_grad(stars=np.zeros(self.stars.shape),mix_stack=mix)
-#         b = self.compute_grad(mix_stack=mix)
-
-
-#         return a-b 
-
-
-#     def compute_MtMX_pm(self,x):
-#         x = abs(x)
-#         y = np.zeros(self.stars.shape)
-#         print "MtMX.."
-#         tic = time.time()
-#         res = omp.call_WDL(A=self.A,spectrums=self.spectrums,flux=self.flux,sig=self.sig,ker=self.ker,rot_ker=self.ker_rot, 
-#             D_stack=x,w_stack=self.w_stack,gamma=self.gamma,n_iter_sink=self.n_iter_sink,y=y,N=self.N,func='--MtX_wdl')
-#         toc = time.time()
-#         print "Done in: " + str((toc-tic)/60.0) + " min"
-
-#         return res[0]
-
-#     def compute_MtMX_dict(self,stars=None,D_stack=None):
-
-#         y = self.stars
-#         dic = self.mix_stack[0]
-
-#         if stars is not None:
-#             y = stars
-
-#         if D_stack is not None:
-#             dic = D_stack
-            
-#         # Sadly, do abs of D_stack so that it doesn't explode. The projection on the simplex is not enough, it works in convergence but not at every iteration specifically.
-
-#         dic = abs(dic)
-
-
-#         print "MtMX.."
-#         tic = time.time()
-#         res = omp.call_WDL(A=self.A[:self.nb_comp_chrom,:],spectrums=self.spectrums,flux=self.flux,sig=self.sig,ker=self.ker,rot_ker=self.ker_rot, 
-#             D_stack=dic,w_stack=self.w_stack,gamma=self.gamma,n_iter_sink=self.n_iter_sink,y=y,N=self.N,func='--MtX_wdl')
-#         toc = time.time()
-#         print "Done in: " + str((toc-tic)/60.0) + " min"
-
-#         self.MtMX_dict__MtMX = res[0]
-#         self.MtMX_dict__MX = res[1]
-
-
-#         return self.MtMX_dict__MtMX
-
-
-#     def compute_MtX_RCA(self,mx):        
-
-#         res = psflu.MtX_RCA(mx,self.A[self.nb_comp_chrom:,:],self.flux,self.sig,self.ker_rot)
-
-#         return res
-
-
-#     def compute_MX_RCA(self,S_stack):
-
-#         res = psflu.MX_RCA(S_stack,self.A[self.nb_comp_chrom:,:],self.flux,self.sig,self.ker,D=2)
-
-#         return res
-
-
-#     def compute_MX_dict(self, D_stack):
-
-#         print "MX.."
-#         tic = time.time()
-#         res = omp.call_WDL(A=self.A[:self.nb_comp_chrom,:],spectrums=self.spectrums,flux=self.flux,sig=self.sig,ker=self.ker,rot_ker=self.ker_rot, 
-#             D_stack=D_stack,w_stack=self.w_stack,gamma=self.gamma,n_iter_sink=self.n_iter_sink,N=self.N,func='--MX_wdl')
-#         toc = time.time()
-#         print "Done in: " + str((toc-tic)/60.0) + " min"
-#         self.MX_dict__MX = res[0]
-#         self.MX_dict__barys = res[1]
-
-#         # print ">>>> Energy of reconstructed stars: ", np.sum(abs(self.MtMX__MX),axis=(0,1))
-
-#         return self.MX_dict__MX
-
-#     def compute_MX(self,mix_stack):
-
-#         dic = mix_stack[0]
-#         S = mix_stack[1]
-
-#         self.compute_MX_MX = self.compute_MX_dict(dic) + self.compute_MX_RCA(S)
-
-#         return self.compute_MX_MX
-
-
-#     def compute_barys(self,D_stack=None,w_stack=None):
-
-#         dic = self.mix_stack[0]
-#         w = self.w_stack
-
-#         if D_stack is not None:
-#             dic = D_stack
-#         if w_stack is not None:
-#             w = w_stack
-
-#         print "Computing barycenters.."
-#         tic = time.time()
-#         self.compute_barys__barys = omp.call_WDL(D_stack=dic,w_stack=w,gamma=self.gamma,n_iter_sink=self.n_iter_sink,
-#             func="--bary",N=self.N,remove_files=True)
-#         toc = time.time()
-#         print "Done in: " + str((toc-tic)/60.0) + " min"
-
-#         return self.compute_barys__barys
-
-
-#     def compute_grad(self,stars=None,mix_stack=None,use_cache_grad=False):
-
-
-#         self.compute_grad__iter += 1
-
-#         if not use_cache_grad:
-#             y = self.stars
-#             dic = self.mix_stack[0]
-#             S = self.mix_stack[1]
-            
-#             if stars is not None:
-#                 y = stars
-
-#             if mix_stack is not None:
-#                 dic = mix_stack[0]
-#                 S = mix_stack[1]
-
-#             res_dict = self.compute_MtMX_dict(stars=y,D_stack=dic)
-#             res_RCA = self.compute_MtX_RCA(self.compute_MX_RCA(S) - y)
-#             self.compute_grad__resRCA = np.copy(res_RCA)
-   
-#                res = np.empty(2,dtype=np.ndarray)
-#                res[0] = np.copy(res_dict)
-#                res[1] = np.copy(res_RCA)
-#             # res = [ np.copy(res_dict), np.copy(res_RCA)]
-            
-
-#             self.compute_grad__res = res
-        
-        
-#         return self.compute_grad__res
-
-
-
-#     def get_grad(self,mix_stack): #active command, in modopt style
-
-
-#         print "get_grad called"
-
-#         self.get_grad__iter += 1
-
-#         self.grad = self.compute_grad(mix_stack = mix_stack,use_cache_grad=True)
-
-#         return self.grad
-
-
-#     def cost(self, x, y=None, verbose=False):
-#         """ Compute data fidelity term. ``y`` is unused (it's just so ``modopt.opt.algorithms.Condat`` can feed
-#         the dual variable.)
-#         """
-#         # if isinstance(self.MtMX__MX, type(None)):
-#         #     self._current_rec = self.compute_MX(x)
-#         # else:
-#         #     self._current_rec = self.MtMX__MX
-
-#         self._current_rec = self.compute_MX(x)
-
-#         cost_val = 0.5 * np.linalg.norm(self._current_rec - self.stars) ** 2
-#         if verbose:
-#             print " > MIN(X):\t{0}\t{1}".format(np.min(x[0]), np.min(x[1]))
-#             print " > Current cost: {}".format(cost_val)
-#         return cost_val
-
-
-#     def gamma_update(self,gamma):
-
-
-#         self.gamma_update__iter += 1
-
-#         print "gamma update called"
-
-
-#         if self.min_dict is not None:
-#             x_0 = np.copy(self.min_dict._x_new)
-#         else:
-#             x_0 = np.copy(self.mix_stack)
-
-#         grad = self.compute_grad(mix_stack=x_0)
-#         f_0 = self.cost(x_0) # this will be computed twice :/
-#         gamma = utils.back_tracking_armijo_line_search(x_0, grad, f_0, self.cost, alpha=1.0)
-
-#         return gamma
-
-    
-#     def sig_tau_update(self,sigma):
-
-#         print "sigma update called"
-
-#         if self.min_dict is not None:
-#             x_0 = np.copy(self.min_dict._x_new)
-
-#         else:
-#             x_0 = np.copy(self.mix_stack)
-            
-#         grad = self.compute_grad(mix_stack=x_0)
-#         f_0 = self.cost(x_0) # this will be computed twice :/
-#         L_est = utils.back_tracking_armijo_line_search(x_0, grad, f_0, self.cost, alpha=1.0)
-
-#         sigma = 1.0/(L_est + self.lin_l1norm)
-#         tau = np.copy(sigma)
-
-#         # Check convergence condition
-#         if 1.0/tau - sigma*self.lin_l1norm**2 >= L_est/2.0 :
-#             print "good combination of parameters"
-#         else:
-#             print "attention: bad combination "
-
-#         if self.min_dict is not None:
-#             self.min_dict._tau = tau
-
-#         return sigma
-#     # def lambda_update(self,lbda):
-
-#     #     gamma = self.min_dict.gamma
-
-#     #     if lbda > 0 and lbda < 1.0:
-
-
 class polychrom_eigen_psf_coeff_A(GradParent, PowerMethod):
 
     def __init__(self,A,spectrums,flux,sig,ker,ker_rot,D_stack,w_stack, gamma, n_iter_sink,stars,barycenters=None,data_type=float):
@@ -1256,7 +856,6 @@ class polychrom_eigen_psf_coeff_A(GradParent, PowerMethod):
         self.costs = []
         self.steps = []
 
-        # PowerMethod.__init__(self, self.compute_MtMX_pm, alpha.shape,verbose=True)
 
     def reset_costs(self):
         self.costs = []
@@ -1350,7 +949,6 @@ class polychrom_eigen_psf_coeff_A(GradParent, PowerMethod):
             barys = self.compute_barys(dic,w)
         self.MX__MX = psflu.MX(a,barys,self.spectrums,self.sig,self.flux,self.ker)
 
-        # print ">>>> Energy of reconstructed stars: ", np.sum(abs(self.MX__MX),axis=(0,1))
 
         return self.MX__MX
 
@@ -1396,8 +994,6 @@ class polychrom_eigen_psf_coeff_A(GradParent, PowerMethod):
             self.costs.append(cost_val)
             
             
-#        import pdb; pdb.set_trace()  # breakpoint bc817e81 //
-
         return cost_val
 
 
@@ -1455,7 +1051,6 @@ class polychrom_eigen_psf_coeff_graph(GradParent, PowerMethod):
         self.costs = []
         self.steps = []
 
-        # PowerMethod.__init__(self, self.compute_MtMX_pm, alpha.shape,verbose=True)
 
     def reset_costs(self):
         self.costs = []
@@ -1549,7 +1144,6 @@ class polychrom_eigen_psf_coeff_graph(GradParent, PowerMethod):
             barys = self.compute_barys(dic,w)
         self.MX__MX = psflu.MX(a.dot(self.basis),barys,self.spectrums,self.sig,self.flux,self.ker)
 
-        # print ">>>> Energy of reconstructed stars: ", np.sum(abs(self.MX__MX),axis=(0,1))
 
         return self.MX__MX
 
@@ -1880,257 +1474,6 @@ class polychrom_eigen_psf_coeff_graph_wrapper(GradParent, PowerMethod):
 
         return gamma
 
-
-
-
-
-# class polychrom_eigen_psf_coeff_graph_mix(GradParent, PowerMethod):
-
-#     def __init__(self,alpha_mix,basis,spectrums,flux,sig,ker,ker_rot,mix_stack,w_stack, gamma, n_iter_sink,stars,barycenters=None,data_type=np.ndarray):
-#         self._grad_data_type = data_type
-#         self.alpha_mix = alpha_mix
-#         self.basis = basis
-#         self.spectrums = spectrums
-#         self.flux = flux
-#         self.sig = sig
-#         self.ker = ker
-#         self.ker_rot = ker_rot
-#         self.mix_stack = mix_stack
-#         self.w_stack = w_stack
-#         self.gamma = gamma
-#         self.n_iter_sink = n_iter_sink
-#         self.stars = stars
-#         self.shap = (stars.shape[0]*2,stars.shape[1]*2)
-#         self.N = self.shap[0]*self.shap[1]
-#         self.nb_comp_chrom = mix_stack[0].shape[-1]
-
-#         self.compute_barys__barys = None
-#         self.MtX_dict__MtX = None
-#         self.MX_dict__MX = None
-#         self.MtX_RCA__MtX = None
-#         self.MX_RCA__MX = None
-#         self.MX__MX = None 
-#         self.compute_grad__resdict = None
-#         self.compute_grad__resRCA = None
-#         self.barycenters = barycenters
-
-
-#         self.min_coef = None
-#         self.compute_grad__iter = 0
-#         self.get_grad__iter  = 0
-#         self.gamma_update__iter = 0
-
-#         # PowerMethod.__init__(self, self.compute_MtMX_pm, alpha.shape,verbose=True)
-
-
-#     def set_alpha_mix(self,alpha_new):
-#         self.alpha_mix = np.copy(alpha_new)
-
-
-#     def set_mix_stack(self,mix_stack_new):
-#         self.mix_stack = np.copy(mix_stack_new)
-
-#     def set_flux(self,flux_new):
-#         self.flux = np.copy(flux_new)
-
-#     def get_flux(self):
-#         return self.flux
-
-
-#     def set_min_coef(self, min_coef_new):
-#         self.min_coef = min_coef_new
-
-
-#     def set_barycenters(self, barycenters_new):
-#         self.barycenters = np.copy(barycenters_new)
-
-#     def reset_iterations(self):
-#         self.compute_grad__iter = 0
-#         self.get_grad__iter  = 0
-#         self.gamma_update__iter = 0
-
-#     def get_barycenters(self):
-#         return self.barycenters
-
-#     def compute_barys(self,D_stack=None,w_stack=None): # recover it from grads dict if it gets to slow
-        
-#         dic = self.mix_stack[0]
-#         w = self.w_stack
-
-#         if D_stack is not None:
-#             dic = D_stack
-#         if w_stack is not None:
-#             w = w_stack
-
-#         print "Computing barycenters.."
-#         tic = time.time()
-#         self.compute_barys__barys = omp.call_WDL(D_stack=dic,w_stack=w,gamma=self.gamma,n_iter_sink=self.n_iter_sink,
-#             func="--bary",N=self.N,remove_files=True)
-#         toc = time.time()
-#         print "Done in: " + str((toc-tic)/60.0) + " min"
-
-#         return self.compute_barys__barys
-
-
-#     def compute_MtX_dict(self,mx,use_cache_bary=False):
-
-        
-
-#         if use_cache_bary and self.barycenters is not None :
-#             barycenters = self.barycenters
-#         else:
-#             barycenters = self.compute_barys()
-#         A = psflu.MtX_coeff_graph(mx,barycenters,self.spectrums,self.sig,self.flux,self.ker_rot)
-
-#         self.MtX_dict__MtX = A.dot(np.transpose(self.basis))*1.0/(1.0*A.shape[0])
-
-
-#         return self.MtX_dict__MtX
-
-
-#     def compute_MX_dict(self,alpha_mix,D_stack=None,w_stack=None,barycenters=None,use_cache_bary=False):
-
-#         dic = self.mix_stack[0]
-#         w = self.w_stack
-
-        
-#         if D_stack is not None:
-#             dic = D_stack
-#         if w_stack is not None:
-#             w = w_stack
-
-#         if use_cache_bary and self.barycenters is not None :
-#             barys = self.barycenters
-#         elif barycenters is not None:
-#             barys = barycenters
-#         else:
-#             barys = self.compute_barys(D_stack=dic,w_stack=w)
-#         self.MX_dict__MX = psflu.MX(alpha_mix[0].dot(self.basis),barys,self.spectrums,self.sig,self.flux,self.ker)
-
-#         # print ">>>> Energy of reconstructed stars: ", np.sum(abs(self.MX__MX),axis=(0,1))
-
-#         return self.MX_dict__MX
-
-
-#     def compute_MtX_RCA(self,mx,S_stack=None):
-
-#         S = self.mix_stack[1]
-#         if S_stack  is not None :
-#             S = S_stack
-
-#         A = psflu.MtX_coef_graph_RCA(mx,S,self.sig,self.flux,self.ker_rot,D=2)
-
-
-
-#         self.MtX_RCA__MtX = A.dot(np.transpose(self.basis))*1.0/(1.0*A.shape[0])
-
-
-#         return self.MtX_RCA__MtX
-
-
-
-#     def compute_MX_RCA(self,alpha_mix, S_stack=None):
-
-#         S = self.mix_stack[1]
-
-#         if S_stack is not None:
-#             S = S_stack
-
-
-
-#         self.MX_RCA__MX = psflu.MX_RCA(S,alpha_mix[1].dot(self.basis),self.flux,self.sig,self.ker)
-
-
-#         return self.MX_RCA__MX
-
-
-#     def compute_MX(self,alpha_mix=None):
-
-#         a = self.alpha_mix
-
-#         if alpha_mix is not None:
-#             a = alpha_mix
-
-
-
-#         self.MX__MX = self.compute_MX_dict(a,use_cache_bary=True) + self.compute_MX_RCA(a)
-
-
-#         return self.MX__MX 
-
-#     # def compute_MtMX_pm(self,x):
-
-
-#     #     temp =  self.compute_MtX(self.compute_MX(alpha=x,use_cache_bary=True),use_cache_bary=True)
-
-#     #     return temp
-
-#     def compute_grad(self,alpha_mix=None,use_cache_grad=False):
-
-
-#         self.compute_grad__iter += 1
-
-#         if not use_cache_grad:
-#             a = self.alpha_mix
-#             if alpha_mix is not None:
-#                 a = alpha_mix
-#             self.compute_grad__resdict = self.compute_MtX_dict(self.compute_MX(alpha_mix = a)-self.stars,use_cache_bary=True)
-#             self.compute_grad__resRCA =  self.compute_MtX_RCA(self.compute_MX(alpha_mix = a)-self.stars)
-
-#             res = np.empty(2, dtype=np.ndarray) 
-#             res[0] = np.copy(self.compute_grad__resdict)
-#             res[1] = np.copy(self.compute_grad__resRCA)
-
-#             self.grad = res
-
-
-
-
-#         return self.grad
-
-#     def get_grad(self,alpha_mix):
-
-#         print "get_grad called"
-
-
-#         self.get_grad__iter += 1
-
-#         res = self.compute_grad(alpha_mix=alpha_mix,use_cache_grad=True)
-
-#         return res
-
-
-#     def cost(self, x, y=None, verbose=False):
-#         """ Compute data fidelity term. ``y`` is unused (it's just so ``modopt.opt.algorithms.Condat`` can feed
-#         the dual variable.)
-#         """
-#         self._current_rec = self.compute_MX(alpha_mix = x)
-
-#         cost_val = 0.5 * np.linalg.norm(self._current_rec - self.stars) ** 2
-#         if verbose:
-#             print " > MIN(X):\t{0}\t{1}".format(np.min(x[0]), np.min(x[1]))
-#             print " > Current cost: {}".format(cost_val)
-#         return cost_val
-
-
-#     def gamma_update(self,gamma):
-
-
-#         self.gamma_update__iter += 1
-
-
-#         if self.min_coef is not None:
-#             print "got x new"
-#             x_0 = np.copy(self.min_coef._x_new)
-#         else:
-#             x_0 = np.copy(self.alpha_mix)
-
-
-#         grad = self.compute_grad(alpha_mix=x_0)
-#         f_0 = self.cost(x_0) # this will be computed twice :/
-#         gamma = utils.back_tracking_armijo_line_search(x_0, grad, f_0, self.cost, alpha=1.0)
-
-#         return gamma
 
 
 
