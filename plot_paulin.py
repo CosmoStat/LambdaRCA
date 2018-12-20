@@ -600,6 +600,39 @@ if save_plot:
     ID +=1
 
 plt.close()
+
+#%% down + up m SEDs
+rca_pos_idx_m_max = np.argmax((paulin_stats_rca_testgal_listPos[:,0,0]))
+rca_pos_idx_m_min = np.argmin((paulin_stats_rca_testgal_listPos[:,0,0]))
+
+lbda_pos_idx_m_max = np.argmax((paulin_stats_lbda_testgal_listPos[:,0,0]))
+lbda_pos_idx_m_min = np.argmin((paulin_stats_lbda_testgal_listPos[:,0,0]))
+
+
+cindx = 1.0/(3-1)*np.array(range(3)) # for galaxies
+
+fig, ax = plt.subplots()
+plt.errorbar(sizes, paulin_stats_rca_testgal_listPos[rca_pos_idx_m_max,0,:],yerr=paulin_stats_rca_testgal_listPos[rca_pos_idx_m_max,1,:], c='red', lw=2, capsize=5,elinewidth=1.2)
+plt.errorbar(sizes, paulin_stats_lbda_testgal_listPos[lbda_pos_idx_m_max,0,:],yerr=paulin_stats_lbda_testgal_listPos[lbda_pos_idx_m_max,1,:],c='orchid', lw=2, capsize=5,elinewidth=1.2)
+plt.errorbar(sizes, paulin_stats_rca_testgal_listPos[rca_pos_idx_m_min,0,:],paulin_stats_rca_testgal_listPos[rca_pos_idx_m_min,1,:], c='firebrick', lw=2, capsize=5,elinewidth=1.2)
+plt.errorbar(sizes, paulin_stats_lbda_testgal_listPos[lbda_pos_idx_m_min,0,:],yerr=paulin_stats_lbda_testgal_listPos[lbda_pos_idx_m_min,1,:], c='darkorchid', lw=2, capsize=5,elinewidth=1.2)
+
+plt.legend(leg)
+
+plt.xlabel(r'Galaxy size $R$ (arcsec)')
+plt.ylabel(r'Paulin predicted $m$')
+
+plt.xlim(.075,0.525)
+plt.plot([0,0.6], [0,0], 'k--')
+plt.title(r'Multiplicative bias: with galaxy SEDs at galaxy positions.  Errorbars in SEDs.')
+if save_plot:
+    plt.savefig(plot_path+'{}.eps'.format(ID),format='eps',dpi=1200)
+    plt.savefig(plot_path+'{}.jpg'.format(ID),format='jpeg',dpi=1200)
+    ID +=1
+
+plt.show()
+plt.close()
+
 #%% 
 fig, ax = plt.subplots()
 for gal_i in range(paulin_stats_rca_testgal_listGals.shape[0]):
@@ -616,6 +649,42 @@ if save_plot:
 
 plt.show()
 plt.close()
+
+#%% down + up m positions
+rca_gal_idx_m_max = np.argmax((paulin_stats_rca_testgal_listGals[:,0,0]))
+rca_gal_idx_m_min = np.argmin((paulin_stats_rca_testgal_listGals[:,0,0]))
+
+lbda_gal_idx_m_max = np.argmax((paulin_stats_lbda_testgal_listGals[:,0,0]))
+lbda_gal_idx_m_min = np.argmin((paulin_stats_lbda_testgal_listGals[:,0,0]))
+
+
+cindx = 1.0/(3-1)*np.array(range(3)) # for galaxies
+
+fig, ax = plt.subplots()
+plt.errorbar(sizes, paulin_stats_rca_testgal_listGals[rca_gal_idx_m_max,0,:],yerr=paulin_stats_rca_testgal_listGals[rca_gal_idx_m_max,1,:], c='red', lw=2, capsize=5,elinewidth=1.2)
+plt.errorbar(sizes, paulin_stats_lbda_testgal_listGals[lbda_gal_idx_m_max,0,:],yerr=paulin_stats_lbda_testgal_listGals[lbda_gal_idx_m_max,1,:],c='orchid', lw=2, capsize=5,elinewidth=1.2)
+plt.errorbar(sizes, paulin_stats_rca_testgal_listGals[rca_gal_idx_m_min,0,:],paulin_stats_rca_testgal_listGals[rca_gal_idx_m_min,1,:], c='firebrick', lw=2, capsize=5,elinewidth=1.2)
+plt.errorbar(sizes, paulin_stats_lbda_testgal_listGals[lbda_gal_idx_m_min,0,:],yerr=paulin_stats_lbda_testgal_listGals[lbda_gal_idx_m_min,1,:], c='darkorchid', lw=2, capsize=5,elinewidth=1.2)
+
+
+#plt.fill_between(sizes,paulin_stats_lbda_testgal_listGals[lbda_gal_idx_m_max,0,:]-paulin_stats_lbda_testgal_listGals[lbda_gal_idx_m_max,1,:],paulin_stats_lbda_testgal_listGals[lbda_gal_idx_m_max,0,:]+paulin_stats_lbda_testgal_listGals[lbda_gal_idx_m_max,1,:],color='dodgerblue',alpha=0.3,label=r'$\lambda$RCA')
+#plt.fill_between(sizes,paulin_stats_lbda_testgal_listGals[lbda_gal_idx_m_min,0,:]-paulin_stats_lbda_testgal_listGals[lbda_gal_idx_m_min,1,:],paulin_stats_lbda_testgal_listGals[lbda_gal_idx_m_min,0,:]+paulin_stats_lbda_testgal_listGals[lbda_gal_idx_m_min,1,:],color='mediumblue',alpha=0.3)
+plt.legend(leg)
+
+plt.xlabel(r'Galaxy size $R$ (arcsec)')
+plt.ylabel(r'Paulin predicted $m$')
+
+plt.xlim(.075,0.525)
+plt.plot([0,0.6], [0,0], 'k--')
+plt.title(r'Multiplicative bias: with galaxy SEDs at galaxy positions.  Errorbars in positions.')
+if save_plot:
+    plt.savefig(plot_path+'{}.eps'.format(ID),format='eps',dpi=1200)
+    plt.savefig(plot_path+'{}.jpg'.format(ID),format='jpeg',dpi=1200)
+    ID +=1
+
+plt.show()
+plt.close()
+
 #%%
 # Additive bias c1
 plt.errorbar(sizes,paulin_stats_rca[2], yerr=paulin_stats_rca[3], c='darkorchid', lw=2, capsize=5)
@@ -641,6 +710,39 @@ for pos in range(paulin_stats_rca_testgal_listPos.shape[0]):
 plt.xlabel(r'Galaxy size $R$ (arcsec)')
 plt.ylabel(r'Paulin predicted $c_1$')
 plt.legend(leg)
+plt.xlim(.075,0.525)
+plt.plot([0,0.6], [0,0], 'k--')
+plt.title(r'Additive bias (1st component): with galaxy SEDs at galaxy positions. Errorbars in SEDs.')
+if save_plot:
+    plt.savefig(plot_path+'{}.eps'.format(ID),format='eps',dpi=1200)
+    plt.savefig(plot_path+'{}.jpg'.format(ID),format='jpeg',dpi=1200)
+    ID +=1
+
+plt.show()
+plt.close()
+
+#%% down + up c1
+rca_pos_idx_c1_max = np.argmax((paulin_stats_rca_testgal_listPos[:,2,0]))
+rca_pos_idx_c1_min = np.argmin((paulin_stats_rca_testgal_listPos[:,2,0]))
+
+lbda_pos_idx_c1_max = np.argmax((paulin_stats_lbda_testgal_listPos[:,2,0]))
+lbda_pos_idx_c1_min = np.argmin((paulin_stats_lbda_testgal_listPos[:,2,0]))
+
+
+cindx = 1.0/(3-1)*np.array(range(3)) 
+fig, ax = plt.subplots()
+plt.errorbar(sizes, paulin_stats_rca_testgal_listPos[rca_pos_idx_c1_max,2,:],yerr=paulin_stats_rca_testgal_listPos[rca_pos_idx_c1_max,3,:], c='firebrick', lw=2, capsize=5,elinewidth=1.2,label=r'RCA')
+plt.errorbar(sizes, paulin_stats_lbda_testgal_listPos[lbda_pos_idx_c1_max,2,:],c='aqua', lw=2, capsize=5,elinewidth=1.2)
+plt.errorbar(sizes, paulin_stats_rca_testgal_listPos[rca_pos_idx_c1_min,2,:],paulin_stats_rca_testgal_listPos[rca_pos_idx_c1_min,3,:], c='red', lw=2, capsize=5,elinewidth=1.2)
+plt.errorbar(sizes, paulin_stats_lbda_testgal_listPos[lbda_pos_idx_c1_min,2,:], c='mediumblue', lw=2, capsize=5,elinewidth=1.2)
+
+plt.fill_between(sizes,paulin_stats_lbda_testgal_listPos[lbda_pos_idx_c1_max,2,:]-paulin_stats_lbda_testgal_listPos[lbda_pos_idx_c1_max,3,:],paulin_stats_lbda_testgal_listPos[lbda_pos_idx_c1_max,2,:]+paulin_stats_lbda_testgal_listPos[lbda_pos_idx_c1_max,3,:],color='dodgerblue',alpha=0.3,label=r'$\lambda$RCA')
+plt.fill_between(sizes,paulin_stats_lbda_testgal_listPos[lbda_pos_idx_c1_min,2,:]-paulin_stats_lbda_testgal_listPos[lbda_pos_idx_c1_min,3,:],paulin_stats_lbda_testgal_listPos[lbda_pos_idx_c1_min,2,:]+paulin_stats_lbda_testgal_listPos[lbda_pos_idx_c1_min,3,:],color='mediumblue',alpha=0.3)
+plt.legend()
+
+plt.xlabel(r'Galaxy size $R$ (arcsec)')
+plt.ylabel(r'Paulin predicted $c_1$')
+
 plt.xlim(.075,0.525)
 plt.plot([0,0.6], [0,0], 'k--')
 plt.title(r'Additive bias (1st component): with galaxy SEDs at galaxy positions. Errorbars in SEDs.')
@@ -688,6 +790,85 @@ if save_plot:
 
 plt.show()
 plt.close()
+
+#%% down + up c1
+rca_gal_idx_c1_max = np.argmax((paulin_stats_rca_testgal_listGals[:,2,0]))
+rca_gal_idx_c1_min = np.argmin((paulin_stats_rca_testgal_listGals[:,2,0]))
+
+lbda_gal_idx_c1_max = np.argmax((paulin_stats_lbda_testgal_listGals[:,2,0]))
+lbda_gal_idx_c1_min = np.argmin((paulin_stats_lbda_testgal_listGals[:,2,0]))
+
+
+cindx = 1.0/(3-1)*np.array(range(3)) 
+fig, ax = plt.subplots()
+plt.errorbar(sizes, paulin_stats_rca_testgal_listGals[rca_gal_idx_c1_max,2,:],yerr=paulin_stats_rca_testgal_listGals[rca_gal_idx_c1_max,3,:], c='firebrick', lw=2, capsize=5,elinewidth=1.2,label=r'RCA')
+plt.errorbar(sizes, paulin_stats_lbda_testgal_listGals[lbda_gal_idx_c1_max,2,:],c='aqua', lw=2, capsize=5,elinewidth=1.2)
+plt.errorbar(sizes, paulin_stats_rca_testgal_listGals[rca_gal_idx_c1_min,2,:],paulin_stats_rca_testgal_listGals[rca_gal_idx_c1_min,3,:], c='red', lw=2, capsize=5,elinewidth=1.2)
+plt.errorbar(sizes, paulin_stats_lbda_testgal_listGals[lbda_gal_idx_c1_min,2,:], c='mediumblue', lw=2, capsize=5,elinewidth=1.2)
+
+plt.fill_between(sizes,paulin_stats_lbda_testgal_listGals[lbda_gal_idx_c1_max,2,:]-paulin_stats_lbda_testgal_listGals[lbda_gal_idx_c1_max,3,:],paulin_stats_lbda_testgal_listGals[lbda_gal_idx_c1_max,2,:]+paulin_stats_lbda_testgal_listGals[lbda_gal_idx_c1_max,3,:],color='dodgerblue',alpha=0.3,label=r'$\lambda$RCA')
+plt.fill_between(sizes,paulin_stats_lbda_testgal_listGals[lbda_gal_idx_c1_min,2,:]-paulin_stats_lbda_testgal_listGals[lbda_gal_idx_c1_min,3,:],paulin_stats_lbda_testgal_listGals[lbda_gal_idx_c1_min,2,:]+paulin_stats_lbda_testgal_listGals[lbda_gal_idx_c1_min,3,:],color='mediumblue',alpha=0.3)
+plt.legend()
+
+plt.xlabel(r'Galaxy size $R$ (arcsec)')
+plt.ylabel(r'Paulin predicted $c_1$')
+
+plt.xlim(.075,0.525)
+plt.plot([0,0.6], [0,0], 'k--')
+plt.title(r'Additive bias (1st component): with galaxy SEDs at galaxy positions. Errorbars in positions.')
+if save_plot:
+    plt.savefig(plot_path+'{}.eps'.format(ID),format='eps',dpi=1200)
+    plt.savefig(plot_path+'{}.jpg'.format(ID),format='jpeg',dpi=1200)
+    ID +=1
+
+plt.show()
+plt.close()
+
+##%% down c1
+#
+#rca_gal_idx_c1_min = np.argmin((paulin_stats_rca_testgal_listGals[:,2,0]))
+#lbda_gal_idx_c1_min = np.argmin((paulin_stats_lbda_testgal_listGals[:,2,0]))
+#
+#
+#cindx = 1.0/(3-1)*np.array(range(3)) # for galaxies
+#fig, ax = plt.subplots()
+#plt.errorbar(sizes, paulin_stats_rca_testgal_listGals[rca_gal_idx_c1_min,2,:],yerr=paulin_stats_rca_testgal_listGals[rca_gal_idx_c1_min,3,:], c='red', lw=2, capsize=5,elinewidth=1.2)
+#plt.errorbar(sizes, paulin_stats_lbda_testgal_listGals[lbda_gal_idx_c1_min,2,:],yerr=paulin_stats_lbda_testgal_listGals[lbda_gal_idx_c1_min,3,:], c='darkorchid', lw=2, capsize=5,elinewidth=1.2)
+#plt.xlabel(r'Galaxy size $R$ (arcsec)')
+#plt.ylabel(r'Paulin predicted $c_1$')
+#plt.legend(leg)
+#plt.xlim(.075,0.525)
+#plt.plot([0,0.6], [0,0], 'k--')
+#plt.title(r'Additive bias (1st component): with galaxy SEDs at galaxy positions. Errorbars in positions.')
+#if save_plot:
+#    plt.savefig(plot_path+'{}.eps'.format(ID),format='eps',dpi=1200)
+#    plt.savefig(plot_path+'{}.jpg'.format(ID),format='jpeg',dpi=1200)
+#    ID +=1
+#
+#plt.show()
+#plt.close()
+##%% up c1
+#rca_gal_idx_c1_max = np.argmax((paulin_stats_rca_testgal_listGals[:,2,0]))
+#
+#lbda_gal_idx_c1_max = np.argmax((paulin_stats_lbda_testgal_listGals[:,2,0]))
+#
+#cindx = 1.0/(3-1)*np.array(range(3)) # for galaxies
+#fig, ax = plt.subplots()
+#plt.errorbar(sizes, paulin_stats_rca_testgal_listGals[rca_gal_idx_c1_max,2,:],yerr=paulin_stats_rca_testgal_listGals[rca_gal_idx_c1_max,3,:], c='red', lw=2, capsize=5,elinewidth=1.2)
+#plt.errorbar(sizes, paulin_stats_lbda_testgal_listGals[lbda_gal_idx_c1_max,2,:],yerr=paulin_stats_lbda_testgal_listGals[lbda_gal_idx_c1_max,3,:], c='darkorchid', lw=2, capsize=5,elinewidth=1.2)
+#plt.xlabel(r'Galaxy size $R$ (arcsec)')
+#plt.ylabel(r'Paulin predicted $c_1$')
+#plt.legend(leg)
+#plt.xlim(.075,0.525)
+#plt.plot([0,0.6], [0,0], 'k--')
+#plt.title(r'Additive bias (1st component): with galaxy SEDs at galaxy positions. Errorbars in positions.')
+#if save_plot:
+#    plt.savefig(plot_path+'{}.eps'.format(ID),format='eps',dpi=1200)
+#    plt.savefig(plot_path+'{}.jpg'.format(ID),format='jpeg',dpi=1200)
+#    ID +=1
+#
+#plt.show()
+#plt.close()
 
 #%%
 fig, ax = plt.subplots()
@@ -745,6 +926,40 @@ if save_plot:
 
 plt.show()
 plt.close()
+
+#%% Down + up c2
+rca_pos_idx_c2_max = np.argmax(abs(paulin_stats_rca_testgal_listPos[:,4,0]))
+rca_pos_idx_c2_min = np.argmin(abs(paulin_stats_rca_testgal_listPos[:,4,0]))
+
+lbda_pos_idx_c2_max = np.argmax(abs(paulin_stats_lbda_testgal_listPos[:,4,0]))
+lbda_pos_idx_c2_min = np.argmin(abs(paulin_stats_lbda_testgal_listPos[:,4,0]))
+
+
+cindx = 1.0/(3-1)*np.array(range(3)) # for galaxies
+fig, ax = plt.subplots()
+plt.errorbar(sizes, paulin_stats_rca_testgal_listPos[rca_pos_idx_c2_max,4,:],yerr=paulin_stats_rca_testgal_listPos[rca_pos_idx_c2_max,5,:], c='firebrick', lw=2, capsize=5,elinewidth=1.2,label=r'RCA')
+plt.errorbar(sizes, paulin_stats_lbda_testgal_listPos[lbda_pos_idx_c2_max,4,:],c='aqua', lw=2, capsize=5,elinewidth=1.2)
+plt.errorbar(sizes, paulin_stats_rca_testgal_listPos[rca_pos_idx_c2_min,4,:],paulin_stats_rca_testgal_listPos[rca_pos_idx_c2_min,5,:], c='red', lw=2, capsize=5,elinewidth=1.2)
+plt.errorbar(sizes, paulin_stats_lbda_testgal_listPos[lbda_pos_idx_c2_min,4,:], c='mediumblue', lw=2, capsize=5,elinewidth=1.2)
+
+plt.fill_between(sizes,paulin_stats_lbda_testgal_listPos[lbda_pos_idx_c2_max,4,:]-paulin_stats_lbda_testgal_listPos[lbda_pos_idx_c2_max,5,:],paulin_stats_lbda_testgal_listPos[lbda_pos_idx_c2_max,4,:]+paulin_stats_lbda_testgal_listPos[lbda_pos_idx_c2_max,5,:],color='dodgerblue',alpha=0.3,label=r'$\lambda$RCA')
+plt.fill_between(sizes,paulin_stats_lbda_testgal_listPos[lbda_pos_idx_c2_min,4,:]-paulin_stats_lbda_testgal_listPos[lbda_pos_idx_c2_min,5,:],paulin_stats_lbda_testgal_listPos[lbda_pos_idx_c2_min,4,:]+paulin_stats_lbda_testgal_listPos[lbda_pos_idx_c2_min,5,:],color='mediumblue',alpha=0.3)
+plt.legend()
+
+plt.xlabel(r'Galaxy size $R$ (arcsec)')
+plt.ylabel(r'Paulin predicted $c_2$')
+
+plt.xlim(.075,0.525)
+plt.plot([0,0.6], [0,0], 'k--')
+plt.title(r'Additive bias (2nd component): with galaxy SEDs at galaxy positions. Errorbars in SEDs.')
+if save_plot:
+    plt.savefig(plot_path+'{}.eps'.format(ID),format='eps',dpi=1200)
+    plt.savefig(plot_path+'{}.jpg'.format(ID),format='jpeg',dpi=1200)
+    ID +=1
+
+plt.show()
+plt.close()
+
 #%%
 fig, ax = plt.subplots()
 plt.plot(sizes, np.mean(paulin_stats_rca_testgal_listPos[:,4,:],axis=0), c='red', lw=2)
@@ -765,6 +980,10 @@ if save_plot:
 
 plt.show()
 plt.close()
+
+
+
+
 #%%
 
 fig, ax = plt.subplots()
@@ -784,6 +1003,89 @@ if save_plot:
 
 plt.show()
 plt.close()
+
+#%% down + up c2
+rca_gal_idx_c2_max = np.argmax(abs(paulin_stats_rca_testgal_listGals[:,4,0]))
+rca_gal_idx_c2_min = np.argmin(abs(paulin_stats_rca_testgal_listGals[:,4,0]))
+
+lbda_gal_idx_c2_max = np.argmax(abs(paulin_stats_lbda_testgal_listGals[:,4,0]))
+lbda_gal_idx_c2_min = np.argmin(abs(paulin_stats_lbda_testgal_listGals[:,4,0]))
+
+
+cindx = 1.0/(3-1)*np.array(range(3)) # for galaxies
+
+fig, ax = plt.subplots()
+plt.errorbar(sizes, paulin_stats_rca_testgal_listGals[rca_gal_idx_c2_max,4,:],yerr=paulin_stats_rca_testgal_listGals[rca_gal_idx_c2_max,5,:], c='firebrick', lw=2, capsize=5,elinewidth=1.2,label=r'RCA')
+plt.errorbar(sizes, paulin_stats_lbda_testgal_listGals[lbda_gal_idx_c2_max,4,:],c='aqua', lw=2, capsize=5,elinewidth=1.2)
+plt.errorbar(sizes, paulin_stats_rca_testgal_listGals[rca_gal_idx_c2_min,4,:],paulin_stats_rca_testgal_listGals[rca_gal_idx_c2_min,5,:], c='red', lw=2, capsize=5,elinewidth=1.2)
+plt.errorbar(sizes, paulin_stats_lbda_testgal_listGals[lbda_gal_idx_c2_min,4,:], c='mediumblue', lw=2, capsize=5,elinewidth=1.2)
+
+
+plt.fill_between(sizes,paulin_stats_lbda_testgal_listGals[lbda_gal_idx_c2_max,4,:]-paulin_stats_lbda_testgal_listGals[lbda_gal_idx_c2_max,5,:],paulin_stats_lbda_testgal_listGals[lbda_gal_idx_c2_max,4,:]+paulin_stats_lbda_testgal_listGals[lbda_gal_idx_c2_max,5,:],color='dodgerblue',alpha=0.3,label=r'$\lambda$RCA')
+plt.fill_between(sizes,paulin_stats_lbda_testgal_listGals[lbda_gal_idx_c2_min,4,:]-paulin_stats_lbda_testgal_listGals[lbda_gal_idx_c2_min,5,:],paulin_stats_lbda_testgal_listGals[lbda_gal_idx_c2_min,4,:]+paulin_stats_lbda_testgal_listGals[lbda_gal_idx_c2_min,5,:],color='mediumblue',alpha=0.3)
+plt.legend()
+
+plt.xlabel(r'Galaxy size $R$ (arcsec)')
+plt.ylabel(r'Paulin predicted $c_2$')
+
+plt.xlim(.075,0.525)
+plt.plot([0,0.6], [0,0], 'k--')
+plt.title(r'Additive bias (2nd component): with galaxy SEDs at galaxy positions. Errorbars in positions.')
+if save_plot:
+    plt.savefig(plot_path+'{}.eps'.format(ID),format='eps',dpi=1200)
+    plt.savefig(plot_path+'{}.jpg'.format(ID),format='jpeg',dpi=1200)
+    ID +=1
+
+plt.show()
+plt.close()
+
+#%%
+##%% Best c2
+#
+#rca_gal_idx_c2_min = np.argmin(abs(paulin_stats_rca_testgal_listGals[:,4,0]))
+#lbda_gal_idx_c2_min = np.argmin(abs(paulin_stats_lbda_testgal_listGals[:,4,0]))
+#
+#
+#cindx = 1.0/(3-1)*np.array(range(3)) # for galaxies
+#fig, ax = plt.subplots()
+#plt.errorbar(sizes, paulin_stats_rca_testgal_listGals[rca_gal_idx_c2_min,4,:],yerr=paulin_stats_rca_testgal_listGals[rca_gal_idx_c2_min,5,:], c='red', lw=2, capsize=5,elinewidth=1.2)
+#plt.errorbar(sizes, paulin_stats_lbda_testgal_listGals[lbda_gal_idx_c2_min,4,:],yerr=paulin_stats_lbda_testgal_listGals[lbda_gal_idx_c2_min,5,:], c='darkorchid', lw=2, capsize=5,elinewidth=1.2)
+#plt.xlabel(r'Galaxy size $R$ (arcsec)')
+#plt.ylabel(r'Paulin predicted $c_2$')
+#plt.legend(leg)
+#plt.xlim(.075,0.525)
+#plt.plot([0,0.6], [0,0], 'k--')
+#plt.title(r'Additive bias (2nd component): with galaxy SEDs at galaxy positions. Errorbars in positions.')
+#if save_plot:
+#    plt.savefig(plot_path+'{}.eps'.format(ID),format='eps',dpi=1200)
+#    plt.savefig(plot_path+'{}.jpg'.format(ID),format='jpeg',dpi=1200)
+#    ID +=1
+#
+#plt.show()
+#plt.close()
+##%% Worst c2
+#rca_gal_idx_c2_max = np.argmax(abs(paulin_stats_rca_testgal_listGals[:,4,0]))
+#
+#lbda_gal_idx_c2_max = np.argmax(abs(paulin_stats_lbda_testgal_listGals[:,4,0]))
+#
+#cindx = 1.0/(3-1)*np.array(range(3)) # for galaxies
+#fig, ax = plt.subplots()
+#plt.errorbar(sizes, paulin_stats_rca_testgal_listGals[rca_gal_idx_c2_max,4,:],yerr=paulin_stats_rca_testgal_listGals[rca_gal_idx_c2_max,5,:], c='red', lw=2, capsize=5,elinewidth=1.2)
+#plt.errorbar(sizes, paulin_stats_lbda_testgal_listGals[lbda_gal_idx_c2_max,4,:],yerr=paulin_stats_lbda_testgal_listGals[lbda_gal_idx_c2_max,5,:], c='darkorchid', lw=2, capsize=5,elinewidth=1.2)
+#plt.xlabel(r'Galaxy size $R$ (arcsec)')
+#plt.ylabel(r'Paulin predicted $c_2$')
+#plt.legend(leg)
+#plt.xlim(.075,0.525)
+#plt.plot([0,0.6], [0,0], 'k--')
+#plt.title(r'Additive bias (2nd component): with galaxy SEDs at galaxy positions. Errorbars in positions.')
+#if save_plot:
+#    plt.savefig(plot_path+'{}.eps'.format(ID),format='eps',dpi=1200)
+#    plt.savefig(plot_path+'{}.jpg'.format(ID),format='jpeg',dpi=1200)
+#    ID +=1
+#
+#plt.show()
+#plt.close()
+
 #%%
 fig, ax = plt.subplots()
 plt.plot(sizes, np.mean(paulin_stats_rca_testgal_listGals[:,4,:],axis=0), c='red', lw=2)
@@ -803,6 +1105,8 @@ if save_plot:
     ID +=1
 plt.show()
 plt.close()
+
+
 #%% Stack it all together
 
 # Multiplicative bias

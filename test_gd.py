@@ -121,9 +121,9 @@ def plot_dic(D_stack):
         for at in range(D_stack.shape[1]):
             tk.plot_func(D_stack[:,at,i])
 
-
+#%%
 def plot_func(im, wind=False, cmap='gist_stern', norm=None, cutoff=5e-4,
-                title=''):
+                title='',cb=True):
     if cmap in ['sam','Sam']:
         cmap = Samcmap
         boundaries = np.arange(cutoff, np.max(im), 0.0001)
@@ -147,9 +147,11 @@ def plot_func(im, wind=False, cmap='gist_stern', norm=None, cutoff=5e-4,
                        interpolation='Nearest', vmin=vmin, vmax=vmax)
     if title:
         plt.title(title)
+    if cb:
+        plt.colorbar()
     plt.xticks([])
     plt.yticks([])
-
+#%%
 def plot_sideByside(x,path=None):
     """Parameters
        ----------
@@ -171,6 +173,18 @@ def plot_sideByside(x,path=None):
     if path is not None:
         plt.savefig(path, format='jpeg', dpi=1000)
     plt.show()
+
+
+
+
+    
+    
+
+
+
+
+
+
 
 
 
@@ -1352,6 +1366,16 @@ toc_ext = time.time()
 print "Total time taken "+ str((toc_ext-tic_ext)/60.0) + " min"
 print "Time per iteration "+ str((toc_ext-tic_ext)/60.0/n_iter) + " min"
 
+# Build integrated error
+stars_est_2euclidres_nor = stars_est_2euclidres/np.sum(abs(stars_est_2euclidres),axis=(0,1))
+error_integrated_energy = np.sum(abs(stars_est_2euclidres_nor - gt_stars_2euclidrec), axis=(0,1))
+
+# Build chromatic error
+if problem_type in ['mix','lbdaRCA']:
+    error = psf_est_shift_nor - gt_PSFs
+    error_energy = np.sum(abs(error), axis=(0,1))
+
+
 
 
 MSE_rel_nor = np.array(MSE_rel_nor)
@@ -1395,8 +1419,11 @@ np.save(result_path+'/SEDs.npy',spectrums)
 np.save(result_path+'/fov.npy',fov)
 np.save(result_path+'/lambdas.npy',lbdas)
 np.save(result_path+'/gt_PSFs.npy',gt_PSFs)
-
-
+np.save(result_path+'/D_stack_0.npy',D_stack_0)
+np.save(result_path+'/error_integrated_energy.npy',error_integrated_energy)
+np.save(result_path+'/gt_stars_2euclidrec.npy',gt_stars_2euclidrec)
+np.save(result_path+'/error.npy',error)
+np.save(result_path+'/error_energy.npy',error_energy)
 
 
 raise ValueError('Check gradient of mix_stack[1] with small data. Pq nao ta mudando quase nada???????')
@@ -1485,9 +1512,6 @@ for it in range(n_iter):
 
 
 #%%
-# Build integrated error
-stars_est_2euclidres_nor = stars_est_2euclidres/np.sum(abs(stars_est_2euclidres),axis=(0,1))
-error_integrated_energy = np.sum(abs(stars_est_2euclidres_nor - gt_stars_2euclidrec), axis=(0,1))
 
 # plot error energy
 fig = plt.figure()
@@ -1495,10 +1519,6 @@ plt.plot(range(nb_obj), error_integrated_energy )
 plt.xlabel(r'Objects')
 plt.ylabel(r'Error integrated energy')
 
-# Build chromatic error
-if problem_type in ['mix','lbdaRCA']:
-    error = psf_est_shift_nor - gt_PSFs
-    error_energy = np.sum(abs(error), axis=(0,1))
 
 #%%
 for obj in range(nb_obj):
@@ -1523,43 +1543,84 @@ for pos in range(gt_PSFs.shape[2]):
         print "error ", error_energy[pos,wvl]
         tk.plot_func(error[:,:,pos,wvl])
 
+
+
+
+
 #%%
-for obj in range(nb_obj):
-    print np.sum(abs(stars[:,:,obj]))
-    tk.plot_func(stars[:,:,obj])
+        
+def plot_func(im, wind=False, cmap='gist_stern', norm=None, cutoff=5e-4,
+                title='',cb=True):
+#    plt.rcParams['figure.figsize'] = 10, 10
+   
+    if cmap in ['sam','Sam']:
+        cmap = Samcmap
+        boundaries = np.arange(cutoff, np.max(im), 0.0001)
+        norm = BoundaryNorm(boundaries, plt.cm.get_cmap(name=cmap).N)
+    if len(im.shape) == 2:
+        if not wind:
+            plt.imshow(im, cmap=cmap, norm=norm,
+                       interpolation='Nearest')
+        else:
+            vmin, vmax = wind
+            plt.imshow(im, cmap=cmap, norm=norm,
+                       interpolation='Nearest', vmin=vmin, vmax=vmax)
+    else:
+        sqrtN = int(np.sqrt(im.shape[0]))
+        if not wind:
+            plt.imshow(im.reshape(sqrtN,sqrtN), cmap=cmap, norm=norm,
+                       interpolation='Nearest',aspect='auto')
+        else:
+            vmin, vmax = wind
+            plt.imshow(im.reshape(sqrtN,sqrtN), cmap=cmap, norm=norm, 
+                       interpolation='Nearest', vmin=vmin, vmax=vmax)
+    if title:
+        plt.title(title)
+    if cb:
+        plt.colorbar()
+    plt.xticks([])
+    plt.yticks([])
+    
+def plot_wass_vs_gt(PSFs_gt, PSFs,lambdas,cb):
+    """
+        Parameters
+        ----------
+        PSFs_gt: <W,W,wvl>
+        PSFs   : <W,W,wvl>
+        
+    """
+    nb_wvl = PSFs_gt.shape[-1]
+    fig = plt.figure()
+    fig.figsize = (10,10)
+    gs1 = gridspec.GridSpec(2,nb_wvl)
+    gs1.update(wspace=0.05, hspace=0.0) # set the spacing between axes. 
+    for i in range(2):
+        for j in range(nb_wvl):
+            ax1 = plt.subplot(gs1[i*nb_wvl+j])
+            if i == 0:
+                if j==nb_wvl-1:
+                    plot_func(PSFs[:,:,j],cb=False)
+                else:
+                    plot_func(PSFs[:,:,j],cb=False)
+            if i==1:
+                if j==nb_wvl-1:
+                    plot_func(PSFs_gt[:,:,j],cb=False)
+                else:
+                    plot_func(PSFs_gt[:,:,j],cb=False)
+                plt.xlabel(r'${:.2f}$'.format(lambdas[int(j)]),fontsize=3)
+            
+                
+    plt.savefig('/Users/rararipe/Desktop/12bins.jpg',format='jpeg',dpi=1200)
+    plt.show()
+    plt.close()
+                
+
 #%%
-
-for wvl in range(nb_wvl):
-    print "wvl "+str(wvl)
-    for obj in range(nb_obj):
-        tk.plot_func(abs(psf_est[:,:,obj,wvl]))
-
-for comp in range(nb_comp_RCA):
-    tk.plot_func((S_stack[:,comp]))
-
-for comp in range(nb_comp_RCA):
-    tk.plot_func((mix_stack[1][:,comp]))
-
-for comp in range(nb_comp):
-    for at in range(2):
-        tk.plot_func(D_stack[:,at,comp])
+chosen_wvls = np.array([ 0,  6, 12, 18, 24, 30, 36, 42, 48, 54, 60, 66,69])
+plot_wass_vs_gt(gt_PSFs[:,:,16,chosen_wvls], psf_est_nor[:,:,16,chosen_wvls],all_lbdas[chosen_wvls],cb=False)
 
 
 
-for obj in range(nb_obj):
-    tk.plot_func(psf_est[:,:,obj])
-
-
-
-
-for obj in range(nb_obj):
-    tk.plot_func(obs_est[:,:,obj])
-
-
-
-for comp in range(nb_comp_chrom):
-    for at in range(2):
-        tk.plot_func(D_stack[:,at,comp])
 
 
 
