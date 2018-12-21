@@ -73,7 +73,11 @@ def MtX_RCA(mx,A,flux,sig,ker_rot,D=2):
 
 
 def MX_RCA(S_stack,A,flux,sig,ker,D=2):
-
+    """ Operator corresponding to transformation Mt in equation Mt(y-MAS), where M is a linear operator for under-sampling 
+        and shifting and Mt its transpose. If the input is y-MAS,it returns the gradient of the loss function f(A)= 0.5*||y-MAS||ˆ2_2,
+        where A is a matrix of coefficients and S a matrix of components, giving AS=x.
+    
+    """
     nb_comp = A.shape[0]
     nb_obj = A.shape[1]
     N = S_stack.shape[0]
@@ -100,6 +104,21 @@ def MtX_coef_graph_RCA(stars,S_stack,sig,flux,ker_rot,D=2):
     """ Operator corresponding to transformation Mt in equation Mt(y-MAS), where M is a linear operator for under-sampling 
         and shifting and Mt its transpose. If the input is y-MAS,it returns the gradient of the loss function f(A)= 0.5*||y-MAS||ˆ2_2,
         where A is a matrix of coefficients and S a matrix of components, giving AS=x.
+        
+        Parameters
+        ----------
+        stars: <W_pixels,W_pixels,nb_objects> 3d-array
+        S_stack: <nb_components,W_pixels*W_pixels> 2-d array. Components in x = AS.
+        sig: <nb_objects> 1d-array. Noise stds for each object.
+        flux: <nb_objects> 1d-array. Luminosity flux for each object.
+        ker_rot: <l,l,nb_objects> 3d-array. Kernel for fixing shifts on stars.
+        D: int. Decimation factor. Default value is 2.
+        
+        Output
+        ------
+        A: <nb_components,nb_objects> 2d array. Gradient of f(A) = 0.5*||y-MAS||ˆ2_2, if input corresponds to the residuous y-MAS, where 
+            M is a linear operator for decimation and shifting, A is a weighting matrix and S is a components matrix.
+        
     
     """
     nb_comp = S_stack.shape[-1]
