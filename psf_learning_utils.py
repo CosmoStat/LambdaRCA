@@ -54,6 +54,72 @@ def MX(A,barycenters,spectrums,sig,flux,ker,D=2):
     return stars_est
 
 
+def MtX_RCA(mx,A,flux,sig,ker_rot,D=2):
+
+    nb_comp = A.shape[0]
+    nb_obj = A.shape[1]
+    N = D*mx.shape[0]*D* mx.shape[1]
+
+    psf_est = np.zeros((N,nb_obj))
+    for i in range(nb_obj):
+        psf_temp = (flux[i]/sig[i])*scisig.convolve(utils.transpose_decim(mx[:,:,i],D),ker_rot[:,:,i],mode='same')
+        psf_est[:,i] = psf_temp.reshape((N,))
+
+
+    S_stack = A.dot(psf_est.swapaxes(0,1))
+    S_stack = S_stack.swapaxes(0,1) # back to format <N, nb_comp>
+    
+    return S_stack
+
+
+def MX_RCA(S_stack,A,flux,sig,ker,D=2):
+
+    nb_comp = A.shape[0]
+    nb_obj = A.shape[1]
+    N = S_stack.shape[0]
+    shap = (int(np.sqrt(N)),int(np.sqrt(N)))
+
+
+
+    combined_psf = S_stack.dot(A)
+
+    stars_est = np.zeros((shap[0]/D,shap[1]/D,nb_obj))
+
+
+
+    for i in range(nb_obj):
+        stars_est[:,:,i] = (flux[i]/sig[i])*utils.decim(scisig.fftconvolve(combined_psf[:,i].reshape(shap),ker[:,:,i],mode='same'),D,av_en=0)
+    gc.collect()
+
+
+    return stars_est
+
+
+
+def MtX_coef_graph_RCA(stars,S_stack,sig,flux,ker_rot,D=2):
+    """ Operator corresponding to transformation Mt in equation Mt(y-MAS), where M is a linear operator for under-sampling 
+        and shifting and Mt its transpose. If the input is y-MAS,it returns the gradient of the loss function f(A)= 0.5*||y-MAS||ˆ2_2,
+        where A is a matrix of coefficients and S a matrix of components, giving AS=x.
+    
+    """
+    nb_comp = S_stack.shape[-1]
+    nb_obj = stars.shape[-1]
+    N = S_stack.shape[0]
+
+    psf_est = np.zeros((N,nb_obj))
+    for i in range(nb_obj):
+        psf_temp = (flux[i]/sig[i])*scisig.convolve(utils.transpose_decim(stars[:,:,i],D),ker_rot[:,:,i],mode='same')
+        psf_est[:,i] = psf_temp.reshape((N,))
+
+
+    A = np.transpose(S_stack).dot(psf_est)
+
+
+
+    return A
+
+
+
 def get_noise_arr_dict_wvl(D_stack,shap):
 
     Wavelet_transf_dict = transforms.dict_wavelet_transform(shap, D_stack.shape[-1])
@@ -99,8 +165,7 @@ def D_stack_first_guess(shap,nb_im,nb_comp,feat_init,sr_first_guesses=None,gt_PS
     nb_atoms = 2
     p = shap[0]*shap[1] # number of pixels
     D_stack = []
-    nb_pop = int(nb_im/nb_comp)
-    sr_star_all = []
+
     for i in range(nb_comp):
         if feat_init == "uniform":
             Ys = np.ones((p,nb_atoms)) / p
@@ -108,19 +173,6 @@ def D_stack_first_guess(shap,nb_im,nb_comp,feat_init,sr_first_guesses=None,gt_PS
             Ys = np.random.rand(p,nb_atoms) #<2,42x42>
             Ys = (Ys.T / np.sum(Ys, axis = 1)).T #normalize the total of mass in each line
 
-        elif feat_init == "zoom":
-
-            in_fact = 1.3
-            out_fact = 0.5
-            Ys = np.zeros((p,nb_atoms))   
-            # guess = utils.gauss_convolve(stars_first_guess[:,:,i],sig=0.7) #TO DO: add random shift and noise
-            guess = stars_first_guess[:,:,i]
-            zIn = utils.clipped_zoom(guess,in_fact).reshape(-1)
-            zOut = guess.reshape(-1)
-            # zOut = utils.clipped_zoom(guess,out_fact).reshape(-1)
-
-            Ys[:,0] = zIn / np.sum(zIn, axis = 0) #normalize the total of mass in each line
-            Ys[:,1] = zOut/ np.sum(zOut, axis = 0)
 
         elif feat_init == "ground_truth":
 
@@ -134,72 +186,7 @@ def D_stack_first_guess(shap,nb_im,nb_comp,feat_init,sr_first_guesses=None,gt_PS
             tk.plot_func(Ys[:,0])
             tk.plot_func(Ys[:,1])
 
-        elif feat_init == "zoom_2":
-            in_fact = 1.3
-            out_fact = 0.5
-
-            # Denoise
-
-            guess = (flux[i]/sig[i])*scisig.convolve(utils.transpose_decim(im_stack[:,:,i],2),ker_rot[:,:,i],mode='same')
-
-            Ys = np.zeros((p,nb_atoms))   
-            
-            zIn = utils.clipped_zoom(guess,in_fact).reshape(-1)
-            zOut = guess.reshape(-1)
-            # zOut = utils.clipped_zoom(guess,out_fact).reshape(-1)
-
-            Ys[:,0] = zIn / np.sum(zIn, axis = 0) #normalize the total of mass in each line
-            Ys[:,1] = zOut/ np.sum(zOut, axis = 0)
-
-
-        # elif feat_init == "super_res":
-        #     # Change stars to Louis format
-        #     Y = im_stack[:,:,i*nb_pop:(i+1)*nb_pop].swapaxes(2,1).swapaxes(0,1)
-        #     deci_matrix = utils.D2(D,shap_obs[0])
-
-        #     rel_shifs = [shifts[i*nb_pop]-shifts[i*nb_pop+n] for n in range(nb_pop)]
-        #     res = utils.first_guess_integer(Y,nb_pop,shap[0],deci_matrix,shifts[i*nb_pop:(i+1)*nb_pop])
-        #     sr_star_shifted = res[1]
-        #     # Denoise
-        #     # image_rec = call_mr_filter(image_noisy, opt=['-t', '1', '-s', str(n_sigma)])
-
-        #     # Centralize
-        #     sr_star = scisig.convolve(sr_star_shifted,ker_rot[:,:,i*nb_pop],mode='same')
-
-
-            
-        #     sr_star_all.append(sr_star)
-
-
-        #     # Zoom
-        #     in_fact = 1.3
-        #     out_fact = 0.5
-        #     Ys = np.zeros((p,nb_atoms)) 
-        #     guess = sr_star
-        #     zIn = utils.clipped_zoom(guess,in_fact).reshape(-1)
-        #     zOut = guess.reshape(-1)
-        #     # zOut = utils.clipped_zoom(guess,out_fact).reshape(-1)
-
-        #     Ys[:,0] = zIn / np.sum(zIn, axis = 0) #normalize the total of mass in each line
-        #     Ys[:,1] = zOut/ np.sum(zOut, axis = 0)
-
-        # 
-
-        # elif feat_init == "super_res":
-        #     # Zoom
-        #     in_fact = 1.2
-        #     out_fact = 0.6
-        #     Ys = np.zeros((p,nb_atoms)) 
-        #     guess = sr_first_guesses[i]
-
-        #     zIn = utils.clipped_zoom(guess,in_fact).reshape(-1)
-        #     # zOut = utils.clipped_zoom(guess,out_fact).reshape(-1)
-        #     zOut = guess.reshape(-1)
-
-        #     Ys[:,0] = zIn / np.sum(zIn, axis = 0) #normalize the total of mass in each line
-        #     Ys[:,1] = zOut/ np.sum(zOut, axis = 0)
-
-
+  
         elif feat_init == "super_res_zout":
             # Zoom
             if logit:
@@ -213,8 +200,7 @@ def D_stack_first_guess(shap,nb_im,nb_comp,feat_init,sr_first_guesses=None,gt_PS
             zIn = utils.clipped_zoom(guess,in_fact)
 
             zOut = utils.clipped_zoom(guess,out_fact)
-#            zOut = guess
-#            zOut_shift = utils.shift_y_to_grid_x(zOut,zIn)
+
             zIn_shift = utils.shift_y_to_grid_x(zIn,zOut)
 
 
@@ -224,8 +210,6 @@ def D_stack_first_guess(shap,nb_im,nb_comp,feat_init,sr_first_guesses=None,gt_PS
             Ys[:,1] = np.copy(zOut.reshape(-1)/ np.sum(zOut))
             
           
-        
-            
             
         elif feat_init == "super_res_zout_RED":
             in_fact = 1.4
@@ -262,35 +246,6 @@ def D_stack_first_guess(shap,nb_im,nb_comp,feat_init,sr_first_guesses=None,gt_PS
             Ys[:,0] = np.copy(zIn_shift.reshape(-1) / np.sum(zIn_shift)) #normalize the total of mass in each line
             Ys[:,1] = np.copy(zOut.reshape(-1)/ np.sum(zOut))
          
-            
-
-
-        elif feat_init == "guess_bkup":
-            Ys = D_first[:,:,i]
-
-
-        elif feat_init == "sr_semi_free":
-            Ys = np.zeros((p,nb_atoms)) 
-            if i < 0:
-                 # Zoom
-                in_fact = 2.0
-                out_fact = 0.5
-                guess = sr_first_guesses[i]
-
-                zIn = utils.clipped_zoom(guess,in_fact)
-                zOut = utils.clipped_zoom(guess,out_fact)
-                # zOut_shift = utils.shift_y_to_grid_x(zOut,zIn)
-                zIn_shift = utils.shift_y_to_grid_x(zIn,zOut)
-                # zOut = guess.reshape(-1)
-
-                Ys[:,0] = np.copy(zIn_shift.reshape(-1) / np.sum(zIn_shift)) #normalize the total of mass in each line
-                Ys[:,1] = np.copy(zOut.reshape(-1)/ np.sum(zOut))
-            else:
-                one = np.random.normal(0.0, 2.0, shap[0]*shap[1])
-                two = np.random.normal(0.0, 2.0, shap[0]*shap[1])
-                Ys[:,0] = one/np.sum(abs(one))
-                Ys[:,1] = two/np.sum(abs(two))
-
 
         D_stack.append(np.copy(Ys))
 
@@ -342,64 +297,6 @@ def S_stack_first_guess(shap,nb_comp,feat_init="random",sr_first_guesses=None):
     return S_stack 
 
 
-def MtX_RCA(mx,A,flux,sig,ker_rot,D=2):
-
-    nb_comp = A.shape[0]
-    nb_obj = A.shape[1]
-    N = D*mx.shape[0]*D* mx.shape[1]
-
-    psf_est = np.zeros((N,nb_obj))
-    for i in range(nb_obj):
-        psf_temp = (flux[i]/sig[i])*scisig.convolve(utils.transpose_decim(mx[:,:,i],D),ker_rot[:,:,i],mode='same')
-        psf_est[:,i] = psf_temp.reshape((N,))
-
-
-    S_stack = A.dot(psf_est.swapaxes(0,1))
-    S_stack = S_stack.swapaxes(0,1) # back to format <N, nb_comp>
-    
-    return S_stack
-
-
-def MX_RCA(S_stack,A,flux,sig,ker,D=2):
-
-    nb_comp = A.shape[0]
-    nb_obj = A.shape[1]
-    N = S_stack.shape[0]
-    shap = (int(np.sqrt(N)),int(np.sqrt(N)))
-
-
-
-    combined_psf = S_stack.dot(A)
-
-    stars_est = np.zeros((shap[0]/D,shap[1]/D,nb_obj))
-
-
-
-    for i in range(nb_obj):
-        stars_est[:,:,i] = (flux[i]/sig[i])*utils.decim(scisig.fftconvolve(combined_psf[:,i].reshape(shap),ker[:,:,i],mode='same'),D,av_en=0)
-    gc.collect()
-
-
-    return stars_est
-
-
-
-def MtX_coef_graph_RCA(stars,S_stack,sig,flux,ker_rot,D=2):
-    nb_comp = S_stack.shape[-1]
-    nb_obj = stars.shape[-1]
-    N = S_stack.shape[0]
-
-    psf_est = np.zeros((N,nb_obj))
-    for i in range(nb_obj):
-        psf_temp = (flux[i]/sig[i])*scisig.convolve(utils.transpose_decim(stars[:,:,i],D),ker_rot[:,:,i],mode='same')
-        psf_est[:,i] = psf_temp.reshape((N,))
-
-
-    A = np.transpose(S_stack).dot(psf_est)
-
-
-
-    return A
 
 
 
@@ -412,6 +309,18 @@ def normalTologit(D_stack):
 
 
 def SnA(LRobs, shifts):
+    """Transform a stack of under-sampled stars into one single super-resolved image.
+        
+        Parameters
+        ----------
+        stars: <pixel_width,pixel_width,nb_objects> 3d-array
+        shifts: <nb_objects> 1d-array
+        
+        Outputs
+        -------
+        y: <2*pixel_width,2*pixel_width> 2d-array. Super-resolved star.
+    
+    """
     nbpix, _, nobj = LRobs.shape
     # round up shift to integers
     int_shifts = np.round(shifts).astype(int)
@@ -438,24 +347,28 @@ def SnA(LRobs, shifts):
 #    return HR[2:-2,2:-2] / HR_P[2:-2,2:-2]
     return HR[2:-2,2:-2] / temp
 
-def SR_first_guesses(stars,shifts):
-    np.random.seed(17471)
-    group_idx = np.arange(80)
-    np.random.shuffle(group_idx)
-    # split in 3 groups and create first guesse
-    first_guesses = np.array([SnA(stars[:,:,group_idx[:26]], shifts[group_idx[:26]]),
-                          SnA(stars[:,:,group_idx[26:52]], shifts[group_idx[26:52]]),
-                          SnA(stars[:,:,group_idx[52:]], shifts[group_idx[52:]])])
 
-    print " SR first guesses"
-    for fg in first_guesses:
-        tk.plot_func(fg)
-        print np.any(fg==0)
-    
-    return first_guesses
-
-
-def SR_first_guesses_kmeans(stars,fov,shifts,nb_comp): 
+def SR_first_guesses_kmeans(stars,fov,shifts,nb_comp):
+        """Returns super-resolved stars by grouping input under-sampled stars by proximity in the FOV using kmeans to find the neighbors.
+        
+        Parameters
+        ----------
+        stars: <pixel_width,pixel_width,nb_objects> array.
+        fov: <nb_objects,coordinates> array. Positions in the field of view.
+        shifts: <nb_objects>
+        nb_comp: Number of resolved stars to generate.
+        
+        Outputs
+        -------
+        sr_stars: <nb_comp,pixel_width,pixel_width> array. Super-resolved stars.
+        A: <nb_comp,nb_objects> array. Coefficients A in equation SA=X, where S is the array sr_stars and X the final object. 
+            A[i,j] is 1.0 if object i belongs to group j and 0.0 otherwise.
+            
+        Calls
+        -----
+        * :func:`utils.SnA`
+            
+    """
     nb_obj = stars.shape[-1]
     kmeans = KMeans(n_clusters=nb_comp, random_state=0).fit(fov)
     labels = kmeans.predict(fov)
@@ -487,11 +400,29 @@ def SR_first_guesses_kmeans(stars,fov,shifts,nb_comp):
     return sr_stars,A  
 
 
-def SR_first_guesses_rnd(stars,shifts,nb_comp):
+def SR_first_guesses_rnd(stars,shifts,nb_comp,nb_pop=50):
+    """Returns super resolved stars by randomly grouping under-sampled stars.
+        
+        Parameters
+        ----------
+        stars: <pixel_width,pixel_width,nb_objects> array.
+        shifts: <nb_objects>
+        nb_comp: Number of resolved stars to generate.
+        nb_pop: Number of stars in each group designated to generate a resolved star.
+        
+        Outputs
+        -------
+        sr_stars: <nb_comp,pixel_width*2,pixel_width*2> array of super-resolved stars.
+        
+        Calls
+        -----
+        * :func:`utils.SnA`
+    
+    """
     nb_obj = stars.shape[-1]
     groups = []
     for i in range(nb_comp):
-        groups.append(np.random.permutation(np.arange(nb_obj))[:50])
+        groups.append(np.random.permutation(np.arange(nb_obj))[:nb_pop])
     
     sr_stars = []
     for i in range(nb_comp):
@@ -499,108 +430,28 @@ def SR_first_guesses_rnd(stars,shifts,nb_comp):
     sr_stars = np.array(sr_stars)
     return sr_stars
 
-def SR_first_guesses_radial_old(stars,fov,shifts,nb_comp): 
-    nb_obj = stars.shape[-1]
-    
-    min_el_per_grp = 40
-    W = 0.3 # inches?
-    H = 0.25
-    center = [0.0,0.775]
-    r_last = min(W,H)/2 
-    nb_chunks = 2
-    
-    
-    segment = r_last/(nb_chunks-1)
-    r_list = []
-    for i in range(nb_chunks-1):
-        r_list.append(segment*(i+1))
-
-    groups = []
-    for i in range(nb_chunks):
-        groups.append([])
-    for obj in range(nb_obj):
-        sector = 0
-        r_obj = np.sqrt((fov[obj,0] - center[0])**2 + (fov[obj,1] - center[1])**2)
-    #    if r_obj > 0.125:
-    #        print "LAST SECTOR"
-        
-        # Find sector
-        not_found = True
-        j = int((len(r_list)-1)/2) # middle of the list
-        while not_found:
-            if r_obj < r_list[j]:
-                j -= 1
-                if j < 0:
-                    not_found = False
-            elif r_obj >= r_list[j]:
-                if r_obj < r_list[j+1]:
-                    not_found = False
-                else:
-                    j +=1
-                    if j == len(r_list)-1:
-                        not_found = False
-        sector = j+1
-    
-        # Put at the sector
-        groups[sector].append(obj)   
-    
-    # Check if all groups have minimum stars requirement (NOT OPTIMAL)
-    for i in range(nb_chunks):
-        if len(groups[i]) < min_el_per_grp:
-            deficit = min_el_per_grp - len(groups[i])
-            # go through neighbor groups to find a donator
-            neighbors = [i-1,i+1]
-            for j in neighbors:
-                if j < 0:
-                    continue
-                sobra = len(groups[j]) - min_el_per_grp
-                if sobra > 0:
-                    gain = min(sobra,deficit)
-                    groups[i].extend([groups[j].pop(el) for el in range(gain)])
-                    deficit -= gain
-                    if deficit == 0:
-                        break  
-
-    
-    sr_stars = []
-    for i in range(nb_chunks):
-        print len(groups[i])," stars"
-        sr_stars.append(SnA(stars[:,:,groups[i]],shifts[groups[i]]))
-        
-    # Make super resolved components with all stars
-    sr_star_with_all = SnA(stars,shifts)
-    for i in range(nb_comp - nb_chunks):
-       sr_stars.append(sr_star_with_all) 
-    
-    sr_stars = np.array(sr_stars)
-    
-    for sr in sr_stars:
-        tk.plot_func(sr)
-        
-        
-    plt.figure()
-    plt.plot(fov[groups[0],0], fov[groups[0],1], '.',color='red')
-    plt.plot(fov[groups[1],0], fov[groups[1],1], '.',color='blue') 
-#    plt.plot(fov[groups[2],0], fov[groups[2],1], '.',color='green')  
-    
-    fill_principal = 0.7
-    cum = fill_principal
-    A = np.zeros((nb_comp,nb_obj))
-    for i in range(nb_chunks):
-        A[i,groups[i]] = 0.7
-    for i in range(nb_chunks,nb_comp):
-        if i == nb_comp-1:
-            fill_aux = 1.0 - cum
-        else:
-            fill_aux = np.random.randint(1.0-cum)
-        A[i,:] = fill_aux
-        cum += fill_aux
-    tk.plot_func(A)   
-          
-    
-    return sr_stars,A  
 
 def SR_first_guesses_radial(stars,fov,shifts,nb_comp): 
+    """Returns super-resolved stars by grouping input under-sampled stars according to their distance to the center of the FOV.
+        
+        Parameters
+        ----------
+        stars: <pixel_width,pixel_width,nb_objects> array.
+        fov: <nb_objects,coordinates> array. Positions in the field of view.
+        shifts: <nb_objects>
+        nb_comp: Number of resolved stars to generate.
+        
+        Outputs
+        -------
+        sr_stars: <nb_comp,pixel_width,pixel_width> array. Super-resolved stars.
+        A: <nb_comp,nb_objects> array. Coefficients A in equation SA=X, where S is the array sr_stars and X the final object. 
+            A[i,j] is 1.0 if object i belongs to group j and 0.0 otherwise.
+            
+        Calls
+        -----
+        * :func:`utils.SnA`
+            
+    """
     nb_obj = stars.shape[-1]
     
     min_el_per_grp = 40

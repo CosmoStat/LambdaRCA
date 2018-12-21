@@ -5,7 +5,6 @@ from tqdm import tqdm
 import time as time
 import sys
 import matplotlib.gridspec as gridspec
-import C_wrapper as omp
 import grads as grads
 from modopt.opt.cost import costObj
 import modopt.opt.algorithms as optimalg
@@ -19,8 +18,6 @@ import linear
 import utils
 import os
 import optim_utils
-from numpy import zeros,size,where,ones,copy,around,double,sinc,random,pi,arange,cos,sin,arccos,transpose,diag,sqrt,arange,floor,exp,array,mean,roots,float64,int,pi,median,rot90,argsort,tile,repeat,squeeze
-import scipy.signal as scisig
 sys.path.append('opt')
 import algorithms as modoptAlgorithms 
 # tic = time.time() 
@@ -124,10 +121,6 @@ def plot_dic(D_stack):
 #%%
 def plot_func(im, wind=False, cmap='gist_stern', norm=None, cutoff=5e-4,
                 title='',cb=True):
-    if cmap in ['sam','Sam']:
-        cmap = Samcmap
-        boundaries = np.arange(cutoff, np.max(im), 0.0001)
-        norm = BoundaryNorm(boundaries, plt.cm.get_cmap(name=cmap).N)
     if len(im.shape) == 2:
         if not wind:
             plt.imshow(im, cmap=cmap, norm=norm,
@@ -194,7 +187,7 @@ all_lbdas = np.load(load_path+'all_lbdas.npy')
 all_spectrums = np.load(load_path+'all_SEDs.npy')
 
 # Load interpolated spectrum for learning
-load_path_seds = load_path + 'Interp_6wvls/'
+load_path_seds = load_path + 'Interp_8wvls/'
 spectrums = np.load(load_path_seds+'SEDs.npy')
 lbdas = np.load(load_path_seds+'lbdas.npy')
 
@@ -221,22 +214,22 @@ nsig_shift_est=4
 
 # lbdaRCA parameters
 nb_atoms = 2 
-nb_comp = 3
+nb_comp = 3  # Number of components
 feat_init = "super_res_zout"
 feat_init_RCA = "super_res"
-gamma = 0.3
-n_iter_sink = 10
+gamma = 0.3 # Entropy coefficient
+n_iter_sink = 10 # Number of sinkhorn iterations
 
 
 # Alternate optimization parameters
-n_iter = 2 
-max_iter_FB_dict = 200
-max_iter_FB_coef = 200
-list_iterations_dict = [6,4,3]
-list_iterations_coef = [30,30,30]
-n_iter = len(list_iterations_coef)
-alg = "genFB" 
+max_iter_FB_dict = 10 # Max number of sub-iterations of dictionary optimization
+max_iter_FB_coef = 200 # and for coefficients..
+list_iterations_dict = [6,4] # Specify number of sub-iterations for dictionary
+list_iterations_coef = [30,30] # and for coefficients ..
+n_iter = len(list_iterations_coef) # Number of iterations of overall optimization scheme
+alg = "genFB" # Choose between 'genFB' and 'Condat'
 logit = False
+debug = True
 
 if logit:
     alpha_step = [10.0,10.0,10.0] 
@@ -244,13 +237,14 @@ if logit:
 else:
     alpha_step = [1.0,1.0,1.0]
 
+# Set optimization parameters
 fb_gamma_param_dict = 1.0
 fb_lambda_param_dict = 1.0 
 fb_gamma_param_coef = 1.0
 fb_lambda_param_coef = 1.0 
 
 
-save_path = '/Users/rararipe/Documents/Data/GradientDescent_output/trueSEDs/checando'
+save_path = '/Users/rararipe/Documents/Data/GradientDescent_output/trueSEDs/ULTIMATE_8wvl'
 #save_path = '/Users/rararipe/Documents/Data/GradientDescent_output/trueSEDs/42x42pixels_6lbdas80pos_3chrom0RCA_sr_zout0p6zin1p2_coef_dict_sigmaEqualsLinTrace_alpha1pBeta0p1_abssvdASR50_3it643dict30coef_weight4dict1p5coef_FluxUpdate_genFB_sink10_unicornio_lbdaEquals1p0_LowPass_W0p20p40p4'
 
 if not os.path.exists(save_path):
@@ -570,7 +564,7 @@ for i in tqdm(range(n_iter)):
                 gamma_param=fb_gamma_param_dict,lambda_param =fb_lambda_param_dict, gamma_update=Wdl_comp.gamma_update,logit=logit,weights=[0.7,0.3]) # check again the effects of these weights weights=[0.1, 0.9]
         else:
             min_dict = modoptAlgorithms.GenForwardBackward(D_stack,Wdl_comp,proxs_comp,cost=Cost_comp,auto_iterate=False,
-                gamma_param=fb_gamma_param_dict,lambda_param =fb_lambda_param_dict, gamma_update=Wdl_comp.gamma_update,weights=[0.2,0.4,0.4])
+                gamma_param=fb_gamma_param_dict,lambda_param =fb_lambda_param_dict, gamma_update=Wdl_comp.gamma_update,weights=[0.2,0.4,0.4],debug=debug)
     if alg=="condat":
         if logit:
             min_dict = modoptAlgorithms.Condat(Dlog_stack,dual_var,Wdl_comp,prox_comp_primal,prox_comp_dual,linear=Lin_comb_condat,cost=Cost_comp,auto_iterate=False,

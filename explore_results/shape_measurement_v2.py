@@ -14,7 +14,6 @@ import os
 from tqdm import tqdm
 from matplotlib import cm
 import matplotlib
-import colors_plot as cp
 import random
 import copy
 import utils_shape_measurements as utils
@@ -42,9 +41,10 @@ plot_shape_measurements_all = True
 save_stuff = False
 root_path = '/Users/rararipe/Documents/Data/'
 
-# PSFs paths
-lbdaRCA_path = root_path+ 'GradientDescent_output/trueSEDs/42x42pixels_14lbdas80pos_3chrom0RCA_sr_zout0p6zin1p2_coef_dict_sigmaEqualsLinTrace_alpha1pBeta0p1_abssvdASR50_3it643dict30coef_weight4dict1p5coef_FluxUpdate_genFB_sink10_unicornio_lbdaEquals1p0_LowPass_W0p20p40p4/result/'
-data_path = root_path+'QuickestGenerator/full_res_70lbdas_80train300test/train/PickleSEDs/Interp_14wvls/'
+# PSFs paths (change lbdaRCA_path and data_path according to wvl bins)
+lbdaRCA_path = root_path+'GradientDescent_output/trueSEDs/ULTIMATE_8wvl/result/'
+#lbdaRCA_path = root_path+ 'GradientDescent_output/trueSEDs/42x42pixels_14lbdas80pos_3chrom0RCA_sr_zout0p6zin1p2_coef_dict_sigmaEqualsLinTrace_alpha1pBeta0p1_abssvdASR50_3it643dict30coef_weight4dict1p5coef_FluxUpdate_genFB_sink10_unicornio_lbdaEquals1p0_LowPass_W0p20p40p4/result/'
+data_path = root_path+'QuickestGenerator/full_res_70lbdas_80train300test/train/PickleSEDs/Interp_8wvls/'
 gtobs_path = root_path+'QuickestGenerator/full_res_70lbdas_80train300test/train/PickleSEDs/'
 full_res_gt_path = root_path+'QuickestGenerator/full_res_70lbdas_80train300test/train/full_res_gt/'
 test_data_path = root_path+'QuickestGenerator/full_res_70lbdas_80train300test/test/'
@@ -196,7 +196,7 @@ for pos in tqdm(range(nb_pos_test)):
     lbdaInt_R_pixels_testgal_thrgals = []
     paulin_pred_rca_testgal_thrgals = []
     paulin_pred_lbda_testgal_thrgals = []
-    for gal_i in range(2): # galSEDs.shape[-1]
+    for gal_i in range(galSEDs.shape[-1]): # galSEDs.shape[-1]
        
         PSFs_full_res_test_gt = np.load(test_data_path+'PSF{}.npy'.format(pos))
         PSFs_full_res_test_gt /= np.sum(abs(PSFs_full_res_test_gt),axis=(1,2)).reshape((PSFs_full_res_test_gt.shape[0],1,1))
