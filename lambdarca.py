@@ -12,6 +12,7 @@ import modopt.opt.algorithms as optimalg
 from modopt.opt.linear import Identity
 from modopt.opt.linear import LinearCombo
 from modopt.opt.proximity import ProximityCombo, IdentityProx
+from modopt.signal.wavelet import get_mr_filters, filter_convolve
 import proxs
 import transforms
 import psf_learning_utils as psflu
@@ -23,10 +24,6 @@ from numpy import zeros,size,where,ones,copy,around,double,sinc,random,pi,arange
 import scipy.signal as scisig
 sys.path.append('opt')
 import algorithms as modoptAlgorithms 
-# tic = time.time() 
-# import logOT_bary as ot
-# toc = time.time()
-# print "Theano compilation in " + str((toc-tic)/60.0) + " min"
 
 
 save_path = '/Users/mschmitz/Desktop/BecaV2/output_firstgo'
@@ -662,19 +659,245 @@ def becafunc(stars, lbdas, spectrums,
     np.save(result_path+'/error.npy',error)
     np.save(result_path+'/error_energy.npy',error_energy)"""
 
-
+class LambdaRCA(object):
+    """ Color Resolved Components Analysis.
+    
+    Parameters
+    ----------
+    n_comp: int
+        Number of components to learn.
+    upfact: int
+        Upsampling factor. Default is 1 (no superresolution).
+    ksig: float
+        Value of :math:`k` for the thresholding in Starlet domain (taken to be 
+        :math:`k\sigma`, where :math:`\sigma` is the estimated noise standard deviation.)
+    n_scales: int
+        Number of Starlet scales to use for the sparsity constraint. Default is 3. Unused if
+        ``filters`` are provided.
+    ksig_init: float
+        Similar to ``ksig``, for use when estimating shifts and noise levels, as it might 
+        be desirable to have it set higher than ``ksig``. Unused if ``shifts`` are provided 
+        when running :func:`RCA.fit`. Default is 5.
+    filters: np.ndarray
+        Optional filters to the transform domain wherein eigenPSFs are assumed to be sparse;
+        convolution by them should amount to applying :math:`\Phi`. Optional; if not provided, the
+        Starlet transform with `n_scales` scales will be used.
+    verbose: bool or int
+        If True, will only output RCA-specific lines to stdout. If verbose is set to 2,
+        will run ModOpt's optimization algorithms in verbose mode. 
+        
+    """
+    def __init__(self, n_comp, upfact=1, ksig=3, n_scales=3, ksig_init=5, filters=None, 
+                 verbose=2):
+        self.n_comp = n_comp
+        self.upfact = upfact
+        self.ksig = ksig
+        self.ksig_init = ksig_init
+        
+        if filters is None:
+            # option strings for mr_transform
+            self.opt = ['-t2', '-n{}'.format(n_scales)]
+            self.default_filters = True
+        else:
+            self.Phi_filters = filters
+            self.default_filters = False
+        self.verbose = verbose
+        if self.verbose > 1:
+            self.modopt_verb = True
+        else:
+            self.modopt_verb = False
+        self.is_fitted = False
+        
+    def fit(self, obs_data, obs_pos, SEDs, lbdas, all_lbdas=None,
+            obs_weights=None, S=None, VT=None, alpha=None,
+            shifts=None, sigs=None, psf_size=None, psf_size_type='fwhm',
+            flux=None, nb_iter=2, nb_subiter_S=200, nb_reweight=0, 
+            nb_subiter_weights=None, n_eigenvects=5, graph_kwargs={}):
+        """ Fits lambdaRCA to observed star field.
+        
+        Parameters
+        ----------
+        obs_data: np.ndarray
+            Observed data.
+        obs_pos: np.ndarray
+            Corresponding positions.
+        obs_weights: np.ndarray
+            Corresponding weights. Can be either one per observed star, or contain pixel-wise values. Masks can be
+            handled via binary weights. Default is None (in which case no weights are applied). Note if fluxes and
+            shifts are not provided, weights will be ignored for their estimation. Noise level estimation only removes 
+            bad pixels (with weight strictly equal to 0) and otherwise ignores weights.
+        S: np.ndarray
+            First guess (or warm start) eigenPSFs :math:`S`. Default is ``None``.
+        VT: np.ndarray
+            Matrix of concatenated graph Laplacians. Default is ``None``.
+        alpha: np.ndarray
+            First guess (or warm start) weights :math:`\\alpha`, after factorization by ``VT``. Default is ``None``.
+        shifts: np.ndarray
+            Corresponding sub-pixel shifts. Default is ``None``; will be estimated from
+            observed data if not provided.
+        sigs: np.ndarray
+            Estimated noise levels. Default is ``None``; will be estimated from data
+            if not provided.
+        psf_size: float
+            Approximate expected PSF size in pixels; will be used for the size of the Gaussian window for centroid estimation.
+            ``psf_size_type`` determines the convention used for this size (default is FWHM).
+            Ignored if ``shifts`` are provided. Default is Gaussian sigma of 7.5 pixels.
+        psf_size_type: str
+            Can be any of ``'R2'``, ``'fwhm'`` or ``'sigma'``, for the size defined from quadrupole moments, full width at half maximum
+            (e.g. from SExtractor) or 1-sigma width of the best matching 2D Gaussian. Default is ``'fwhm'``.
+        flux: np.ndarray
+            Flux levels. Default is ``None``; will be estimated from data if not provided.
+        nb_iter: int
+            Number of overall iterations (i.e. of alternations). Note the weights do not
+            get updated the last time around, so they actually get ``nb_iter-1`` updates.
+            Default is 2.
+        nb_subiter_S: int
+            Maximum number of iterations for :math:`S` updates. If ModOpt's optimizers achieve 
+            internal convergence, that number may (and often is) not reached. Default is
+            200.
+        nb_reweight: int 
+            Number of reweightings to apply during :math:`S` updates. See equation (33) in RCA paper. 
+            Default is 0.
+        nb_subiter_weights: int
+            Maximum number of iterations for :math:`\\alpha` updates. If ModOpt's optimizers achieve 
+            internal convergence, that number may (and often is) not reached. Default is None;
+            if not provided, will be set to ``2*nb_subiter_S`` (as it was in RCA v1). 
+        n_eigenvects: int
+            Maximum number of eigenvectors to consider per :math:`(e,a)` couple. Default is ``None``;
+            if not provided, *all* eigenvectors will be considered, which can lead to a poor
+            selection of graphs, especially when data is undersampled. Ignored if ``VT`` and
+            ``alpha`` are provided.
+        graph_kwargs: dictionary
+            List of optional kwargs to be passed on to the :func:`utils.GraphBuilder`.
+        """
+        
+        self.obs_data = np.copy(obs_data)
+        self.shap = self.obs_data.shape
+        self.im_hr_shape = (self.upfact*self.shap[0],self.upfact*self.shap[1],self.shap[2])
+        self.obs_pos = obs_pos
+        if obs_weights is None:
+            self.obs_weights = np.ones(self.shap) #/ self.shap[2]
+        elif obs_weights.shape == self.shap:
+            self.obs_weights = obs_weights / np.expand_dims(np.sum(obs_weights,axis=2), 2) * self.shap[2]
+        elif obs_weights.shape == (self.shap[2],):
+            self.obs_weights = obs_weights.reshape(1,1,-1) / np.sum(obs_weights) * self.shap[2]
+        else:
+            raise ValueError(
+            'Shape mismatch; weights should be of shape {} (for per-pixel weights) or {} (per-observation)'.format(
+                             self.shap, self.shap[2:]))
+        if S is None:
+            self.S = np.zeros(self.im_hr_shape[:2] + (self.n_comp,))
+        else:
+            self.S = S
+        self.VT = VT
+        self.alpha = alpha
+        self.shifts = shifts
+        if shifts is None:
+            self.psf_size = self._set_psf_size(psf_size, psf_size_type)
+        self.sigs = sigs
+        self.flux = flux
+        self.nb_iter = nb_iter
+        self.nb_subiter_S = nb_subiter_S
+        if nb_subiter_weights is None:
+            nb_subiter_weights = 2*nb_subiter_S
+        self.nb_subiter_weights = nb_subiter_weights
+        self.nb_reweight = nb_reweight
+        self.n_eigenvects = n_eigenvects
+        self.graph_kwargs = graph_kwargs
+            
+        if self.verbose:
+            print('Running basic initialization tasks...')
+        self._initialize()
+        if self.verbose:
+            print('... Done.')
+        if self.VT is None or self.alpha is None:
+            if self.verbose:
+                print('Constructing graph constraint...')
+            self._initialize_graph_constraint()
+            if self.verbose:
+                print('... Done.')
+        else:
+            self.A = self.alpha.dot(self.VT)
+        becafunc(obs_data, lbdas, SEDs,
+             self.shifts, self.flux, self.sigs, self.shift_ker_stack,self.shift_ker_stack_adj,
+             self.alpha, self.VT,
+             all_lbdas=all_lbdas)
+        self.is_fitted = True
+        
+    def _set_psf_size(self, psf_size, psf_size_type):
+        """ Handles different "size" conventions."""
+        if psf_size is not None:
+            if psf_size_type == 'fwhm':
+                return psf_size / (2*np.sqrt(2*np.log(2)))
+            elif psf_size_type == 'R2':
+                return np.sqrt(psf_size / 2)
+            elif psf_size_type == 'sigma':
+                return psf_size
+            else:
+                raise ValueError('psf_size_type should be one of "fwhm", "R2" or "sigma"')
+        else:
+            print('''WARNING: neither shifts nor an estimated PSF size were provided to RCA;
+the shifts will be estimated from the data using the default Gaussian
+window of 7.5 pixels.''')
+            return 7.5
+  
+    def _initialize(self):
+        """ Initialization tasks related to noise levels, shifts and flux. Note it includes
+        renormalizing observed data, so needs to be ran even if all three are provided."""
+        if self.default_filters:
+            init_filters = get_mr_filters(self.shap[:2], opt=self.opt, coarse=True)
+        else:
+            init_filters = self.Phi_filters
+        # noise levels
+        if self.sigs is None:
+            transf_data = utils.apply_transform(self.obs_data, init_filters)
+            transf_mask = utils.transform_mask(self.obs_weights, init_filters[0])
+            sigmads = np.array([1.4826*utils.mad(fs[0],w) for fs,w in zip(transf_data,
+                                                      utils.reg_format(transf_mask))])
+            self.sigs = sigmads / np.linalg.norm(init_filters[0])
+        else:
+            self.sigs = np.copy(self.sigs)
+        self.sig_min = np.min(self.sigs)
+        # intra-pixel shifts
+        if self.shifts is None:
+            thresh_data = np.copy(self.obs_data)
+            cents = []
+            for i in range(self.shap[2]):
+                # don't allow thresholding to be over 80% of maximum observed pixel
+                nsig_shifts = min(self.ksig_init, 0.8*self.obs_data[:,:,i].max()/self.sigs[i])
+                thresh_data[:,:,i] = utils.HardThresholding(thresh_data[:,:,i], nsig_shifts*self.sigs[i])
+                cents += [utils.CentroidEstimator(thresh_data[:,:,i], sig=self.psf_size)]
+            self.shifts = np.array([ce.return_shifts() for ce in cents])
+        self.shift_ker_stack,self.shift_ker_stack_adj = utils.shift_ker_stack(self.shifts,
+                                                                              self.upfact)
+        # flux levels
+        if self.flux is None:
+            #TODO: could actually pass on the centroids to flux estimator since we have them at this point
+            self.flux = utils.flux_estimate_stack(self.obs_data,rad=4)
+        self.flux_ref = np.median(self.flux)
+        # Normalize noise levels observed data
+        self.sigs /= self.sig_min
+        self.obs_data /= self.sigs.reshape(1,1,-1)
+    
+    def _initialize_graph_constraint(self):
+        gber = utils.GraphBuilder(self.obs_data, self.obs_pos, self.obs_weights, self.n_comp, 
+                                  n_eigenvects=self.n_eigenvects, verbose=self.verbose,
+                                  **self.graph_kwargs)
+        self.VT, self.alpha, self.distances = gber.VT, gber.alpha, gber.distances
+        self.sel_e, self.sel_a = gber.sel_e, gber.sel_a
+        self.A = self.alpha.dot(self.VT)
+    
 def main():
     load_path = '/Users/mschmitz/Documents/PhD/Teaching/Rebeca/Morgan_kit/Data/QuickestGenerator/full_res_70lbdas_80train300test/train/PickleSEDs/'
     stars = np.load(load_path+'stars.npy')
+    fov = np.load(load_path+'fov.npy')
     all_lbdas = np.load(load_path+'all_lbdas.npy')
     all_spectrums = np.load(load_path+'all_SEDs.npy')
-    # Load interpolated spectrum for learning
-    #[BIGMORGANTAG]load_path_seds = load_path + 'Interp_6wvls/'
     load_path_seds = load_path + 'Interp_12wvls/'
     spectrums = np.load(load_path_seds+'SEDs.npy')
     lbdas = np.load(load_path_seds+'lbdas.npy')
     
-    beca_path = '/Users/mschmitz/Documents/PhD/Teaching/Rebeca/Morgan_kit/Data/lbdaRCA_results/42x42pixels_12lbdas80pos_3chrom0RCA_sr_zout0p6zin1p2_coef_dict_sigmaEqualsLinTrace_alpha1pBeta0p1_abssvdASR50_3it643dict30coef_weight4dict1p5coef_FluxUpdate_genFB_sink10_unicornio_lbdaEquals1p0_LowPass_W0p20p40p4' 
+    """beca_path = '/Users/mschmitz/Documents/PhD/Teaching/Rebeca/Morgan_kit/Data/lbdaRCA_results/42x42pixels_12lbdas80pos_3chrom0RCA_sr_zout0p6zin1p2_coef_dict_sigmaEqualsLinTrace_alpha1pBeta0p1_abssvdASR50_3it643dict30coef_weight4dict1p5coef_FluxUpdate_genFB_sink10_unicornio_lbdaEquals1p0_LowPass_W0p20p40p4' 
     ker = np.load(beca_path+'/ker.npy')
     ker_rot = np.load(beca_path+'/ker_rot.npy')
     shifts = np.load(beca_path+'/shifts.npy')
@@ -682,13 +905,10 @@ def main():
     flux = np.load(beca_path+'/flux.npy')
     
     alph = np.load(beca_path+'/alph_0.npy')
-    basis = np.load(beca_path+'/basis.npy')
+    basis = np.load(beca_path+'/basis.npy')"""
 
-    becafunc(stars, lbdas, spectrums,
-                 shifts, flux, sig, ker, ker_rot,
-                 alph, basis,
-                 all_lbdas)
-
+    lbdarca = LambdaRCA(3)
+    lbdarca.fit(stars, fov, spectrums, lbdas, all_lbdas=all_lbdas)
     
 if __name__ == "__main__":
     main()
