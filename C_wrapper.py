@@ -14,12 +14,13 @@ import shutil
 
 
 def call_WDL(A=None,spectrums=None,flux=None,sig=None,ker=None,rot_ker=None, D_stack=None,Dlog_stack=None,w_stack=None,gamma=None,
-    n_iter_sink=None,y=None,N=None,barycenters=None,func='', opt='', path='./',remove_files=True): 
+    n_iter_sink=None,y=None,N=None,barycenters=None,func='', opt='', path='./',remove_files=True,
+    output_dir='out/',temp_dir='temp/', inp_dir='inp/'): 
 
-    executable = './app_dictionary_learning'
+    executable = 'app_dictionary_learning'
 
     # Make sure mr_transform is installed.
-    is_executable(executable)
+    #is_executable(executable)
 
 
      # Specify directories to save temporary files . ADD 2 to everybody when working in parallel (at the wend of .._warapper and ..._output)
@@ -29,7 +30,7 @@ def call_WDL(A=None,spectrums=None,flux=None,sig=None,ker=None,rot_ker=None, D_s
     
     unique_string = str(time.time())
 
-    varDir = "/Users/rararipe/Documents/src/C/data/lbdaRCA_wrapper/variables"+unique_string
+    varDir = temp_dir+unique_string
     if not os.path.exists(varDir):
         os.makedirs(varDir)
     dictDir = varDir+"/dictionary" 
@@ -44,13 +45,13 @@ def call_WDL(A=None,spectrums=None,flux=None,sig=None,ker=None,rot_ker=None, D_s
     rkerDir = varDir+"/rot_ker" 
     if not os.path.exists(rkerDir):
         os.makedirs(rkerDir)
-    inDir = "/Users/rararipe/Documents/src/C/data/lbdaRCA_wrapper/observed_stars"+unique_string
+    inDir = inp_dir+unique_string
     if not os.path.exists(inDir):
         os.makedirs(inDir)
     baryDir = varDir+"/barycenters"
     if not os.path.exists(baryDir):
         os.makedirs(baryDir)
-    output_path = "/Users/rararipe/Documents/Data/lbdaRCA_wdl/wrapper_output"+unique_string
+    output_path = output_dir+unique_string
     if not os.path.exists(output_path):
         os.makedirs(output_path)
 
@@ -114,37 +115,48 @@ def call_WDL(A=None,spectrums=None,flux=None,sig=None,ker=None,rot_ker=None, D_s
         if func == "--MtX_wdl":
 
             if logit:
-                check_call([executable] + ["-i",inDir,"-iv",varDir,"-idLog",deltaDir,"-iw", "w_stack.csv","-iA", 
-                "A.csv","-ik",kerDir,"-irk",rkerDir,"-isp", "spectrums.csv", "-if", "flux.csv", "-isi", "sig.csv","-g",str(gamma),
-                "-n",str(n_iter_sink),"-o",output_path,"-W", str(W), "-H",str(H),"-P",str(nb_obj),"-nb_comp",str(nb_comp),"-nb_atoms",str(nb_atoms),"-nb_wvl",
-                str(nb_wvl),"-ker_dim", str(ker_dim), "--MtX_wdl"])
+                comlin = [executable] + ["-i",inDir,"-iv",varDir,"-idLog",deltaDir,"-iw", "w_stack.csv","-iA", 
+                            "A.csv","-ik",kerDir,"-irk",rkerDir,"-isp", "spectrums.csv", "-if", "flux.csv", "-isi", "sig.csv","-g",str(gamma),
+                            "-n",str(n_iter_sink),"-o",output_path,"-W", str(W), "-H",str(H),"-P",str(nb_obj),"-nb_comp",str(nb_comp),"-nb_atoms",str(nb_atoms),"-nb_wvl",
+                            str(nb_wvl),"-ker_dim", str(ker_dim), "--MtX_wdl"]
+                comlistr = ''
+                for arg in comlin:
+                    comlistr += arg+' '
+                os.system(comlistr)
 
             else:
-                check_call([executable] + ["-i",inDir,"-iv",varDir,"-id",dictDir,"-iw", "w_stack.csv","-iA", 
+                comlin = [executable] + ["-i",inDir,"-iv",varDir,"-id",dictDir,"-iw", "w_stack.csv","-iA", 
                     "A.csv","-ik",kerDir,"-irk",rkerDir,"-isp", "spectrums.csv", "-if", "flux.csv", "-isi", "sig.csv","-g",str(gamma),
                     "-n",str(n_iter_sink),"-o",output_path,"-W", str(W), "-H",str(H),"-P",str(nb_obj),"-nb_comp",str(nb_comp),"-nb_atoms",str(nb_atoms),"-nb_wvl",
-                    str(nb_wvl),"-ker_dim", str(ker_dim), "--MtX_wdl"])
+                    str(nb_wvl),"-ker_dim", str(ker_dim), "--MtX_wdl"]
+                comlistr = ''
+                for arg in comlin:
+                    comlistr += arg+' '
+                os.system(comlistr)
 
         if func == "--MX_wdl":
-            # print executable,"-iv ",varDir,"-id ",dictDir,"-iw ", "w_stack.csv ","-iA ", "A.csv ","-ik ",kerDir,"-irk ",rkerDir,"-isp ", "spectrums.csv ", "-if ", "flux.csv ", "-isi ", "sig.csv ","-g ",str(gamma),"-n ",str(n_iter_sink),"-o ",output_path,"-W ", str(W), "-H ",str(H),"-P ",str(nb_obj),"-nb_comp ",str(nb_comp),"-nb_atoms ",str(nb_atoms),"-nb_wvl ",str(nb_wvl)," -ker_dim ", str(ker_dim), "--MX_wdl"
-
-
-            check_call([executable] + ["-iv",varDir,"-id",dictDir,"-iw", "w_stack.csv","-iA", 
+            comlin = [executable] + ["-iv",varDir,"-id",dictDir,"-iw", "w_stack.csv","-iA", 
                 "A.csv","-ik",kerDir,"-irk",rkerDir,"-isp", "spectrums.csv", "-if", "flux.csv", "-isi", "sig.csv","-g",str(gamma),
                 "-n",str(n_iter_sink),"-o",output_path,"-W", str(W), "-H",str(H),"-P",str(nb_obj),"-nb_comp",str(nb_comp),"-nb_atoms",str(nb_atoms),"-nb_wvl",
-                str(nb_wvl),"-ker_dim", str(ker_dim), "--MX_wdl"])
+                str(nb_wvl),"-ker_dim", str(ker_dim), "--MX_wdl"]
+            comlistr = ''
+            for arg in comlin:
+                comlistr += arg+' '
+            os.system(comlistr)
 
         if func == "--bary":
-            
-
-            check_output([executable] + ["-iv",varDir,"-id",dictDir,"-iw", "w_stack.csv","-g",str(gamma),
+            comlin = [executable] + ["-iv",varDir,"-id",dictDir,"-iw", "w_stack.csv","-g",str(gamma),
                 "-n",str(n_iter_sink),"-o",output_path,"-W", str(W), "-H",str(H),"-nb_comp",str(nb_comp),"-nb_atoms",str(nb_atoms),"-nb_wvl",
-                str(nb_wvl), "--bary"])
+                str(nb_wvl), "--bary"]
+            comlistr = ''
+            for arg in comlin:
+                comlistr += arg+' '
+            os.system(comlistr)
 
 
 
     except Exception:
-
+        raise IOError('{} failed to run with the options provided.'.format(executable))
         warn('{} failed to run with the options provided.'.format(executable))
 
         if func == "--MtX_wdl" or func == "--MX_wdl" or func == "--MX_coeff" or func == "--MtX_coeff": 
@@ -318,15 +330,13 @@ def call_WDL(A=None,spectrums=None,flux=None,sig=None,ker=None,rot_ker=None, D_s
 
 
 def call_MtX(A,spectrums,flux,sig,ker,rot_ker, D_stack,w_stack,C,gamma,
-    n_iter_sink,y, opt='', path='./',remove_files=True): 
+    n_iter_sink,y, opt='', path='./',remove_files=True,
+    output_dir='out_MtX',temp_dir='temp_MtX', inp_dir='inp_MtX'): 
 
-
-    
-    
-    executable = '../utilities/app_dictionary_learning'
+    executable = 'app_dictionary_learning'
 
     # Make sure mr_transform is installed.
-    is_executable(executable)
+    #is_executable(executable)
 
 
 
@@ -340,14 +350,16 @@ def call_MtX(A,spectrums,flux,sig,ker,rot_ker, D_stack,w_stack,C,gamma,
 
 
     # Specify directories to save temporary files 
+    varDir = temp_dir
+    dictDir = temp_dir+"/dictionary" 
+    kerDir = temp_dir+"/ker" 
+    rkerDir = temp_dir+"/rot_ker"
+    inDir = inp_dir 
+    output_path = output_dir 
 
-    varDir = "/Users/rararipe/Documents/src/C/data/lbdaRCA_wrapper_2/variables"
-    dictDir = "/Users/rararipe/Documents/src/C/data/lbdaRCA_wrapper_2/variables/dictionary" 
-    kerDir = "/Users/rararipe/Documents/src/C/data/lbdaRCA_wrapper_2/variables/ker" 
-    rkerDir = "/Users/rararipe/Documents/src/C/data/lbdaRCA_wrapper_2/variables/rot_ker" 
-    inDir = "/Users/rararipe/Documents/src/C/data/lbdaRCA_wrapper_2/observed_stars"
-    output_path = "/Users/rararipe/Documents/Data/lbdaRCA_wdl/wrapper_output_2"
-
+    for path in [varDir,dictDir,kerDir,rkerDir,inDir,output_path]:
+        if not os.path.exists(path):
+            os.makedirs(path)
 
 
     for i in range(nb_comp):
@@ -385,7 +397,7 @@ def call_MtX(A,spectrums,flux,sig,ker,rot_ker, D_stack,w_stack,C,gamma,
 
 
     except Exception:
-
+        raise IOError('{} failed to run with the options provided.'.format(executable))
         warn('{} failed to run with the options provided.'.format(executable))
         
 
