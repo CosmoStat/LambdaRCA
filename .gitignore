@@ -1,6 +1,10 @@
-.pyc
-.csv
-.npy
+*.pyc
+*.csv
+*.npy
+
+temp/*
+inp/*
+out/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
