@@ -74,7 +74,7 @@ def MtX_RCA(mx,A,flux,sig,ker_rot,D=2):
 
 def MX_RCA(S_stack,A,flux,sig,ker,D=2):
     """ Operator corresponding to transformation Mt in equation Mt(y-MAS), where M is a linear operator for under-sampling 
-        and shifting and Mt its transpose. If the input is y-MAS,it returns the gradient of the loss function f(A)= 0.5*||y-MAS||ˆ2_2,
+        and shifting and Mt its transpose. If the input is y-MAS,it returns the gradient of the loss function f(A)= 0.5*||y-MAS||^2_2,
         where A is a matrix of coefficients and S a matrix of components, giving AS=x.
     
     """
@@ -102,7 +102,7 @@ def MX_RCA(S_stack,A,flux,sig,ker,D=2):
 
 def MtX_coef_graph_RCA(stars,S_stack,sig,flux,ker_rot,D=2):
     """ Operator corresponding to transformation Mt in equation Mt(y-MAS), where M is a linear operator for under-sampling 
-        and shifting and Mt its transpose. If the input is y-MAS,it returns the gradient of the loss function f(A)= 0.5*||y-MAS||ˆ2_2,
+        and shifting and Mt its transpose. If the input is y-MAS,it returns the gradient of the loss function f(A)= 0.5*||y-MAS||^2_2,
         where A is a matrix of coefficients and S a matrix of components, giving AS=x.
         
         Parameters
@@ -116,7 +116,7 @@ def MtX_coef_graph_RCA(stars,S_stack,sig,flux,ker_rot,D=2):
         
         Output
         ------
-        A: <nb_components,nb_objects> 2d array. Gradient of f(A) = 0.5*||y-MAS||ˆ2_2, if input corresponds to the residuous y-MAS, where 
+        A: <nb_components,nb_objects> 2d array. Gradient of f(A) = 0.5*||y-MAS||^2_2, if input corresponds to the residuous y-MAS, where 
             M is a linear operator for decimation and shifting, A is a weighting matrix and S is a components matrix.
         
     
@@ -368,7 +368,7 @@ def SnA(LRobs, shifts):
 
 
 def SR_first_guesses_kmeans(stars,fov,shifts,nb_comp):
-        """Returns super-resolved stars by grouping input under-sampled stars by proximity in the FOV using kmeans to find the neighbors.
+    """Returns super-resolved stars by grouping input under-sampled stars by proximity in the FOV using kmeans to find the neighbors.
         
         Parameters
         ----------
