@@ -185,7 +185,7 @@ def becafunc(stars, lbdas, spectrums,
              shifts, flux, sig, ker, ker_rot,
              alph, basis,
              all_lbdas=None):
-    """ all_lbdas is needed if gt_wvlAll=True (you recompute
+    """ 
     """
     # stuff
     shap = (stars.shape[0]*2,stars.shape[1]*2)
@@ -199,8 +199,8 @@ def becafunc(stars, lbdas, spectrums,
     nsig_shift_est=4
     # lbdaRCA parameters
     nb_atoms = 2 # this is actually a constant
-    nb_comp = 3
-    nb_comp_chrom = 3
+    nb_comp = 4
+    nb_comp_chrom = 4
     feat_init = "super_res_zout" #"ground_truth"
     feat_init_RCA = "super_res"
     gamma = 0.3
@@ -214,7 +214,7 @@ def becafunc(stars, lbdas, spectrums,
     n_iter = len(list_iterations_coef)
     alg = "genFB" #genFB
     logit = False
-    gt_wvlAll = False #[BIGMORGANTAG]True
+    gt_wvlAll = False 
     
     fb_gamma_param_dict = 1.0
     fb_lambda_param_dict = 1.0 # must be in ]0,1[
@@ -228,8 +228,10 @@ def becafunc(stars, lbdas, spectrums,
         alpha_step = [1.0,1.0,1.0] # 0.07 1.0
 
     # initialize A
-    A = utils.cube_svd(stars,nb_comp=nb_comp)
-    A = abs(A)
+    A = np.dot(alph,basis)
+    np.save(save_path+'/A_0.npy', A)
+    np.save(save_path+'/alph_00.npy', alph)
+    np.save(save_path+'/VT_00.npy', basis)
 
     # set up barycentric weights
     t = (lbdas-lbdas.min()).astype(float)/(lbdas.max()-lbdas.min())
@@ -277,7 +279,7 @@ def becafunc(stars, lbdas, spectrums,
     np.save(save_path+'/barycenters_0.npy', barycenters)
 
     # Set up prox's
-    nsigma_dict = 3.0
+    nsigma_dict = 4.
     nsigma_RCA = 1.5
     noise_map_dict = psflu.get_noise_arr_dict_wvl(D_stack,shap)*nsigma_dict
     print "THRSHOLD_estimated: ",str(np.min(noise_map_dict)) 
@@ -344,44 +346,31 @@ def becafunc(stars, lbdas, spectrums,
 
         print "-------------------- Steps coefficients set-up -----------------------"
         Wdl_coef.min_coef = None
-        if i ==0:
-            fb_gamma_param_coef = Wdl_coef_A.gamma_update(fb_gamma_param_coef)
-        else:
-            fb_gamma_param_coef = Wdl_coef.gamma_update(fb_gamma_param_coef) # or maybe pass the entire update_step_function aqui
+        fb_gamma_param_coef = Wdl_coef.gamma_update(fb_gamma_param_coef) # or maybe pass the entire update_step_function aqui
         
         print "-------------------- Coefficients estimation -----------------------"
         # Coefficients update
-        if i == 0:
-           min_coef = optimalg.GenForwardBackward(A,Wdl_coef_A,[IdentityProx()],Cost_coef_A,auto_iterate=False,
-            gamma_param=fb_gamma_param_coef,lambda_param =fb_lambda_param_coef, gamma_update=Wdl_coef_A.gamma_update)
-        else:
-            min_coef = optimalg.GenForwardBackward(alph,Wdl_coef,proxs_coef,Cost_coef,auto_iterate=False,
+        min_coef = optimalg.GenForwardBackward(alph,Wdl_coef,proxs_coef,Cost_coef,auto_iterate=False,
             gamma_param=fb_gamma_param_coef,lambda_param =fb_lambda_param_coef, gamma_update=Wdl_coef.gamma_update)
         
-
-        if i == 0:
-            Wdl_coef_A.set_min_coef(min_coef) 
-            Wdl_coef_A.reset_costs()
-            Wdl_coef_A.reset_steps()
-        else:
-            Wdl_coef.set_min_coef(min_coef) 
-            Wdl_coef.reset_costs()
-            Wdl_coef.reset_steps()
+        Wdl_coef.set_min_coef(min_coef) 
+        Wdl_coef.reset_costs()
+        Wdl_coef.reset_steps()
         tic = time.time()
-        if list_iterations_coef is None:
-            min_coef.iterate(max_iter=max_iter_FB_coef)
-        else:
-            min_coef.iterate(max_iter=list_iterations_coef[i])
-        toc = time.time()
-        print "Done in: " + str((toc-tic)/60.0) + " min"
+        if i:
+            if list_iterations_coef is None:
+                min_coef.iterate(max_iter=max_iter_FB_coef)
+            else:
+                min_coef.iterate(max_iter=list_iterations_coef[i])
+            toc = time.time()
+            print "Done in: " + str((toc-tic)/60.0) + " min"
 
-        # Update
-        if i == 0:
-            A = min_coef.x_final
-            alph =  A.dot(np.transpose(basis))/(1.0*nb_comp)
-        else:
+            # Update
             alph = min_coef.x_final
-            A = alph.dot(basis)
+        A = alph.dot(basis)
+        np.save(result_path+'/alph_{}.npy'.format(i+11),alph)
+        np.save(result_path+'/VT_{}.npy'.format(i+11),basis)
+        np.save(result_path+'/A_{}.npy'.format(i+11),A)
     
         Wdl_coef.set_alpha(alph)
         Wdl_comp.set_A(alph.dot(basis))
@@ -441,12 +430,8 @@ def becafunc(stars, lbdas, spectrums,
         Wdl_comp.cost(D_stack, verbose=True,count=False)
         print "Cost from coef please be the same"
         Wdl_coef.cost(alph, verbose=True,count=False)
-        if i ==0:
-            loss_inners[0] += Wdl_coef_A.costs
-            steps_inners.append(Wdl_coef_A.steps)
-        else:
-            loss_inners.append(Wdl_coef.costs)
-            steps_inners.append(Wdl_coef.steps)
+        loss_inners.append(Wdl_coef.costs)
+        steps_inners.append(Wdl_coef.steps)
         loss_alternates.append(res_rec)
         
         
@@ -552,13 +537,13 @@ def becafunc(stars, lbdas, spectrums,
         np.save(save_path+'/iter_'+str(i)+'/obs_est_1.npy', obs_est)
         np.save(save_path+'/iter_'+str(i)+'/psf_est_integrated_shift_nor_1.npy', psf_est_integrated_shift_nor)
     
-        np.save(save_path+'/iter_'+str(i)+'/psf_est_shift_nor_1.npy', psf_est_shift_nor)
+        np.save(save_path+'/iter_'+str(i)+'/psf_est_shift_nor_1.npy', psf_est_shift_nor)"""
+
         np.save(save_path+'/iter_'+str(i)+'/alpha_1.npy', alph)
         np.save(save_path+'/iter_'+str(i)+'/A_1.npy', A)
         np.save(save_path+'/iter_'+str(i)+'/D_stack_1.npy', D_stack)
         np.save(save_path+'/iter_'+str(i)+'/barycenters_1.npy', barycenters)
-        np.save(save_path+'/iter_'+str(i)+'/psf_est_shift_1.npy', psf_est_shift)"""
-
+        #np.save(save_path+'/iter_'+str(i)+'/psf_est_shift_1.npy', psf_est_shift)
         # Bilan
         res_rec = euclidean_cost(obs_est,stars)
         print " > Cost in test_gd: {}".format(res_rec)
@@ -642,6 +627,7 @@ def becafunc(stars, lbdas, spectrums,
     np.save(result_path+'/D_stack.npy',D_stack)
     np.save(result_path+'/barycenters.npy',barycenters)
     np.save(result_path+'/A.npy',A)
+    np.save(result_path+'/alph.npy',alph)
     np.save(result_path+'/psf_est.npy',psf_est)
     np.save(result_path+'/obs_est.npy',obs_est)
     """np.save(result_path+'/stars_est_2euclidres_nor.npy',stars_est_2euclidres_nor)
@@ -649,6 +635,9 @@ def becafunc(stars, lbdas, spectrums,
     np.save(result_path+'/psf_est_shift_nor.npy',psf_est_shift_nor)"""
     np.save(result_path+'/shifts.npy',shifts)
     np.save(result_path+'/flux.npy',flux)
+    np.save(result_path+'/sig.npy',sig)
+    np.save(result_path+'/ker.npy',ker)
+    np.save(result_path+'/ker_rot.npy',ker_rot)
 
     np.save(result_path+'/SEDs.npy',spectrums)
     np.save(result_path+'/lambdas.npy',lbdas)
@@ -818,9 +807,22 @@ class LambdaRCA(object):
                 print('... Done.')
         else:
             self.A = self.alpha.dot(self.VT)
-        becafunc(obs_data, lbdas, SEDs,
+            
+        # shift VT to positive values
+        Vmins = np.min(self.VT,axis=1)
+        Vmins[Vmins>0] = 0
+        VTpos = self.VT - Vmins.reshape(-1,1)
+        
+        np.save(result_path+'/sig.npy',self.sigs)
+        np.save(result_path+'/shifts.npy',self.shifts)
+        np.save(result_path+'/ker.npy',self.shift_ker_stack)
+        np.save(result_path+'/ker_rot.npy',self.shift_ker_stack_adj)
+        np.save(result_path+'/alph_0.npy',self.alpha)
+        np.save(result_path+'/VT_0.npy',self.VT)
+        
+        becafunc(self.obs_data, lbdas, SEDs,
              self.shifts, self.flux, self.sigs, self.shift_ker_stack,self.shift_ker_stack_adj,
-             self.alpha, self.VT,
+             self.alpha, VTpos, 
              all_lbdas=all_lbdas)
         self.is_fitted = True
         
@@ -897,18 +899,12 @@ def main():
     spectrums = np.load(load_path_seds+'SEDs.npy')
     lbdas = np.load(load_path_seds+'lbdas.npy')
     
-    """beca_path = '/Users/mschmitz/Documents/PhD/Teaching/Rebeca/Morgan_kit/Data/lbdaRCA_results/42x42pixels_12lbdas80pos_3chrom0RCA_sr_zout0p6zin1p2_coef_dict_sigmaEqualsLinTrace_alpha1pBeta0p1_abssvdASR50_3it643dict30coef_weight4dict1p5coef_FluxUpdate_genFB_sink10_unicornio_lbdaEquals1p0_LowPass_W0p20p40p4' 
-    ker = np.load(beca_path+'/ker.npy')
-    ker_rot = np.load(beca_path+'/ker_rot.npy')
-    shifts = np.load(beca_path+'/shifts.npy')
-    sig = np.load(beca_path+'/sig.npy')
-    flux = np.load(beca_path+'/flux.npy')
+    beca_path = '/Users/mschmitz/Documents/PhD/Teaching/Rebeca/Morgan_kit/Data/lbdaRCA_results/42x42pixels_12lbdas80pos_3chrom0RCA_sr_zout0p6zin1p2_coef_dict_sigmaEqualsLinTrace_alpha1pBeta0p1_abssvdASR50_3it643dict30coef_weight4dict1p5coef_FluxUpdate_genFB_sink10_unicornio_lbdaEquals1p0_LowPass_W0p20p40p4' 
     
-    alph = np.load(beca_path+'/alph_0.npy')
-    basis = np.load(beca_path+'/basis.npy')"""
+    flux = np.load(beca_path+'/flux.npy')
 
-    lbdarca = LambdaRCA(3)
-    lbdarca.fit(stars, fov, spectrums, lbdas, all_lbdas=all_lbdas)
+    lbdarca = LambdaRCA(4, upfact=2)
+    lbdarca.fit(stars, fov, spectrums, lbdas, all_lbdas=all_lbdas, flux=flux)
     
 if __name__ == "__main__":
     main()
