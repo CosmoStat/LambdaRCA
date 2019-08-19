@@ -890,18 +890,16 @@ window of 7.5 pixels.''')
         self.A = self.alpha.dot(self.VT)
     
 def main():
-    load_path = '/Users/mschmitz/Documents/PhD/Teaching/Rebeca/Morgan_kit/Data/QuickestGenerator/full_res_70lbdas_80train300test/train/PickleSEDs/'
+    load_path = '/Users/mschmitz/Desktop/BecaV2/Data/RepBeca/'
     stars = np.load(load_path+'stars.npy')
     fov = np.load(load_path+'fov.npy')
-    all_lbdas = np.load(load_path+'all_lbdas.npy')
-    all_spectrums = np.load(load_path+'all_SEDs.npy')
-    load_path_seds = load_path + 'Interp_12wvls/'
-    spectrums = np.load(load_path_seds+'SEDs.npy')
-    lbdas = np.load(load_path_seds+'lbdas.npy')
+    all_lbdas = np.load(load_path+'lbda70.npy')
+    all_spectrums = np.load(load_path+'sed70.npy')
+    load_path_seds = load_path 
+    spectrums = np.load(load_path_seds+'sed12.npy')
+    lbdas = np.load(load_path_seds+'lbda12.npy')
     
-    beca_path = '/Users/mschmitz/Documents/PhD/Teaching/Rebeca/Morgan_kit/Data/lbdaRCA_results/42x42pixels_12lbdas80pos_3chrom0RCA_sr_zout0p6zin1p2_coef_dict_sigmaEqualsLinTrace_alpha1pBeta0p1_abssvdASR50_3it643dict30coef_weight4dict1p5coef_FluxUpdate_genFB_sink10_unicornio_lbdaEquals1p0_LowPass_W0p20p40p4' 
-    
-    flux = np.load(beca_path+'/flux.npy')
+    flux = utils.flux_estimate_stack(np.copy(stars),rad=4)
 
     lbdarca = LambdaRCA(4, upfact=2)
     lbdarca.fit(stars, fov, spectrums, lbdas, all_lbdas=all_lbdas, flux=flux)

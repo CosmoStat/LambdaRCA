@@ -328,16 +328,16 @@ def lanczos(U,n=10,n2=None):
             H[i] = np.sinc(np.pi*(U-(i-n)))*np.sinc(np.pi*(U-(i-n))/n)
     return H
 
-def flux_estimate(im,cent=None,rad=4): # Default value for the flux tuned for Euclid PSF at Euclid resolution
+def flux_estimate(im,cent=None,rad=4): # Default value for the flux tunned for Euclid PSF at Euclid resolution
     """Estimate flux for one image (see SPRITE paper, section 3.4.1., subsection 'Photometric flux').
     """
     flux = 0
     if cent is None:
-        cent = [max_coord[0] for max_coord in np.where(im==np.max(im))]
+        cent = np.array(np.where(im==im.max())).reshape((1,2))
     shap = im.shape
     for i in range(0,shap[0]):
         for j in range(0,shap[1]):
-            if np.sqrt((i-cent[0])**2+(j-cent[1])**2)<=rad:
+            if np.sqrt((i-cent[0,0])**2+(j-cent[0,1])**2)<=rad:
                 flux = flux+im[i,j]
     return flux
 
