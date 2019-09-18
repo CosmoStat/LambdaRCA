@@ -14,7 +14,7 @@ import shutil
 
 
 def call_WDL(A=None,spectrums=None,flux=None,sig=None,ker=None,rot_ker=None, D_stack=None,Dlog_stack=None,w_stack=None,gamma=None,
-    n_iter_sink=None,y=None,N=None,barycenters=None,func='', opt='', path='./',remove_files=True,
+    n_iter_sink=None,y=None,N=None,barycenters=None,func='', opt='', path='./',remove_files=True,nb_dim=2,
     output_dir='out/',temp_dir='temp/', inp_dir='inp/'): 
 
     executable = 'app_dictionary_learning'
@@ -57,7 +57,14 @@ def call_WDL(A=None,spectrums=None,flux=None,sig=None,ker=None,rot_ker=None, D_s
 
 
     logit = False
-    W = H = int(np.sqrt(N))
+    
+    if N is None:
+        N = D_stack.shape[0]
+    if nb_dim==2:
+        W = H = int(np.sqrt(N))
+    elif nb_dim==1:
+        W = N
+        H = 1
 
     if A is not None: 
         nb_obj = A.shape[1]
